@@ -1,0 +1,6 @@
+flask
+requests
+selenium
+pandas
+python-binance
+python-dotenv
