@@ -1,0 +1,7 @@
+# Fibonacci Strategy Dashboard Requirements
+flask>=2.0.0
+werkzeug>=2.0.0
+requests>=2.25.0
+python-dateutil>=2.8.1
+# Uncomment the following line if you want to add charting capabilities
+# matplotlib>=3.4.0

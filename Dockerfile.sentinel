@@ -1,0 +1,94 @@
+# AI Trading Sentinel - Optimized Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Set environment variables for headless operation
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV HEADLESS=true
+ENV USE_TEMP_PROFILE=true
+ENV SCREENSHOT_ON_FAILURE=true
+ENV CHROME_OPTS="--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --window-size=1920,1080"
+ENV PYTHON_ENV=production
+ENV FLASK_APP=cloud_main.py
+ENV FLASK_RUN_HOST=0.0.0.0
+
+# Install system dependencies for Chrome and Selenium
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    unzip \
+    xvfb \
+    libxi6 \
+    libgconf-2-4 \
+    default-jdk \
+    curl \
+    gnupg2 \
+    libglib2.0-0 \
+    libnss3 \
+    libgdk-pixbuf2.0-0 \
+    libgtk-3-0 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libatspi2.0-0 \
+    libcairo2 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Chrome
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Chrome Driver with version matching Chrome
+RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1) \
+    && CHROME_DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}") \
+    && wget -q -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROME_DRIVER_VERSION}/chromedriver_linux64.zip" \
+    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
+    && rm /tmp/chromedriver.zip \
+    && chmod +x /usr/local/bin/chromedriver
+
+# Create directories for Chrome data and logs
+RUN mkdir -p /app/temp_chrome_profile /app/logs/screenshots
+
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install additional required packages
+RUN pip install --no-cache-dir flask flask-cors python-dotenv selenium undetected-chromedriver
+
+# Copy the application files
+COPY cloud_main.py cloud_trade_executor.py login_bulenox.py ./
+COPY backend/ ./backend/
+COPY .env.example ./.env.example
+
+# Expose port for Flask API
+EXPOSE 5000
+
+# Create a healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:5000/api/health || exit 1
+
+# Set up entrypoint to run the Flask API
+CMD ["python", "cloud_main.py"]

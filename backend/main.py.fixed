@@ -1,0 +1,372 @@
+import os
+import json
+import time
+import datetime
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+
+# Health check
+@app.route("/api/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok", "timestamp": datetime.datetime.now().isoformat()}), 200
+
+# Strategy listing (stubbed)
+@app.route("/api/strategies", methods=["GET"])
+def get_strategies():
+    return jsonify({
+        "strategies": [
+            {"id": 1, "name": "Liquidity Sweep"},
+            {"id": 2, "name": "FVG + OTE Combo"},
+            {"id": 3, "name": "Volume Weighted Fibonacci"}
+        ]
+    })
+
+# Trade execution route
+@app.route("/api/trade", methods=["POST"])
+def execute_trade():
+    try:
+        data = request.get_json()
+        symbol = data.get("symbol")
+        side = data.get("side")
+        quantity = data.get("quantity")
+        broker = data.get("broker", "bulenox")  # default broker
+        stopLoss = data.get("stopLoss")
+        takeProfit = data.get("takeProfit")
+
+        if not all([symbol, side, quantity]):
+            return jsonify({"status": "error", "message": "Missing required fields"}), 400
+
+        signal = {"symbol": symbol, "side": side, "quantity": quantity}
+
+        if broker == "bulenox":
+            from executor_bulenox import BulenoxExecutor
+            executor = BulenoxExecutor(signal=signal, stopLoss=stopLoss, takeProfit=takeProfit)
+        # elif broker == "exness":
+        #     executor = ExnessExecutor(signal=signal, stopLoss=stopLoss, takeProfit=takeProfit)
+        # elif broker == "binance":
+        #     executor = BinanceExecutor(signal=signal, stopLoss=stopLoss, takeProfit=takeProfit)
+        else:
+            return jsonify({"status": "error", "message": f"Unsupported broker: {broker}"}), 400
+
+        success = executor.execute_trade()
+        return jsonify({"status": "success" if success else "fail"}), 200 if success else 500
+
+    except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
+        print(f"Trade execution failed: {str(e)}")
+        print(f"Error traceback: {error_traceback}")
+        return jsonify({"status": "error", "message": str(e), "traceback": error_traceback}), 500
+
+# Stealth trade execution route
+@app.route("/api/trade/stealth", methods=["POST"])
+def execute_stealth_trade():
+    try:
+        data = request.get_json()
+        symbol = data.get("symbol")
+        side = data.get("side")
+        quantity = data.get("quantity")
+        broker = data.get("broker", "bulenox")  # default broker
+        stopLoss = data.get("stopLoss")
+        takeProfit = data.get("takeProfit")
+        stealth_level = data.get("stealth_level", 2)  # default stealth level
+
+        if not all([symbol, side, quantity]):
+            return jsonify({"status": "error", "message": "Missing required fields"}), 400
+
+        # Log the stealth trade request
+        print(f"Stealth trade request: {symbol} {side} {quantity} via {broker} with stealth level {stealth_level}")
+
+        signal = {"symbol": symbol, "side": side, "quantity": quantity}
+
+        # Import StealthExecutor here to avoid circular imports
+        from utils.executor_stealth_fixed import StealthExecutor
+        
+        # Create stealth executor
+        success = False
+        try:
+            print(f"Creating StealthExecutor with signal={signal}, stopLoss={stopLoss}, takeProfit={takeProfit}, stealth_level={stealth_level}")
+            executor = StealthExecutor(signal=signal, stopLoss=stopLoss, takeProfit=takeProfit, stealth_level=stealth_level)
+            print("StealthExecutor created successfully")
+            
+            print("Executing trade...")
+            success = executor.execute_trade()
+            print(f"Trade execution result: {success}")
+        except Exception as e:
+            import traceback
+            error_traceback = traceback.format_exc()
+            print(f"Error creating or executing StealthExecutor: {str(e)}")
+            print(f"Error traceback: {error_traceback}")
+            return jsonify({"status": "error", "message": str(e), "traceback": error_traceback}), 500
+
+        return jsonify({"status": "success" if success else "fail"}), 200 if success else 500
+
+    except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
+        print(f"Stealth trade execution failed: {str(e)}")
+        print(f"Error traceback: {error_traceback}")
+        return jsonify({"status": "error", "message": str(e), "traceback": error_traceback}), 500
+
+# Futures trade execution route
+@app.route("/api/trade/futures", methods=["POST"])
+def execute_futures_trade():
+    try:
+        data = request.get_json()
+        symbol = data.get("symbol")  # Can be standard format (GBPUSD) or futures format (MBTQ25)
+        side = data.get("side")
+        quantity = data.get("quantity")
+        broker = data.get("broker", "bulenox")  # default broker for futures
+        stopLoss = data.get("stopLoss")
+        takeProfit = data.get("takeProfit")
+
+        if not all([symbol, side, quantity]):
+            return jsonify({"status": "error", "message": "Missing required fields"}), 400
+
+        # Log the futures trade request
+        print(f"Futures trade request: {symbol} {side} {quantity} via {broker}")
+
+        signal = {"symbol": symbol, "side": side, "quantity": quantity}
+
+        if broker == "bulenox":
+            # Import the BulenoxFuturesExecutor
+            from executor_bulenox_futures import BulenoxFuturesExecutor
+            executor = BulenoxFuturesExecutor(signal=signal, stopLoss=stopLoss, takeProfit=takeProfit)
+        else:
+            return jsonify({"status": "error", "message": f"Unsupported broker for futures: {broker}"}), 400
+
+        # Execute the trade and get detailed result
+        result = executor.execute_trade()
+        
+        # Check if this was a gold trade with symbol detection
+        if "gold_symbol_detected" in result:
+            # This was a gold trade with symbol detection
+            if result["gold_symbol_detected"]:
+                # Gold symbol was detected successfully
+                detected_symbol = result["detected_symbol"]
+                evaluation_mode = result.get("evaluation_mode", False)
+                mode_str = "Evaluation Mode" if evaluation_mode else "Live Mode"
+                
+                # Check if quantity was adjusted
+                if result.get("quantity_adjusted", False):
+                    original_qty = result["original_quantity"]
+                    adjusted_qty = result["adjusted_quantity"]
+                    result["message"] = f"🕵️ Sentinel has detected symbol: {detected_symbol}. "
+                    result["message"] += f"Adjusted quantity from {original_qty} to {adjusted_qty} under {mode_str}."
+                else:
+                    result["message"] = f"🕵️ Sentinel has detected symbol: {detected_symbol}. "
+                    result["message"] += f"Executing trade under {mode_str}."
+            else:
+                # Gold symbol detection failed
+                result["message"] = "⚠️ Gold symbol not confirmed. Sentinel halted trading. Please check platform or preferences."
+        
+        # Determine HTTP status code based on trade status
+        http_status = 200 if result["status"] == "success" else 500
+        
+        return jsonify(result), http_status
+
+    except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
+        print(f"Futures trade execution failed: {str(e)}")
+        print(f"Error traceback: {error_traceback}")
+        return jsonify({"status": "error", "message": str(e), "traceback": error_traceback}), 500
+
+# Trade history (if available)
+@app.route("/api/trade/history", methods=["GET"])
+def trade_history():
+    try:
+        with open("logs/bulenox_trades.json", "r") as f:
+            history = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        history = []
+    return jsonify({"trades": history}), 200
+
+# Compounding Tracker Endpoints
+@app.route("/api/progress/track", methods=["POST"])
+def track_progress():
+    try:
+        data = request.get_json()
+        from tracker import CompoundingTracker
+        tracker = CompoundingTracker()
+        result = tracker.track_trade(data)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/api/progress/reset", methods=["POST"])
+def reset_progress():
+    try:
+        from tracker import CompoundingTracker
+        tracker = CompoundingTracker()
+        tracker.reset()
+        return jsonify({"status": "success", "message": "Progress reset successfully"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/api/progress/summary", methods=["GET"])
+def get_progress_summary():
+    try:
+        from tracker import CompoundingTracker
+        tracker = CompoundingTracker()
+        summary = tracker.get_summary()
+        return jsonify(summary), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/api/progress/advance", methods=["POST"])
+def advance_day():
+    try:
+        from tracker import CompoundingTracker
+        tracker = CompoundingTracker()
+        tracker.advance_day()
+        return jsonify({"status": "success", "message": "Day advanced successfully"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Daily plan endpoint
+@app.route("/api/daily-plan", methods=["GET"])
+def get_daily_plan():
+    try:
+        from tracker import CompoundingTracker
+        tracker = CompoundingTracker()
+        plan = tracker.get_daily_plan()
+        return jsonify(plan), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Per-trade targets endpoint
+@app.route("/api/per-trade-targets", methods=["GET"])
+def get_per_trade_targets():
+    try:
+        from tracker import CompoundingTracker
+        tracker = CompoundingTracker()
+        targets = tracker.get_per_trade_targets()
+        return jsonify(targets), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Signal endpoint
+@app.route("/api/signal", methods=["POST"])
+def process_signal():
+    try:
+        data = request.get_json()
+        # Process the signal (placeholder)
+        return jsonify({"status": "success", "message": "Signal processed"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Brokers endpoint
+@app.route("/api/brokers", methods=["GET"])
+def get_brokers():
+    try:
+        with open("brokers.json", "r") as f:
+            brokers = json.load(f)
+        return jsonify(brokers), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# QuantConnect integration
+@app.route("/api/quantconnect/<path:subpath>", methods=["GET", "POST"])
+def quantconnect_proxy(subpath):
+    try:
+        from quantconnect_integration import handle_quantconnect_request
+        return handle_quantconnect_request(request, subpath)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Account symbol status endpoint
+@app.route("/api/account/symbol-status", methods=["GET"])
+def get_account_symbol_status():
+    try:
+        # Check if we're in development mode
+        dev_mode = os.environ.get('FLASK_ENV') == 'development' or os.environ.get('DEV_MODE') == 'true'
+        
+        if dev_mode:
+            # In development mode, return mock data to avoid Selenium initialization
+            print("Development mode detected, returning mock symbol status data")
+            return jsonify({
+                "status": "success",
+                "symbol": "GC",
+                "mode": "Evaluation",
+                "gold_symbol_confirmed": True,
+                "evaluation_mode": True,
+                "trading_rules": "Standard gold futures - 1 contract max in Evaluation Mode",
+                "dev_mode": True
+            }), 200
+        
+        # Initialize the executor with a dummy signal to access its methods
+        # Use GC as the symbol to trigger gold symbol detection
+        dummy_signal = {"symbol": "GC", "side": "buy", "quantity": 1}
+        
+        try:
+            # Set detect_symbol_on_init to True to actively detect the gold symbol
+            executor = BulenoxFuturesExecutor(signal=dummy_signal, detect_symbol_on_init=True)
+            
+            # Get the detected gold symbol and evaluation mode
+            symbol = executor.detected_gold_symbol if executor.detected_gold_symbol else "Not Detected"
+            mode = "Evaluation" if executor.evaluation_mode else "Funded"
+            
+            # Prepare response with detailed information
+            response = {
+                "status": "success",
+                "symbol": symbol,
+                "mode": mode,
+                "gold_symbol_confirmed": executor.gold_symbol_confirmed,
+                "evaluation_mode": executor.evaluation_mode
+            }
+            
+            # Add trading rules based on detected symbol and mode
+            if executor.detected_gold_symbol:
+                if executor.detected_gold_symbol == "GC":
+                    response["trading_rules"] = "Standard gold futures - 1 contract max in Evaluation Mode"
+                elif executor.detected_gold_symbol == "MGC":
+                    response["trading_rules"] = "Micro gold - scaling 1-3 contracts allowed"
+                elif executor.detected_gold_symbol == "XAUUSD":
+                    response["trading_rules"] = "XAUUSD - using pip-based logic (CFD-style)"
+            
+            return jsonify(response), 200
+        except Exception as selenium_error:
+            print(f"Error initializing Selenium: {selenium_error}")
+            # If Selenium fails, return a fallback response
+            return jsonify({
+                "status": "success",
+                "symbol": "Not Detected",
+                "mode": "Evaluation",
+                "gold_symbol_confirmed": False,
+                "evaluation_mode": True,
+                "message": "Symbol detection unavailable. Using default settings.",
+                "selenium_error": str(selenium_error)
+            }), 200
+    except Exception as e:
+        print(f"Unexpected error in symbol status endpoint: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# API endpoints listing
+@app.route("/api", methods=["GET"])
+def list_endpoints():
+    return jsonify({
+        "endpoints": [
+            "/api/health",
+            "/api/strategies",
+            "/api/trade",
+            "/api/trade/futures",
+            "/api/trade/history",
+            "/api/progress/track",
+            "/api/progress/reset",
+            "/api/progress/summary",
+            "/api/daily-plan",
+            "/api/per-trade-targets",
+            "/api/progress/advance",
+            "/api/signal",
+            "/api/brokers",
+            "/api/account/symbol-status",
+            "/api/quantconnect/*"
+        ]
+    }), 200
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0")

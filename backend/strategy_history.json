@@ -1,0 +1,38 @@
+[
+  {
+    "strategy": "default",
+    "parameters": {
+      "stop_loss": 0.5,
+      "take_profit": 1.5,
+      "max_trades": 3,
+      "risk_percentage": 2
+    },
+    "updated_at": "2025-07-30T12:49:54.021487",
+    "version": 3,
+    "description": "Strategy mutated via API"
+  },
+  {
+    "strategy": "default",
+    "parameters": {
+      "stop_loss": 0.5,
+      "take_profit": 1.5,
+      "max_trades": 3,
+      "risk_percentage": 2
+    },
+    "updated_at": "2025-07-30T12:48:34.993207",
+    "version": 2,
+    "description": "Strategy mutated via API"
+  },
+  {
+    "strategy": "default",
+    "parameters": {
+      "stop_loss": 0.5,
+      "take_profit": 1.5,
+      "max_trades": 3,
+      "risk_percentage": 2
+    },
+    "updated_at": "2023-11-01T12:00:00Z",
+    "version": 1,
+    "description": "Initial default strategy"
+  }
+]

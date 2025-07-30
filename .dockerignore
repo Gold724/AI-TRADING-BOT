@@ -1,0 +1,72 @@
+# Version control
+.git
+.gitignore
+.github
+
+# Environment and secrets
+.env
+*.env
+!.env.example
+secrets.json
+*.pem
+*.key
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs and databases
+*.log
+logs/*
+!logs/.gitkeep
+*.sqlite
+*.db
+
+# Chrome profiles and browser data
+temp_chrome_profile/
+*.profile
+
+# Test files
+test_*.py
+
+# Documentation
+*.md
+LICENSE
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Screenshots and diagnostic images
+*.png
+*.jpg
+*.jpeg
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

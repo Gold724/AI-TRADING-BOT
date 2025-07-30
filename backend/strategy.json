@@ -1,0 +1,15 @@
+{
+  "strategy": "default",
+  "parameters": {
+    "stop_loss": 0.5,
+    "take_profit": 1.5,
+    "max_trades": 3,
+    "risk_percentage": 2
+  },
+  "updated_at": "2023-11-01T12:00:00Z",
+  "strategy_name": "fibonacci_strategy",
+  "changes": {
+    "stop_loss_pct": 0.6,
+    "take_profit_pct": 1.8
+  }
+}

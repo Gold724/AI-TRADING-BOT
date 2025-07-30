@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # Override for local development
+  cloud-trading-sentinel:
+    environment:
+      - FLASK_ENV=development
+      - DEV_MODE=true
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    command: python cloud_main.py
+
+  # Override for frontend development
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    command: npm run dev
+    ports:
+      - "3000:3000"

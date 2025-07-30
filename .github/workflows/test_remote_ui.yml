@@ -1,0 +1,58 @@
+name: Remote UI Tests
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'cloud_main.py'
+      - 'cloud_trade_executor.py'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'cloud_main.py'
+      - 'cloud_trade_executor.py'
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: 'API URL to test'
+        required: false
+        default: 'http://localhost:5000'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+          
+      - name: Run Remote UI Tests
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.api_url }}" != "" ]; then
+            python test_remote_ui.py --url "${{ github.event.inputs.api_url }}"
+          else
+            # Start the Flask server for testing
+            pip install -r requirements.txt
+            python cloud_main.py &
+            sleep 5  # Wait for server to start
+            python test_remote_ui.py --url "http://localhost:5000"
+          fi
+        env:
+          FLASK_HOST: 0.0.0.0
+          FLASK_PORT: 5000
+          CORS_ORIGINS: '*'
+          HEADLESS: 'true'
+          USE_TEMP_PROFILE: 'true'
+          DEV_MODE: 'true'

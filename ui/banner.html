@@ -1,0 +1,162 @@
+<!-- Mutation Sentinel v0.5 Banner -->
+<div class="sentinel-banner">
+  <div class="banner-header">
+    <h1>🧬 Mutation Sentinel <span class="version">v0.5</span></h1>
+  </div>
+  
+  <div class="banner-content">
+    <div class="capabilities">
+      <h2>Your Trading Sentinel Powers:</h2>
+      <ul>
+        <li><span class="icon">🧠</span> Mutation on demand via prompt or API</li>
+        <li><span class="icon">🌐</span> Broker-agnostic trade execution</li>
+        <li><span class="icon">⚡</span> JavaScript-aware Selenium intelligence</li>
+        <li><span class="icon">☁️</span> Cloud-native deployment at scale</li>
+        <li><span class="icon">📱</span> Live UI control from mobile, browser, or bot</li>
+      </ul>
+    </div>
+    
+    <div class="webhook-info">
+      <h2>🔔 Webhook Infrastructure</h2>
+      <div class="webhook-types">
+        <div class="webhook-type">
+          <h3>✅ Trade Webhooks</h3>
+          <p>Execute trades via <code>/api/trade/stealth</code> or <code>/api/webhook</code></p>
+        </div>
+        <div class="webhook-type">
+          <h3>📢 Slack Webhooks</h3>
+          <p>Real-time notifications for login status, trades, and errors</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="banner-footer">
+    <p class="motto">Adapt. Scale. Mutate.</p>
+    <p class="tagline">Trade smarter — without borders, without breaks.</p>
+  </div>
+</div>
+
+<style>
+  .sentinel-banner {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #e6e6e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .banner-header h1 {
+    margin: 0;
+    font-size: 2.2rem;
+    color: #00b4d8;
+    display: flex;
+    align-items: center;
+  }
+  
+  .version {
+    font-size: 1rem;
+    background-color: #00b4d8;
+    color: #1a1a2e;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 10px;
+  }
+  
+  .banner-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+  }
+  
+  .capabilities, .webhook-info {
+    flex: 1;
+    min-width: 300px;
+  }
+  
+  .capabilities h2, .webhook-info h2 {
+    font-size: 1.5rem;
+    margin-top: 0;
+    color: #90e0ef;
+    border-bottom: 1px solid #90e0ef;
+    padding-bottom: 8px;
+  }
+  
+  .capabilities ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .capabilities li {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .icon {
+    display: inline-block;
+    width: 24px;
+    margin-right: 10px;
+    font-size: 1.2rem;
+  }
+  
+  .webhook-types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  
+  .webhook-type {
+    background-color: rgba(0, 180, 216, 0.1);
+    border-radius: 6px;
+    padding: 12px;
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .webhook-type h3 {
+    margin-top: 0;
+    font-size: 1.2rem;
+    color: #48cae4;
+  }
+  
+  code {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+  }
+  
+  .banner-footer {
+    margin-top: 20px;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 15px;
+  }
+  
+  .motto {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+    color: #ade8f4;
+  }
+  
+  .tagline {
+    margin: 5px 0 0 0;
+    font-style: italic;
+    opacity: 0.8;
+  }
+  
+  @media (max-width: 768px) {
+    .banner-content {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<!-- Include the interactive JavaScript -->
+<script src="banner.js"></script>

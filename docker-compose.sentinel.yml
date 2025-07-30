@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  sentinel-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.sentinel
+    container_name: sentinel-runner
+    ports:
+      - "5000:5000"  # Expose the Flask API port
+    environment:
+      - FLASK_ENV=production
+      - HEADLESS=true
+      - USE_TEMP_PROFILE=true
+      - SCREENSHOT_ON_FAILURE=true
+      # You can override these with your actual values at runtime
+      - BULENOX_ACCOUNT_ID=${BULENOX_ACCOUNT_ID:-BX64883}
+      - BULENOX_USERNAME=${BULENOX_USERNAME}
+      - BULENOX_PASSWORD=${BULENOX_PASSWORD}
+      - PYTHONUNBUFFERED=1
+      - CHROME_OPTS="--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --window-size=1920,1080"
+    volumes:
+      - ./logs:/app/logs  # Persist logs
+      - ./.env:/app/.env  # Mount .env file for configuration
+      - ./temp_chrome_profile:/app/temp_chrome_profile  # Persist Chrome profile
+    restart: unless-stopped
+    init: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G

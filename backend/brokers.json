@@ -1,0 +1,7 @@
+[
+  {
+    "name": "TestBroker",
+    "apiKey": "test-api-key",
+    "defaultRiskPercent": 0.5
+  }
+]

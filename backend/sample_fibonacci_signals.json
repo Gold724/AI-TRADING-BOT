@@ -1,0 +1,60 @@
+[
+  {
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.1,
+    "entry": 1.0850,
+    "fib_low": 1.0800,
+    "fib_high": 1.0900,
+    "stopLoss": 1.0780,
+    "takeProfit": 1.0950,
+    "stealth_level": 2,
+    "description": "EUR/USD Long Position with Fibonacci Retest Strategy"
+  },
+  {
+    "symbol": "BTCUSD",
+    "side": "sell",
+    "quantity": 0.01,
+    "entry": 65000,
+    "fib_low": 64000,
+    "fib_high": 66000,
+    "stopLoss": 66500,
+    "takeProfit": 63000,
+    "stealth_level": 2,
+    "description": "BTC/USD Short Position with Fibonacci Retest Strategy"
+  },
+  {
+    "symbol": "XAUUSD",
+    "side": "buy",
+    "quantity": 0.05,
+    "entry": 2375.00,
+    "fib_low": 2360.00,
+    "fib_high": 2400.00,
+    "stopLoss": 2350.00,
+    "stealth_level": 3,
+    "description": "Gold Long Position with Fibonacci Retest Strategy and High Stealth"
+  },
+  {
+    "symbol": "USDJPY",
+    "side": "sell",
+    "quantity": 0.1,
+    "entry": 155.50,
+    "fib_low": 154.00,
+    "fib_high": 156.00,
+    "stopLoss": 156.50,
+    "takeProfit": 153.00,
+    "stealth_level": 1,
+    "description": "USD/JPY Short Position with Fibonacci Retest Strategy and Low Stealth"
+  },
+  {
+    "symbol": "ETHUSD",
+    "side": "buy",
+    "quantity": 0.05,
+    "entry": 3200.00,
+    "fib_low": 3100.00,
+    "fib_high": 3300.00,
+    "direction": "long",
+    "stealth_level": 2,
+    "description": "ETH/USD Long Position with Fibonacci Retest Strategy and Explicit Direction"
+  }
+]
