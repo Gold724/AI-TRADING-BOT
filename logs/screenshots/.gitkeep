@@ -1,2 +1,0 @@
-# This file ensures the screenshots directory is included in version control
-# The actual screenshot files should be ignored via .gitignore

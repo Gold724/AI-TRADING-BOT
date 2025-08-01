@@ -1,6 +1,0 @@
-[2023-07-28 10:00:00] - ORIGIN CLOUD PRIME - INFO - AI Trading Sentinel initialized
-[2023-07-28 10:00:01] - ORIGIN CLOUD PRIME - INFO - Loading environment variables
-[2023-07-28 10:00:02] - ORIGIN CLOUD PRIME - INFO - Initializing cloud trade executor
-[2023-07-28 10:00:03] - ORIGIN CLOUD PRIME - INFO - Setting up session logging
-[2023-07-28 10:00:04] - ORIGIN CLOUD PRIME - INFO - Ready to receive trading signals
-[2023-07-28 10:00:05] - ORIGIN CLOUD PRIME - INFO - Waiting for webhook or API requests

@@ -1,2 +1,0 @@
-# This file ensures the logs directory is included in version control
-# The actual log files should be ignored via .gitignore
