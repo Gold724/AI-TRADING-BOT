@@ -1,0 +1,19 @@
+[
+  {
+    "id": "test-signal-001",
+    "timestamp": "2023-11-15T10:30:00Z",
+    "symbol": "EURUSD",
+    "direction": "long",
+    "quantity": 0.1,
+    "entry": 1.0850,
+    "sl": 1.0800,
+    "tp": 1.0950,
+    "fibonacci_level": 0.618,
+    "strategy": "OTE_LIQ_FVG",
+    "timeframe": "H1",
+    "confidence": 85,
+    "notes": "Test signal for heartbeat system",
+    "source": "manual_test",
+    "processed": false
+  }
+]

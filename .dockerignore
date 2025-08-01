@@ -39,6 +39,7 @@ logs/*
 !logs/.gitkeep
 *.sqlite
 *.db
+trade_history.json
 
 # Chrome profiles and browser data
 temp_chrome_profile/

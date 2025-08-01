@@ -1,79 +1,265 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import datetime
-import json
+from flask import Flask, jsonify, request, session
 import os
-import sys
-
-# Add the current directory to the path so we can import modules
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Import executors
-from utils.base_executor import BaseExecutor
-from executor_bulenox import BulenoxExecutor
-# from executor_exness import ExnessExecutor  # If needed
-# from executor_binance import BinanceExecutor  # If needed
+from executor_binance import BinanceExecutor
+from executor_exness import ExecutorExness
+from executor_bulenox import ExecutorBulenox
 
 app = Flask(__name__)
-CORS(app)
+app.secret_key = 'your-secret-key'  # Replace with a secure random key
 
-# Health check
-@app.route("/api/health", methods=["GET"])
-def health():
-    return jsonify({"status": "ok", "timestamp": datetime.datetime.now().isoformat()}), 200
+from auth import login_required, login, logout
 
-# Strategy listing (stubbed)
-@app.route("/api/strategies", methods=["GET"])
+# Initialize executors
+binance_executor = BinanceExecutor()
+exness_executor = ExecutorExness()
+bulenox_executor = ExecutorBulenox()
+
+import datetime
+
+STRATEGIES_DIR = os.path.join(os.path.dirname(__file__), 'strategies')
+
+from strategies.quantconnect_strategy import BasicTemplateAlgorithm
+
+# Add a dictionary to map strategy names to classes
+strategy_classes = {
+    'quantconnect_strategy.py': BasicTemplateAlgorithm
+}
+
+DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+
+# Load strategy files from /strategies/
+def list_strategies():
+    strategies = []
+    if os.path.exists(STRATEGIES_DIR):
+        for filename in os.listdir(STRATEGIES_DIR):
+            if filename.endswith('.json') or filename.endswith('.yaml') or filename.endswith('.py'):
+                strategies.append(filename)
+    return strategies
+
+# Dummy data for signals
+signals = [{
+    "timestamp": "2023-01-01T00:00:00",
+    "confidence": 75,
+    "direction": "BUY",
+    "asset": "BTCUSD"
+}]
+
+@app.route('/api/login', methods=['POST'])
+def handle_login():
+    return login()
+
+@app.route('/api/logout', methods=['POST'])
+def handle_logout():
+    return logout()
+
+@app.route('/api/strategies', methods=['GET'])
+@login_required
 def get_strategies():
+    strategies = list_strategies()
+    return jsonify({'strategies': strategies})
+
+@app.route('/api/simulate', methods=['POST'])
+@login_required
+def simulate_strategy():
+    data = request.json
+    strategy_name = data.get('strategy_name')
+    start_date_str = data.get('start_date')
+    end_date_str = data.get('end_date')
+
+    if not strategy_name or not start_date_str or not end_date_str:
+        return jsonify({'error': 'Missing parameters'}), 400
+
+    try:
+        import datetime
+        start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
+        end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'Invalid date format, expected YYYY-MM-DD'}), 400
+
+    if strategy_name not in list_strategies():
+        return jsonify({'error': 'Strategy not found'}), 404
+
+    if strategy_name in strategy_classes:
+        StrategyClass = strategy_classes[strategy_name]
+        # Instantiate and run the strategy simulation here
+        # For now, return a mock response
+        simulation_result = {
+            'strategy': strategy_name,
+            'start_date': start_date_str,
+            'end_date': end_date_str,
+            'signals': [
+                {'timestamp': '2023-01-01T10:00:00', 'symbol': 'BTCUSD', 'side': 'buy', 'price': 20000, 'quantity': 0.1},
+                {'timestamp': '2023-01-02T15:30:00', 'symbol': 'BTCUSD', 'side': 'sell', 'price': 21000, 'quantity': 0.1}
+            ],
+            'pnl_summary': {
+                'total_trades': 2,
+                'winning_trades': 1,
+                'losing_trades': 1,
+                'net_profit': 1000
+            }
+        }
+        return jsonify(simulation_result)
+
+    # For other strategies, return mock data
+    simulation_result = {
+        'strategy': strategy_name,
+        'start_date': start_date_str,
+        'end_date': end_date_str,
+        'signals': [
+            {'timestamp': '2023-01-01T10:00:00', 'symbol': 'BTCUSD', 'side': 'buy', 'price': 20000, 'quantity': 0.1},
+            {'timestamp': '2023-01-02T15:30:00', 'symbol': 'BTCUSD', 'side': 'sell', 'price': 21000, 'quantity': 0.1}
+        ],
+        'pnl_summary': {
+            'total_trades': 2,
+            'winning_trades': 1,
+            'losing_trades': 1,
+            'net_profit': 1000
+        }
+    }
+
+    return jsonify(simulation_result)
+
+@app.route('/api/signal')
+def get_signal():
+    return jsonify(signals[-1])
+
+@app.route('/api/signal/stats')
+def get_signal_stats():
+    total_signals = len(signals)
+    avg_confidence = sum(s["confidence"] for s in signals) / total_signals if total_signals > 0 else 0
     return jsonify({
-        "strategies": [
-            {"id": 1, "name": "Liquidity Sweep"},
-            {"id": 2, "name": "FVG + OTE Combo"},
-            {"id": 3, "name": "Volume Weighted Fibonacci"}
-        ]
+        "totalSignals": total_signals,
+        "averageConfidence": avg_confidence,
+        "history": signals
     })
 
-# Trade execution route
-@app.route("/api/trade", methods=["POST"])
-def execute_trade():
+@app.route('/api/signal/export', methods=['POST'])
+def export_signal():
+    # Implement export and webhook test logic here
+    return jsonify({"status": "success", "message": "Signal exported and webhook tested."})
+
+@app.route('/api/trade/binance', methods=['POST'])
+def trigger_binance_trade():
+    signal = request.json
+    if not signal:
+        return jsonify({"status": "error", "message": "No signal data provided."}), 400
     try:
-        data = request.get_json()
-        symbol = data.get("symbol")
-        side = data.get("side")
-        quantity = data.get("quantity")
-        broker = data.get("broker", "bulenox")  # default broker
-        stopLoss = data.get("stopLoss")
-        takeProfit = data.get("takeProfit")
-
-        if not all([symbol, side, quantity]):
-            return jsonify({"status": "error", "message": "Missing required fields"}), 400
-
-        signal = {"symbol": symbol, "side": side, "quantity": quantity}
-
-        if broker == "bulenox":
-            executor = BulenoxExecutor(signal=signal, stopLoss=stopLoss, takeProfit=takeProfit)
-        # elif broker == "exness":
-        #     executor = ExnessExecutor(signal=signal, stopLoss=stopLoss, takeProfit=takeProfit)
-        # elif broker == "binance":
-        #     executor = BinanceExecutor(signal=signal, stopLoss=stopLoss, takeProfit=takeProfit)
+        trade_result = binance_executor.execute_trade_from_signal(signal)
+        if trade_result:
+            # Log trade to signals history
+            signals.append({
+                "timestamp": trade_result.get('timestamp', ""),
+                "confidence": signal.get('confidence', 0),
+                "direction": signal.get('side', ""),
+                "asset": signal.get('symbol', "")
+            })
+            return jsonify({"status": "success", "message": "Trade executed successfully.", "trade": trade_result})
         else:
-            return jsonify({"status": "error", "message": f"Unsupported broker: {broker}"}), 400
-
-        success = executor.execute_trade()
-        return jsonify({"status": "success" if success else "fail"}), 200 if success else 500
-
+            return jsonify({"status": "error", "message": "Trade not executed due to low confidence or other reasons."}), 400
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# Trade history (if available)
-@app.route("/api/trade/history", methods=["GET"])
-def trade_history():
-    try:
-        with open("logs/bulenox_trades.json", "r") as f:
-            history = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        history = []
-    return jsonify({"trades": history}), 200
+import os
+import json
+import datetime
+import requests
 
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+import importlib
+
+@app.route('/api/trade', methods=['POST'])
+def trigger_trade():
+    data = request.json
+    broker = data.get('broker')
+    signal = data.get('signal')
+    if not broker or not signal:
+        return jsonify({"status": "error", "message": "Broker and signal data must be provided."}), 400
+    try:
+        module_name = f"executor_{broker}"
+        if broker == 'exness':
+            class_name = 'ExecutorExness'
+        else:
+            class_name = ''.join([part.capitalize() for part in broker.split('_')]) + 'Executor'
+        executor_module = importlib.import_module(module_name)
+        ExecutorClass = getattr(executor_module, class_name)
+
+        stop_loss = signal.get('stopLoss')
+        take_profit = signal.get('takeProfit')
+
+        executor_instance = ExecutorClass(signal=signal, stopLoss=stop_loss, takeProfit=take_profit)
+
+        trade_result = executor_instance.execute_trade()
+
+        trade_log_entry = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "broker": broker,
+            "symbol": signal.get('symbol'),
+            "side": signal.get('side'),
+            "quantity": signal.get('quantity'),
+            "stopLoss": stop_loss,
+            "takeProfit": take_profit,
+            "status": "success" if trade_result else "failed"
+        }
+
+        signals.append(trade_log_entry)
+
+        log_file = f"logs/{broker}_trades.json"
+        if os.path.exists(log_file):
+            with open(log_file, 'r') as f:
+                history = json.load(f)
+        else:
+            history = []
+        history.append(trade_log_entry)
+        with open(log_file, 'w') as f:
+            json.dump(history, f, indent=2)
+
+        telegram_token = os.getenv('TELEGRAM_BOT_TOKEN')
+        telegram_chat_id = os.getenv('TELEGRAM_CHAT_ID')
+        if telegram_token and telegram_chat_id:
+            message = f"Trade executed on {broker}: {signal.get('side')} {signal.get('quantity')} {signal.get('symbol')}"
+            if stop_loss:
+                message += f", Stop Loss: {stop_loss}"
+            if take_profit:
+                message += f", Take Profit: {take_profit}"
+            url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
+            payload = {"chat_id": telegram_chat_id, "text": message}
+            try:
+                requests.post(url, json=payload)
+            except Exception as e:
+                print(f"Failed to send Telegram alert: {e}")
+
+        if trade_result:
+            return jsonify({"status": "success", "message": "Trade executed successfully."})
+        else:
+            return jsonify({"status": "failed", "message": "Trade execution failed."}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/trade/history', methods=['GET'])
+def get_trade_history():
+    broker = request.args.get('broker')
+    if not broker:
+        return jsonify({"status": "error", "message": "Broker parameter is required."}), 400
+    log_file = f"logs/{broker}_trades.json"
+    if os.path.exists(log_file):
+        with open(log_file, 'r') as f:
+            history = json.load(f)
+    else:
+        history = []
+    return jsonify({"status": "success", "history": history})
+
+@app.route('/api/health/broker/<broker>', methods=['GET'])
+def broker_health_check(broker):
+    try:
+        module_name = f"executor_{broker}"
+        class_name = ''.join([part.capitalize() for part in broker.split('_')]) + 'Executor'
+        executor_module = importlib.import_module(module_name)
+        ExecutorClass = getattr(executor_module, class_name)
+        executor_instance = ExecutorClass()
+        health_status = executor_instance.health()
+        return jsonify(health_status)
+    except Exception as e:
+        return jsonify({"status": "error", "details": str(e)})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)

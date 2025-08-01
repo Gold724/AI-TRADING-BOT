@@ -9,20 +9,20 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 # Check the status of the services using docker-compose
-docker-compose ps
+docker-compose -f docker-compose.yml -f docker-compose.override.yml ps
 
 echo ""
 echo "Checking container logs (last 10 lines):"
 echo ""
 
-echo "Cloud Trading Sentinel logs:"
+echo "Sentinel Bot logs:"
 echo "-------------------------------"
-docker-compose logs --tail=10 cloud-trading-sentinel
+docker-compose -f docker-compose.yml -f docker-compose.override.yml logs --tail=10 sentinel-bot
 
 echo ""
 echo "Frontend logs:"
 echo "-------------------------------"
-docker-compose logs --tail=10 frontend
+docker-compose -f docker-compose.yml -f docker-compose.override.yml logs --tail=10 frontend
 
 echo ""
 echo "Press Enter to exit..."

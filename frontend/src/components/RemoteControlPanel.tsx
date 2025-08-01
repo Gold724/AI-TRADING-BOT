@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import HeartbeatStatus from './HeartbeatStatus';
 
 interface RemoteControlPanelProps {
   className?: string;
@@ -150,6 +151,11 @@ const RemoteControlPanel: React.FC<RemoteControlPanelProps> = ({
   return (
     <div className={`bg-white p-4 rounded shadow ${className}`}>
       <h2 className="text-xl font-semibold mb-4">Remote Control Panel</h2>
+      
+      {/* Heartbeat Status */}
+      <div className="mb-6">
+        <HeartbeatStatus apiBaseUrl={apiBaseUrl} />
+      </div>
       
       {/* Health Status */}
       <div className="mb-6">

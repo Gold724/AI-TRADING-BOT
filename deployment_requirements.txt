@@ -1,0 +1,5 @@
+# Deployment script requirements
+paramiko>=2.7.2  # For SSH connections
+cryptography>=3.4.8  # Required by paramiko for key handling
+pysftp>=0.2.9  # For SFTP file transfers
+tqdm>=4.62.3  # For progress bars during file transfers

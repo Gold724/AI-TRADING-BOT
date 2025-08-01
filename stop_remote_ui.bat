@@ -9,7 +9,7 @@ if %ERRORLEVEL% neq 0 (
 )
 
 REM Stop the services using docker-compose
-docker-compose down
+docker-compose -f docker-compose.yml -f docker-compose.override.yml down
 
 echo.
 echo Remote UI services stopped successfully!

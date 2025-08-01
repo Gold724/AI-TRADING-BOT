@@ -53,7 +53,8 @@ def root():
             "/api/sessions",
             "/api/status",
             "/api/strategy",
-            "/api/logs"
+            "/api/logs",
+            "/api/heartbeat/status"
         ]
     }), 200
 
@@ -415,6 +416,68 @@ def webhook():
     
     except Exception as e:
         logger.exception(f"Error during webhook processing: {e}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+# Heartbeat status endpoint
+@app.route("/api/heartbeat/status", methods=["GET"])
+def heartbeat_status():
+    try:
+        # Path to the heartbeat status file
+        status_file = os.path.join(log_dir, "heartbeat_status.txt")
+        
+        # Default status if file doesn't exist
+        status_data = {
+            "status": "🔄 Waiting for signals...",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "session_active": False,
+            "last_update": datetime.datetime.now().isoformat()
+        }
+        
+        # Read status from file if it exists
+        if os.path.exists(status_file):
+            try:
+                with open(status_file, 'r') as f:
+                    lines = f.read().strip().split('\n')
+                    
+                    if len(lines) >= 1:
+                        status_data["status"] = lines[0]
+                    
+                    if len(lines) >= 2:
+                        status_data["timestamp"] = lines[1]
+                        # Use timestamp from file as last_update
+                        status_data["last_update"] = lines[1]
+                    
+                    # Parse session_active from JSON in third line if available
+                    if len(lines) >= 3:
+                        try:
+                            session_data = json.loads(lines[2])
+                            if "session_active" in session_data:
+                                status_data["session_active"] = session_data["session_active"]
+                        except json.JSONDecodeError:
+                            # Fallback to checking status text if JSON parsing fails
+                            status_text = status_data["status"].lower()
+                            if "login successful" in status_text or "trade executed" in status_text:
+                                status_data["session_active"] = True
+                    else:
+                        # Fallback to checking status text if third line is missing
+                        status_text = status_data["status"].lower()
+                        if "login successful" in status_text or "trade executed" in status_text:
+                            status_data["session_active"] = True
+            except Exception as e:
+                logger.error(f"Error reading heartbeat status file: {e}")
+        
+        # Add uptime information
+        status_data["uptime_seconds"] = (datetime.datetime.now() - 
+                                      datetime.datetime.fromisoformat(status_data["timestamp"]) 
+                                      if "timestamp" in status_data else datetime.datetime.now()).total_seconds()
+        
+        return jsonify(status_data), 200
+    
+    except Exception as e:
+        logger.exception(f"Error retrieving heartbeat status: {e}")
         return jsonify({
             "status": "error",
             "message": str(e)

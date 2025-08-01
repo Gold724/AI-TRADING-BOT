@@ -1,0 +1,16 @@
+{
+  "id": "sig_20231215_001",
+  "timestamp": "2023-12-15T10:30:45Z",
+  "symbol": "EURUSD",
+  "direction": "long",
+  "quantity": 0.01,
+  "entry": 1.0920,
+  "sl": 1.0890,
+  "tp": 1.0980,
+  "fibonacci_level": 0.618,
+  "strategy": "fibonacci_strategy",
+  "timeframe": "1h",
+  "confidence": 0.85,
+  "notes": "Fibonacci retracement at 0.618 with bullish engulfing pattern",
+  "source": "trae_signal_generator"
+}

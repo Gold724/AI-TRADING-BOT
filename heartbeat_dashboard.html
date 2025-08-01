@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trading Sentinel - Heartbeat Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e2e;
+            color: #cdd6f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #45475a;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #cba6f7;
+        }
+        .status-card {
+            background-color: #313244;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .status-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #f5c2e7;
+            margin: 0;
+        }
+        .status-indicator {
+            font-size: 1.5rem;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+        .status-indicator.healthy {
+            background-color: #a6e3a1;
+            color: #1e1e2e;
+        }
+        .status-indicator.warning {
+            background-color: #f9e2af;
+            color: #1e1e2e;
+        }
+        .status-indicator.error {
+            background-color: #f38ba8;
+            color: #1e1e2e;
+        }
+        .status-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .detail-item {
+            background-color: #45475a;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .detail-label {
+            font-size: 0.9rem;
+            color: #bac2de;
+            margin-bottom: 5px;
+        }
+        .detail-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .log-section {
+            margin-top: 30px;
+        }
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .log-title {
+            font-size: 1.2rem;
+            color: #f5c2e7;
+            margin: 0;
+        }
+        .log-container {
+            background-color: #313244;
+            border-radius: 8px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .log-line {
+            margin: 0;
+            padding: 2px 0;
+            border-bottom: 1px solid #45475a;
+        }
+        .refresh-button {
+            background-color: #cba6f7;
+            color: #1e1e2e;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .refresh-button:hover {
+            background-color: #f5c2e7;
+        }
+        .timestamp {
+            font-size: 0.8rem;
+            color: #bac2de;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #bac2de;
+        }
+        .error-message {
+            background-color: #f38ba8;
+            color: #1e1e2e;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Trading Sentinel - Heartbeat Dashboard</h1>
+            <button id="refreshButton" class="refresh-button">Refresh</button>
+        </div>
+        
+        <div id="errorContainer" style="display: none;" class="error-message"></div>
+        
+        <div class="status-card">
+            <div class="status-header">
+                <h2 class="status-title">Heartbeat Status</h2>
+                <div id="statusIndicator" class="status-indicator">...</div>
+            </div>
+            <div class="status-details">
+                <div class="detail-item">
+                    <div class="detail-label">Current Status</div>
+                    <div id="currentStatus" class="detail-value">Loading...</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Last Update</div>
+                    <div id="lastUpdate" class="detail-value">Loading...</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Session Active</div>
+                    <div id="sessionActive" class="detail-value">Loading...</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Uptime</div>
+                    <div id="uptime" class="detail-value">Loading...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="log-section">
+            <div class="log-header">
+                <h2 class="log-title">Recent Logs</h2>
+                <select id="logTypeSelector">
+                    <option value="heartbeat_monitor">Heartbeat Monitor</option>
+                    <option value="heartbeat">Heartbeat Main</option>
+                    <option value="restart">Restart Log</option>
+                </select>
+            </div>
+            <div id="logContainer" class="log-container">
+                <div class="loading">Loading logs...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API endpoint (adjust based on your setup)
+        const API_BASE_URL = window.location.protocol + '//' + window.location.hostname + ':5000/api';
+        
+        // Elements
+        const statusIndicator = document.getElementById('statusIndicator');
+        const currentStatus = document.getElementById('currentStatus');
+        const lastUpdate = document.getElementById('lastUpdate');
+        const sessionActive = document.getElementById('sessionActive');
+        const uptime = document.getElementById('uptime');
+        const logContainer = document.getElementById('logContainer');
+        const logTypeSelector = document.getElementById('logTypeSelector');
+        const refreshButton = document.getElementById('refreshButton');
+        const errorContainer = document.getElementById('errorContainer');
+        
+        // Fetch heartbeat status
+        async function fetchHeartbeatStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/heartbeat/status`);
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                updateStatusUI(data);
+                hideError();
+            } catch (error) {
+                console.error('Error fetching heartbeat status:', error);
+                showError(`Failed to fetch heartbeat status: ${error.message}`);
+                // Try to read from local file as fallback
+                fetchLocalStatus();
+            }
+        }
+        
+        // Fallback to local file if API is not available
+        async function fetchLocalStatus() {
+            try {
+                const response = await fetch('logs/heartbeat_status.txt');
+                if (!response.ok) {
+                    throw new Error(`File error: ${response.status}`);
+                }
+                
+                const text = await response.text();
+                const lines = text.split('\n');
+                
+                if (lines.length >= 2) {
+                    const status = lines[0];
+                    const timestamp = lines[1];
+                    let isActive = false;
+                    
+                    if (lines.length >= 3) {
+                        try {
+                            const jsonData = JSON.parse(lines[2]);
+                            isActive = jsonData.session_active || false;
+                        } catch (e) {
+                            isActive = status.toLowerCase().includes('login successful') || 
+                                      status.toLowerCase().includes('trade executed');
+                        }
+                    }
+                    
+                    const statusData = {
+                        status: status,
+                        timestamp: timestamp,
+                        session_active: isActive,
+                        uptime: 'Unknown',
+                        last_update: timestamp
+                    };
+                    
+                    updateStatusUI(statusData);
+                }
+            } catch (error) {
+                console.error('Error fetching local status:', error);
+                // If both API and local file fail, show offline status
+                updateStatusOffline();
+            }
+        }
+        
+        // Fetch logs
+        async function fetchLogs() {
+            const logType = logTypeSelector.value;
+            let logPath;
+            
+            switch(logType) {
+                case 'heartbeat_monitor':
+                    logPath = 'logs/heartbeat_monitor.log';
+                    break;
+                case 'heartbeat':
+                    logPath = 'logs/heartbeat.log';
+                    break;
+                case 'restart':
+                    logPath = 'logs/restart_log.txt';
+                    break;
+                default:
+                    logPath = 'logs/heartbeat_monitor.log';
+            }
+            
+            try {
+                // Try API first
+                const response = await fetch(`${API_BASE_URL}/logs?type=${logType}&lines=50`);
+                if (response.ok) {
+                    const data = await response.json();
+                    updateLogsUI(data.logs);
+                    return;
+                }
+                
+                // Fallback to local file
+                const fileResponse = await fetch(logPath);
+                if (!fileResponse.ok) {
+                    throw new Error(`File error: ${fileResponse.status}`);
+                }
+                
+                const text = await fileResponse.text();
+                const lines = text.split('\n').slice(-50); // Get last 50 lines
+                updateLogsUI(lines);
+                
+            } catch (error) {
+                console.error('Error fetching logs:', error);
+                logContainer.innerHTML = `<div class="error-message">Failed to load logs: ${error.message}</div>`;
+            }
+        }
+        
+        // Update status UI
+        function updateStatusUI(data) {
+            currentStatus.textContent = data.status || 'Unknown';
+            
+            // Format timestamp
+            const timestamp = data.timestamp ? new Date(data.timestamp) : new Date();
+            lastUpdate.textContent = formatDateTime(timestamp);
+            
+            // Session active status
+            sessionActive.textContent = data.session_active ? '✅ Yes' : '❌ No';
+            
+            // Uptime
+            if (data.uptime !== undefined) {
+                uptime.textContent = formatUptime(data.uptime);
+            } else {
+                uptime.textContent = 'Unknown';
+            }
+            
+            // Status indicator
+            updateStatusIndicator(data.status, data.session_active);
+        }
+        
+        // Update status indicator based on status text and session active flag
+        function updateStatusIndicator(statusText, isSessionActive) {
+            if (!statusText) {
+                statusIndicator.textContent = 'Unknown';
+                statusIndicator.className = 'status-indicator warning';
+                return;
+            }
+            
+            const lowerStatus = statusText.toLowerCase();
+            
+            if (lowerStatus.includes('❌') || lowerStatus.includes('error') || lowerStatus.includes('failed')) {
+                statusIndicator.textContent = 'Error';
+                statusIndicator.className = 'status-indicator error';
+            } else if (lowerStatus.includes('⏳') || lowerStatus.includes('waiting') || lowerStatus.includes('in progress')) {
+                statusIndicator.textContent = 'In Progress';
+                statusIndicator.className = 'status-indicator warning';
+            } else if ((lowerStatus.includes('✅') || lowerStatus.includes('success') || lowerStatus.includes('executed')) && isSessionActive) {
+                statusIndicator.textContent = 'Healthy';
+                statusIndicator.className = 'status-indicator healthy';
+            } else if (lowerStatus.includes('🔄') || lowerStatus.includes('restart')) {
+                statusIndicator.textContent = 'Restarting';
+                statusIndicator.className = 'status-indicator warning';
+            } else {
+                statusIndicator.textContent = 'Warning';
+                statusIndicator.className = 'status-indicator warning';
+            }
+        }
+        
+        // Update status when offline
+        function updateStatusOffline() {
+            currentStatus.textContent = '❓ Unknown - Cannot connect to API or read status file';
+            lastUpdate.textContent = 'Unknown';
+            sessionActive.textContent = '❌ No';
+            uptime.textContent = 'Unknown';
+            
+            statusIndicator.textContent = 'Offline';
+            statusIndicator.className = 'status-indicator error';
+        }
+        
+        // Update logs UI
+        function updateLogsUI(logs) {
+            if (!logs || logs.length === 0) {
+                logContainer.innerHTML = '<div class="loading">No logs available</div>';
+                return;
+            }
+            
+            logContainer.innerHTML = '';
+            logs.forEach(log => {
+                const logLine = document.createElement('div');
+                logLine.className = 'log-line';
+                logLine.textContent = log;
+                logContainer.appendChild(logLine);
+            });
+            
+            // Scroll to bottom
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // Format date and time
+        function formatDateTime(date) {
+            return date.toLocaleString();
+        }
+        
+        // Format uptime
+        function formatUptime(seconds) {
+            if (isNaN(seconds)) return 'Unknown';
+            
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            
+            let result = '';
+            if (days > 0) result += `${days}d `;
+            if (hours > 0 || days > 0) result += `${hours}h `;
+            if (minutes > 0 || hours > 0 || days > 0) result += `${minutes}m `;
+            result += `${secs}s`;
+            
+            return result;
+        }
+        
+        // Show error message
+        function showError(message) {
+            errorContainer.textContent = message;
+            errorContainer.style.display = 'block';
+        }
+        
+        // Hide error message
+        function hideError() {
+            errorContainer.style.display = 'none';
+        }
+        
+        // Event listeners
+        refreshButton.addEventListener('click', () => {
+            fetchHeartbeatStatus();
+            fetchLogs();
+        });
+        
+        logTypeSelector.addEventListener('change', fetchLogs);
+        
+        // Initial load
+        fetchHeartbeatStatus();
+        fetchLogs();
+        
+        // Auto refresh every 30 seconds
+        setInterval(() => {
+            fetchHeartbeatStatus();
+            fetchLogs();
+        }, 30000);
+    </script>
+</body>
+</html>

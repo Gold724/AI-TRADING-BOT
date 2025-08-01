@@ -1,8 +1,7 @@
-version: '3.8'
 
 services:
   # Override for local development
-  cloud-trading-sentinel:
+  sentinel-bot:
     environment:
       - FLASK_ENV=development
       - DEV_MODE=true

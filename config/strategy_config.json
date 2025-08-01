@@ -1,0 +1,55 @@
+{
+  "version": "1.0.0",
+  "name": "Fibonacci Strategy",
+  "description": "A strategy based on Fibonacci retracement levels with additional filters",
+  "enabled": true,
+  "filters": {
+    "symbols": {
+      "enabled": true,
+      "allowed": ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "NZDUSD", "USDCHF"]
+    },
+    "directions": {
+      "enabled": true,
+      "allowed": ["long", "short"]
+    },
+    "time": {
+      "enabled": true,
+      "trading_hours": {
+        "start": "08:00",
+        "end": "16:00"
+      },
+      "trading_days": [1, 2, 3, 4, 5],
+      "exclude_dates": ["2023-12-25", "2024-01-01"]
+    },
+    "fibonacci": {
+      "enabled": true,
+      "min_level": 0.382,
+      "max_level": 0.786,
+      "preferred_levels": [0.382, 0.5, 0.618]
+    },
+    "liquidity": {
+      "enabled": false,
+      "min_volume": 1000,
+      "max_spread": 5
+    },
+    "volatility": {
+      "enabled": false,
+      "min_atr": 0.0010,
+      "max_atr": 0.0050
+    }
+  },
+  "risk_management": {
+    "default_quantity": 0.01,
+    "max_quantity": 0.05,
+    "risk_per_trade": 1.0,
+    "max_daily_loss": 3.0,
+    "max_open_trades": 3
+  },
+  "execution": {
+    "use_market_orders": true,
+    "use_stop_loss": true,
+    "use_take_profit": true,
+    "default_sl_pips": 30,
+    "default_tp_pips": 60
+  }
+}
