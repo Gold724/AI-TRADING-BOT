@@ -1,0 +1,92 @@
+[
+  {
+    "timestamp": "2025-07-22T21:24:29.367177",
+    "broker": "bulenox",
+    "symbol": "BTCUSD",
+    "side": "buy",
+    "quantity": 0.1,
+    "stopLoss": 29500,
+    "takeProfit": 31500,
+    "status": "success"
+  },
+  {
+    "timestamp": "2025-07-28T02:11:24.115102",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T02:13:33.260485",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T02:14:56.484898",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T02:19:45.063397",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T02:20:30.675241",
+    "original_symbol": "EURUSD",
+    "futures_symbol": "6EU25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T02:21:06.945781",
+    "original_symbol": "USDJPY",
+    "futures_symbol": "6J25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 108.0,
+    "takeProfit": 112.0,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T02:29:31.427355",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T09:29:07.775096",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": false
+  }
+]

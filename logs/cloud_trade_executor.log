@@ -1,0 +1,488 @@
+2025-07-29 16:43:56,571 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-164356 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250729-164356
+2025-07-29 16:43:56,572 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-164356 - INFO - Running in headless mode
+2025-07-29 16:43:56,573 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-164356 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-29 17:12:29,292 - CLOUD_MAIN - INFO - Starting AI Trading Sentinel Cloud API on port 5000
+2025-07-29 17:12:29,293 - CLOUD_MAIN - INFO - Debug mode: False
+2025-07-29 17:12:29,294 - CLOUD_MAIN - INFO - Environment: cloud
+2025-07-29 17:12:29,342 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.117.179.55:5000
+2025-07-29 17:12:29,343 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-29 17:16:13,735 - CLOUD_MAIN - INFO - Starting AI Trading Sentinel Cloud API on port 5000
+2025-07-29 17:16:13,735 - CLOUD_MAIN - INFO - Debug mode: False
+2025-07-29 17:16:13,735 - CLOUD_MAIN - INFO - Environment: cloud
+2025-07-29 17:16:13,757 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.117.179.55:5000
+2025-07-29 17:16:13,758 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-29 17:16:24,478 - werkzeug - INFO - 127.0.0.1 - - [29/Jul/2025 17:16:24] "GET /api/health HTTP/1.1" 200 -
+2025-07-29 17:16:26,518 - CLOUD_MAIN - INFO - Creating new session BX64883-20250729-171626 for account BX64883
+2025-07-29 17:16:26,519 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-171626 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250729-171626
+2025-07-29 17:16:26,520 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-171626 - INFO - Running in headless mode
+2025-07-29 17:16:26,521 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-171626 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-29 17:16:48,402 - werkzeug - INFO - 127.0.0.1 - - [29/Jul/2025 17:16:48] "GET /api/health HTTP/1.1" 200 -
+2025-07-29 17:16:50,448 - CLOUD_MAIN - INFO - Creating new session BX64883-20250729-171650 for account BX64883
+2025-07-29 17:16:50,450 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-171650 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250729-171650
+2025-07-29 17:16:50,458 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-171650 - INFO - Running in headless mode
+2025-07-29 17:16:50,478 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-171650 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-29 17:18:45,183 - werkzeug - INFO - 127.0.0.1 - - [29/Jul/2025 17:18:45] "GET /api/health HTTP/1.1" 200 -
+2025-07-29 17:18:47,253 - CLOUD_MAIN - INFO - Creating new session BX64883-20250729-171847 for account BX64883
+2025-07-29 17:18:47,254 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-171847 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250729-171847
+2025-07-29 17:18:47,255 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-171847 - INFO - Running in headless mode
+2025-07-29 17:18:47,255 - CLOUD_TRADE_EXECUTOR_BX64883-20250729-171847 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-29 23:59:54,888 - CLOUD_MAIN - INFO - Starting AI Trading Sentinel Cloud API on port 5000
+2025-07-29 23:59:54,889 - CLOUD_MAIN - INFO - Debug mode: False
+2025-07-29 23:59:54,889 - CLOUD_MAIN - INFO - Environment: cloud
+2025-07-29 23:59:54,945 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.87.78.55:5000
+2025-07-29 23:59:54,945 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-30 00:00:03,371 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:00:03] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 00:00:05,446 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-000005 for account BX64883
+2025-07-30 00:00:05,447 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000005 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-000005
+2025-07-30 00:00:05,448 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000005 - INFO - Running in headless mode
+2025-07-30 00:00:05,449 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000005 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 00:02:07,964 - CLOUD_MAIN - INFO - Starting AI Trading Sentinel Cloud API on port 5000
+2025-07-30 00:02:07,965 - CLOUD_MAIN - INFO - Debug mode: False
+2025-07-30 00:02:07,965 - CLOUD_MAIN - INFO - Environment: cloud
+2025-07-30 00:02:07,990 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.87.78.55:5000
+2025-07-30 00:02:07,991 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-30 00:02:17,790 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:02:17] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 00:02:19,838 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-000219 for account BX64883
+2025-07-30 00:02:19,839 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000219 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-000219
+2025-07-30 00:02:19,840 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000219 - INFO - Running in headless mode
+2025-07-30 00:02:19,841 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000219 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 00:03:05,353 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000219 - INFO - Login successful and driver returned.
+2025-07-30 00:03:05,354 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000219 - ERROR - Failed to take screenshot: 'bool' object has no attribute 'save_screenshot'
+2025-07-30 00:03:05,354 - CLOUD_MAIN - INFO - Login successful for session BX64883-20250730-000219
+2025-07-30 00:03:05,355 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:03:05] "POST /api/login HTTP/1.1" 200 -
+2025-07-30 00:03:21,867 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:03:21] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 00:03:23,902 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-000323 for account BX64883
+2025-07-30 00:03:23,903 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000323 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-000323
+2025-07-30 00:03:23,904 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000323 - INFO - Running in headless mode
+2025-07-30 00:03:23,905 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000323 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 00:04:09,590 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000323 - INFO - Login successful and driver returned.
+2025-07-30 00:04:09,591 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000323 - ERROR - Failed to take screenshot: 'bool' object has no attribute 'save_screenshot'
+2025-07-30 00:04:09,591 - CLOUD_MAIN - INFO - Login successful for session BX64883-20250730-000323
+2025-07-30 00:04:09,592 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:04:09] "POST /api/login HTTP/1.1" 200 -
+2025-07-30 00:04:11,631 - CLOUD_MAIN - INFO - Using existing session BX64883-20250730-000323
+2025-07-30 00:04:11,632 - CLOUD_MAIN - INFO - Executing trade for session BX64883-20250730-000323: {'symbol': 'EURUSD', 'side': 'buy', 'quantity': 1, 'stop_loss': 50, 'take_profit': 100}
+2025-07-30 00:04:11,632 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000323 - INFO - Executing buy trade for 1 6EU25 (original: EURUSD)
+2025-07-30 00:04:11,633 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000323 - ERROR - Error during trade execution: 'bool' object has no attribute 'get'
+2025-07-30 00:04:11,634 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000323 - ERROR - Failed to take screenshot: 'bool' object has no attribute 'save_screenshot'
+2025-07-30 00:04:11,635 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000323 - INFO - Trade status logged to C:\Users\Admin\Downloads\ai-trading-sentinel\logs\status.json
+2025-07-30 00:04:11,636 - CLOUD_MAIN - ERROR - Trade execution failed for session BX64883-20250730-000323
+2025-07-30 00:04:11,636 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:04:11] "[35m[1mPOST /api/trade HTTP/1.1[0m" 500 -
+2025-07-30 00:04:13,667 - CLOUD_MAIN - INFO - Received webhook: {'account_id': 'BX64883', 'signal': {'symbol': 'GBPUSD', 'side': 'sell', 'quantity': 1, 'stop_loss': 30, 'take_profit': 90}}
+2025-07-30 00:04:13,667 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-000413 for account BX64883 from webhook
+2025-07-30 00:04:13,668 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000413 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-000413
+2025-07-30 00:04:13,669 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000413 - INFO - Running in headless mode
+2025-07-30 00:04:13,670 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000413 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 00:04:45,698 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:04:45] "GET /api/sessions HTTP/1.1" 200 -
+2025-07-30 00:04:47,719 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:04:47] "GET /api/status HTTP/1.1" 200 -
+2025-07-30 00:05:07,431 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000413 - INFO - Login successful and driver returned.
+2025-07-30 00:05:07,432 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000413 - ERROR - Failed to take screenshot: 'bool' object has no attribute 'save_screenshot'
+2025-07-30 00:05:07,433 - CLOUD_MAIN - INFO - Executing trade for webhook session BX64883-20250730-000413: {'symbol': 'GBPUSD', 'side': 'sell', 'quantity': 1, 'stop_loss': 30, 'take_profit': 90}
+2025-07-30 00:05:07,433 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000413 - INFO - Executing sell trade for 1 MBTQ25 (original: GBPUSD)
+2025-07-30 00:05:07,434 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000413 - ERROR - Error during trade execution: 'bool' object has no attribute 'get'
+2025-07-30 00:05:07,434 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000413 - ERROR - Failed to take screenshot: 'bool' object has no attribute 'save_screenshot'
+2025-07-30 00:05:07,436 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000413 - INFO - Trade status logged to C:\Users\Admin\Downloads\ai-trading-sentinel\logs\status.json
+2025-07-30 00:05:07,437 - CLOUD_MAIN - ERROR - Error during webhook processing: 'bool' object has no attribute 'quit'
+Traceback (most recent call last):
+  File "C:\Users\Admin\Downloads\ai-trading-sentinel\cloud_main.py", line 288, in webhook
+    executor.close()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\Admin\Downloads\ai-trading-sentinel\cloud_trade_executor.py", line 306, in close
+    self.driver.quit()
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'bool' object has no attribute 'quit'
+2025-07-30 00:05:07,440 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:05:07] "[35m[1mPOST /api/webhook HTTP/1.1[0m" 500 -
+2025-07-30 00:05:32,043 - CLOUD_MAIN - INFO - Starting AI Trading Sentinel Cloud API on port 5000
+2025-07-30 00:05:32,043 - CLOUD_MAIN - INFO - Debug mode: False
+2025-07-30 00:05:32,044 - CLOUD_MAIN - INFO - Environment: cloud
+2025-07-30 00:05:32,058 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.87.78.55:5000
+2025-07-30 00:05:32,059 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-30 00:05:41,304 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:05:41] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 00:05:43,361 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-000543 for account BX64883
+2025-07-30 00:05:43,362 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000543 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-000543
+2025-07-30 00:05:43,362 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000543 - INFO - Running in headless mode
+2025-07-30 00:05:43,363 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000543 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 00:06:27,019 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000543 - INFO - Login successful and driver returned.
+2025-07-30 00:06:27,189 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000543 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-000627.png
+2025-07-30 00:06:27,189 - CLOUD_MAIN - INFO - Login successful for session BX64883-20250730-000543
+2025-07-30 00:06:27,190 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:06:27] "POST /api/login HTTP/1.1" 200 -
+2025-07-30 00:06:42,418 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:06:42] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 00:06:44,485 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-000644 for account BX64883
+2025-07-30 00:06:44,486 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000644 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-000644
+2025-07-30 00:06:44,486 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000644 - INFO - Running in headless mode
+2025-07-30 00:06:44,487 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000644 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 00:07:28,045 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000644 - INFO - Login successful and driver returned.
+2025-07-30 00:07:28,215 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000644 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-000728.png
+2025-07-30 00:07:28,216 - CLOUD_MAIN - INFO - Login successful for session BX64883-20250730-000644
+2025-07-30 00:07:28,216 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:07:28] "POST /api/login HTTP/1.1" 200 -
+2025-07-30 00:07:30,263 - CLOUD_MAIN - INFO - Using existing session BX64883-20250730-000644
+2025-07-30 00:07:30,263 - CLOUD_MAIN - INFO - Executing trade for session BX64883-20250730-000644: {'symbol': 'EURUSD', 'side': 'buy', 'quantity': 1, 'stop_loss': 50, 'take_profit': 100}
+2025-07-30 00:07:30,264 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000644 - INFO - Executing buy trade for 1 6EU25 (original: EURUSD)
+2025-07-30 00:07:30,763 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000644 - INFO - Navigated to trade page
+2025-07-30 00:07:46,259 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000644 - ERROR - Error during trade execution: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x7ff6fd53e935+77845]
+	GetHandleVerifier [0x0x7ff6fd53e990+77936]
+	(No symbol) [0x0x7ff6fd2f9cda]
+	(No symbol) [0x0x7ff6fd3506aa]
+	(No symbol) [0x0x7ff6fd35095c]
+	(No symbol) [0x0x7ff6fd3a3d07]
+	(No symbol) [0x0x7ff6fd37890f]
+	(No symbol) [0x0x7ff6fd3a0b07]
+	(No symbol) [0x0x7ff6fd3786a3]
+	(No symbol) [0x0x7ff6fd341791]
+	(No symbol) [0x0x7ff6fd342523]
+	GetHandleVerifier [0x0x7ff6fd81684d+3059501]
+	GetHandleVerifier [0x0x7ff6fd810c0d+3035885]
+	GetHandleVerifier [0x0x7ff6fd830400+3164896]
+	GetHandleVerifier [0x0x7ff6fd558c3e+185118]
+	GetHandleVerifier [0x0x7ff6fd56054f+216111]
+	GetHandleVerifier [0x0x7ff6fd5472e4+113092]
+	GetHandleVerifier [0x0x7ff6fd547499+113529]
+	GetHandleVerifier [0x0x7ff6fd52e298+10616]
+	BaseThreadInitThunk [0x0x7ff9798c7374+20]
+	RtlUserThreadStart [0x0x7ff97a23cc91+33]
+
+2025-07-30 00:07:46,447 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000644 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\trade_error_BX64883_20250730-000746.png
+2025-07-30 00:07:46,448 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000644 - INFO - Trade status logged to C:\Users\Admin\Downloads\ai-trading-sentinel\logs\status.json
+2025-07-30 00:07:46,449 - CLOUD_MAIN - ERROR - Trade execution failed for session BX64883-20250730-000644
+2025-07-30 00:07:46,450 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:07:46] "[35m[1mPOST /api/trade HTTP/1.1[0m" 500 -
+2025-07-30 00:07:48,496 - CLOUD_MAIN - INFO - Received webhook: {'account_id': 'BX64883', 'signal': {'symbol': 'GBPUSD', 'side': 'sell', 'quantity': 1, 'stop_loss': 30, 'take_profit': 90}}
+2025-07-30 00:07:48,497 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-000748 for account BX64883 from webhook
+2025-07-30 00:07:48,498 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000748 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-000748
+2025-07-30 00:07:48,498 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000748 - INFO - Running in headless mode
+2025-07-30 00:07:48,499 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000748 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 00:08:20,532 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:08:20] "GET /api/sessions HTTP/1.1" 200 -
+2025-07-30 00:08:22,616 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:08:22] "GET /api/status HTTP/1.1" 200 -
+2025-07-30 00:08:32,113 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000748 - INFO - Login successful and driver returned.
+2025-07-30 00:08:32,378 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000748 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-000832.png
+2025-07-30 00:08:32,379 - CLOUD_MAIN - INFO - Executing trade for webhook session BX64883-20250730-000748: {'symbol': 'GBPUSD', 'side': 'sell', 'quantity': 1, 'stop_loss': 30, 'take_profit': 90}
+2025-07-30 00:08:32,379 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000748 - INFO - Executing sell trade for 1 MBTQ25 (original: GBPUSD)
+2025-07-30 00:08:33,535 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000748 - INFO - Navigated to trade page
+2025-07-30 00:08:49,034 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000748 - ERROR - Error during trade execution: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x7ff6fd53e935+77845]
+	GetHandleVerifier [0x0x7ff6fd53e990+77936]
+	(No symbol) [0x0x7ff6fd2f9cda]
+	(No symbol) [0x0x7ff6fd3506aa]
+	(No symbol) [0x0x7ff6fd35095c]
+	(No symbol) [0x0x7ff6fd3a3d07]
+	(No symbol) [0x0x7ff6fd37890f]
+	(No symbol) [0x0x7ff6fd3a0b07]
+	(No symbol) [0x0x7ff6fd3786a3]
+	(No symbol) [0x0x7ff6fd341791]
+	(No symbol) [0x0x7ff6fd342523]
+	GetHandleVerifier [0x0x7ff6fd81684d+3059501]
+	GetHandleVerifier [0x0x7ff6fd810c0d+3035885]
+	GetHandleVerifier [0x0x7ff6fd830400+3164896]
+	GetHandleVerifier [0x0x7ff6fd558c3e+185118]
+	GetHandleVerifier [0x0x7ff6fd56054f+216111]
+	GetHandleVerifier [0x0x7ff6fd5472e4+113092]
+	GetHandleVerifier [0x0x7ff6fd547499+113529]
+	GetHandleVerifier [0x0x7ff6fd52e298+10616]
+	BaseThreadInitThunk [0x0x7ff9798c7374+20]
+	RtlUserThreadStart [0x0x7ff97a23cc91+33]
+
+2025-07-30 00:08:49,265 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000748 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\trade_error_BX64883_20250730-000849.png
+2025-07-30 00:08:49,267 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000748 - INFO - Trade status logged to C:\Users\Admin\Downloads\ai-trading-sentinel\logs\status.json
+2025-07-30 00:08:51,508 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000748 - INFO - Browser closed
+2025-07-30 00:08:51,509 - CLOUD_MAIN - ERROR - Webhook trade execution failed for session BX64883-20250730-000748
+2025-07-30 00:08:51,510 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:08:51] "[35m[1mPOST /api/webhook HTTP/1.1[0m" 500 -
+2025-07-30 00:09:05,448 - CLOUD_MAIN - INFO - Starting AI Trading Sentinel Cloud API on port 5000
+2025-07-30 00:09:05,448 - CLOUD_MAIN - INFO - Debug mode: False
+2025-07-30 00:09:05,448 - CLOUD_MAIN - INFO - Environment: cloud
+2025-07-30 00:09:05,471 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.87.78.55:5000
+2025-07-30 00:09:05,472 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-30 00:09:14,666 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:09:14] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 00:09:16,734 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-000916 for account BX64883
+2025-07-30 00:09:16,735 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000916 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-000916
+2025-07-30 00:09:16,736 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000916 - INFO - Running in headless mode
+2025-07-30 00:09:16,737 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000916 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 00:09:59,919 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000916 - INFO - Login successful and driver returned.
+2025-07-30 00:10:00,176 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-000916 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-000959.png
+2025-07-30 00:10:00,177 - CLOUD_MAIN - INFO - Login successful for session BX64883-20250730-000916
+2025-07-30 00:10:00,178 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:10:00] "POST /api/login HTTP/1.1" 200 -
+2025-07-30 00:10:09,142 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:10:09] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 00:10:11,189 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-001011 for account BX64883
+2025-07-30 00:10:11,190 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001011 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-001011
+2025-07-30 00:10:11,191 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001011 - INFO - Running in headless mode
+2025-07-30 00:10:11,191 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001011 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 00:10:53,600 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001011 - INFO - Login successful and driver returned.
+2025-07-30 00:10:53,793 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001011 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-001053.png
+2025-07-30 00:10:53,794 - CLOUD_MAIN - INFO - Login successful for session BX64883-20250730-001011
+2025-07-30 00:10:53,795 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:10:53] "POST /api/login HTTP/1.1" 200 -
+2025-07-30 00:10:55,874 - CLOUD_MAIN - INFO - Using existing session BX64883-20250730-001011
+2025-07-30 00:10:55,874 - CLOUD_MAIN - INFO - Executing trade for session BX64883-20250730-001011: {'symbol': 'EURUSD', 'side': 'buy', 'quantity': 1, 'stop_loss': 50, 'take_profit': 100}
+2025-07-30 00:10:55,875 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001011 - INFO - Executing buy trade for 1 6EU25 (original: EURUSD)
+2025-07-30 00:10:56,569 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001011 - INFO - Navigated to trade page
+2025-07-30 00:11:11,753 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001011 - ERROR - Error during trade execution: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x7ff6fd53e935+77845]
+	GetHandleVerifier [0x0x7ff6fd53e990+77936]
+	(No symbol) [0x0x7ff6fd2f9cda]
+	(No symbol) [0x0x7ff6fd3506aa]
+	(No symbol) [0x0x7ff6fd35095c]
+	(No symbol) [0x0x7ff6fd3a3d07]
+	(No symbol) [0x0x7ff6fd37890f]
+	(No symbol) [0x0x7ff6fd3a0b07]
+	(No symbol) [0x0x7ff6fd3786a3]
+	(No symbol) [0x0x7ff6fd341791]
+	(No symbol) [0x0x7ff6fd342523]
+	GetHandleVerifier [0x0x7ff6fd81684d+3059501]
+	GetHandleVerifier [0x0x7ff6fd810c0d+3035885]
+	GetHandleVerifier [0x0x7ff6fd830400+3164896]
+	GetHandleVerifier [0x0x7ff6fd558c3e+185118]
+	GetHandleVerifier [0x0x7ff6fd56054f+216111]
+	GetHandleVerifier [0x0x7ff6fd5472e4+113092]
+	GetHandleVerifier [0x0x7ff6fd547499+113529]
+	GetHandleVerifier [0x0x7ff6fd52e298+10616]
+	BaseThreadInitThunk [0x0x7ff9798c7374+20]
+	RtlUserThreadStart [0x0x7ff97a23cc91+33]
+
+2025-07-30 00:11:11,931 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001011 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\trade_error_BX64883_20250730-001111.png
+2025-07-30 00:11:11,933 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001011 - INFO - Trade status logged to C:\Users\Admin\Downloads\ai-trading-sentinel\logs\status.json
+2025-07-30 00:11:11,934 - CLOUD_MAIN - ERROR - Trade execution failed for session BX64883-20250730-001011
+2025-07-30 00:11:11,934 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:11:11] "[35m[1mPOST /api/trade HTTP/1.1[0m" 500 -
+2025-07-30 00:11:13,968 - CLOUD_MAIN - INFO - Received webhook: {'account_id': 'BX64883', 'signal': {'symbol': 'GBPUSD', 'side': 'sell', 'quantity': 1, 'stop_loss': 30, 'take_profit': 90}}
+2025-07-30 00:11:13,969 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-001113 for account BX64883 from webhook
+2025-07-30 00:11:13,970 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001113 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-001113
+2025-07-30 00:11:13,970 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001113 - INFO - Running in headless mode
+2025-07-30 00:11:13,971 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001113 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 00:11:46,016 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:11:46] "GET /api/sessions HTTP/1.1" 200 -
+2025-07-30 00:11:48,082 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:11:48] "GET /api/status HTTP/1.1" 200 -
+2025-07-30 00:11:58,719 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001113 - INFO - Login successful and driver returned.
+2025-07-30 00:11:58,906 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001113 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-001158.png
+2025-07-30 00:11:58,907 - CLOUD_MAIN - INFO - Executing trade for webhook session BX64883-20250730-001113: {'symbol': 'GBPUSD', 'side': 'sell', 'quantity': 1, 'stop_loss': 30, 'take_profit': 90}
+2025-07-30 00:11:58,907 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001113 - INFO - Executing sell trade for 1 MBTQ25 (original: GBPUSD)
+2025-07-30 00:11:59,603 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001113 - INFO - Navigated to trade page
+2025-07-30 00:12:15,038 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001113 - ERROR - Error during trade execution: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x7ff6fd53e935+77845]
+	GetHandleVerifier [0x0x7ff6fd53e990+77936]
+	(No symbol) [0x0x7ff6fd2f9cda]
+	(No symbol) [0x0x7ff6fd3506aa]
+	(No symbol) [0x0x7ff6fd35095c]
+	(No symbol) [0x0x7ff6fd3a3d07]
+	(No symbol) [0x0x7ff6fd37890f]
+	(No symbol) [0x0x7ff6fd3a0b07]
+	(No symbol) [0x0x7ff6fd3786a3]
+	(No symbol) [0x0x7ff6fd341791]
+	(No symbol) [0x0x7ff6fd342523]
+	GetHandleVerifier [0x0x7ff6fd81684d+3059501]
+	GetHandleVerifier [0x0x7ff6fd810c0d+3035885]
+	GetHandleVerifier [0x0x7ff6fd830400+3164896]
+	GetHandleVerifier [0x0x7ff6fd558c3e+185118]
+	GetHandleVerifier [0x0x7ff6fd56054f+216111]
+	GetHandleVerifier [0x0x7ff6fd5472e4+113092]
+	GetHandleVerifier [0x0x7ff6fd547499+113529]
+	GetHandleVerifier [0x0x7ff6fd52e298+10616]
+	BaseThreadInitThunk [0x0x7ff9798c7374+20]
+	RtlUserThreadStart [0x0x7ff97a23cc91+33]
+
+2025-07-30 00:12:15,209 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001113 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\trade_error_BX64883_20250730-001215.png
+2025-07-30 00:12:15,211 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001113 - INFO - Trade status logged to C:\Users\Admin\Downloads\ai-trading-sentinel\logs\status.json
+2025-07-30 00:12:17,474 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-001113 - INFO - Browser closed
+2025-07-30 00:12:17,474 - CLOUD_MAIN - ERROR - Webhook trade execution failed for session BX64883-20250730-001113
+2025-07-30 00:12:17,475 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 00:12:17] "[35m[1mPOST /api/webhook HTTP/1.1[0m" 500 -
+2025-07-30 00:47:35,897 - CLOUD_MAIN - INFO - Starting AI Trading Sentinel Cloud API on port 5000
+2025-07-30 00:47:35,898 - CLOUD_MAIN - INFO - Debug mode: False
+2025-07-30 00:47:35,898 - CLOUD_MAIN - INFO - Environment: cloud
+2025-07-30 00:47:36,001 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.87.78.55:5000
+2025-07-30 00:47:36,003 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-30 01:19:44,660 - CLOUD_MAIN - INFO - Starting AI Trading Sentinel Cloud API on port 5000
+2025-07-30 01:19:44,660 - CLOUD_MAIN - INFO - Debug mode: False
+2025-07-30 01:19:44,661 - CLOUD_MAIN - INFO - Environment: cloud
+2025-07-30 01:19:44,687 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.87.78.55:5000
+2025-07-30 01:19:44,688 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-30 01:21:02,401 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 01:21:02] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 01:21:04,444 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-012104 for account BX64883
+2025-07-30 01:21:04,445 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-012104 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-012104
+2025-07-30 01:21:04,446 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-012104 - INFO - Running in headless mode
+2025-07-30 01:21:04,447 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-012104 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 01:22:19,435 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-012104 - INFO - Login successful and driver returned.
+2025-07-30 01:22:19,633 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-012104 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-012219.png
+2025-07-30 01:22:19,634 - CLOUD_MAIN - INFO - Login successful for session BX64883-20250730-012104
+2025-07-30 01:22:19,635 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 01:22:19] "POST /api/login HTTP/1.1" 200 -
+2025-07-30 01:50:17,342 - CLOUD_MAIN - INFO - Starting AI Trading Sentinel Cloud API on port 5000
+2025-07-30 01:50:17,343 - CLOUD_MAIN - INFO - Debug mode: False
+2025-07-30 01:50:17,344 - CLOUD_MAIN - INFO - Environment: cloud
+2025-07-30 01:50:17,367 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.87.78.55:5000
+2025-07-30 01:50:17,367 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-30 01:53:40,835 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 01:53:40] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 01:53:42,869 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-015342 for account BX64883
+2025-07-30 01:53:42,870 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015342 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-015342
+2025-07-30 01:53:42,871 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015342 - INFO - Running in headless mode
+2025-07-30 01:53:42,871 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015342 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 01:54:00,453 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015342 - INFO - Login successful and driver returned.
+2025-07-30 01:54:00,636 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015342 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-015400.png
+2025-07-30 01:54:00,637 - CLOUD_MAIN - INFO - Login successful for session BX64883-20250730-015342
+2025-07-30 01:54:00,639 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 01:54:00] "POST /api/login HTTP/1.1" 200 -
+2025-07-30 01:56:51,944 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 01:56:51] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 01:56:54,020 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-015654 for account BX64883
+2025-07-30 01:56:54,022 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015654 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-015654
+2025-07-30 01:56:54,022 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015654 - INFO - Running in headless mode
+2025-07-30 01:56:54,023 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015654 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 01:57:10,053 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015654 - INFO - Login successful and driver returned.
+2025-07-30 01:57:10,234 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015654 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-015710.png
+2025-07-30 01:57:10,236 - CLOUD_MAIN - INFO - Login successful for session BX64883-20250730-015654
+2025-07-30 01:57:10,237 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 01:57:10] "POST /api/login HTTP/1.1" 200 -
+2025-07-30 01:57:12,278 - CLOUD_MAIN - INFO - Using existing session BX64883-20250730-015654
+2025-07-30 01:57:12,279 - CLOUD_MAIN - INFO - Executing trade for session BX64883-20250730-015654: {'symbol': 'EURUSD', 'side': 'buy', 'quantity': 1, 'stop_loss': 50, 'take_profit': 100}
+2025-07-30 01:57:12,279 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015654 - INFO - Executing buy trade for 1 6EU25 (original: EURUSD)
+2025-07-30 01:57:13,037 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015654 - INFO - Navigated to trade page
+2025-07-30 01:57:28,566 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015654 - ERROR - Error during trade execution: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x7ff7354ce415+77285]
+	GetHandleVerifier [0x0x7ff7354ce470+77376]
+	(No symbol) [0x0x7ff735299a6a]
+	(No symbol) [0x0x7ff7352f0406]
+	(No symbol) [0x0x7ff7352f06bc]
+	(No symbol) [0x0x7ff735343ac7]
+	(No symbol) [0x0x7ff73531864f]
+	(No symbol) [0x0x7ff73534087f]
+	(No symbol) [0x0x7ff7353183e3]
+	(No symbol) [0x0x7ff7352e1521]
+	(No symbol) [0x0x7ff7352e22b3]
+	GetHandleVerifier [0x0x7ff7357b1efd+3107021]
+	GetHandleVerifier [0x0x7ff7357ac29d+3083373]
+	GetHandleVerifier [0x0x7ff7357cbedd+3213485]
+	GetHandleVerifier [0x0x7ff7354e884e+184862]
+	GetHandleVerifier [0x0x7ff7354f055f+216879]
+	GetHandleVerifier [0x0x7ff7354d7084+113236]
+	GetHandleVerifier [0x0x7ff7354d7239+113673]
+	GetHandleVerifier [0x0x7ff7354be298+11368]
+	BaseThreadInitThunk [0x0x7ff9798c7374+20]
+	RtlUserThreadStart [0x0x7ff97a23cc91+33]
+
+2025-07-30 01:57:28,994 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015654 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\trade_error_BX64883_20250730-015728.png
+2025-07-30 01:57:28,997 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015654 - INFO - Trade status logged to C:\Users\Admin\Downloads\ai-trading-sentinel\logs\status.json
+2025-07-30 01:57:28,997 - CLOUD_MAIN - ERROR - Trade execution failed for session BX64883-20250730-015654
+2025-07-30 01:57:28,998 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 01:57:28] "[35m[1mPOST /api/trade HTTP/1.1[0m" 500 -
+2025-07-30 01:57:31,042 - CLOUD_MAIN - INFO - Received webhook: {'account_id': 'BX64883', 'signal': {'symbol': 'GBPUSD', 'side': 'sell', 'quantity': 1, 'stop_loss': 30, 'take_profit': 90}}
+2025-07-30 01:57:31,043 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-015731 for account BX64883 from webhook
+2025-07-30 01:57:31,044 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015731 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-015731
+2025-07-30 01:57:31,045 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015731 - INFO - Running in headless mode
+2025-07-30 01:57:31,045 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015731 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 01:57:47,413 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015731 - INFO - Login successful and driver returned.
+2025-07-30 01:57:47,680 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015731 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-015747.png
+2025-07-30 01:57:47,684 - CLOUD_MAIN - INFO - Executing trade for webhook session BX64883-20250730-015731: {'symbol': 'GBPUSD', 'side': 'sell', 'quantity': 1, 'stop_loss': 30, 'take_profit': 90}
+2025-07-30 01:57:47,685 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015731 - INFO - Executing sell trade for 1 MBTQ25 (original: GBPUSD)
+2025-07-30 01:57:48,361 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015731 - INFO - Navigated to trade page
+2025-07-30 01:58:03,225 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 01:58:03] "GET /api/sessions HTTP/1.1" 200 -
+2025-07-30 01:58:03,548 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015731 - ERROR - Error during trade execution: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x7ff7354ce415+77285]
+	GetHandleVerifier [0x0x7ff7354ce470+77376]
+	(No symbol) [0x0x7ff735299a6a]
+	(No symbol) [0x0x7ff7352f0406]
+	(No symbol) [0x0x7ff7352f06bc]
+	(No symbol) [0x0x7ff735343ac7]
+	(No symbol) [0x0x7ff73531864f]
+	(No symbol) [0x0x7ff73534087f]
+	(No symbol) [0x0x7ff7353183e3]
+	(No symbol) [0x0x7ff7352e1521]
+	(No symbol) [0x0x7ff7352e22b3]
+	GetHandleVerifier [0x0x7ff7357b1efd+3107021]
+	GetHandleVerifier [0x0x7ff7357ac29d+3083373]
+	GetHandleVerifier [0x0x7ff7357cbedd+3213485]
+	GetHandleVerifier [0x0x7ff7354e884e+184862]
+	GetHandleVerifier [0x0x7ff7354f055f+216879]
+	GetHandleVerifier [0x0x7ff7354d7084+113236]
+	GetHandleVerifier [0x0x7ff7354d7239+113673]
+	GetHandleVerifier [0x0x7ff7354be298+11368]
+	BaseThreadInitThunk [0x0x7ff9798c7374+20]
+	RtlUserThreadStart [0x0x7ff97a23cc91+33]
+
+2025-07-30 01:58:03,880 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015731 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\trade_error_BX64883_20250730-015803.png
+2025-07-30 01:58:03,883 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015731 - INFO - Trade status logged to C:\Users\Admin\Downloads\ai-trading-sentinel\logs\status.json
+2025-07-30 01:58:05,287 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 01:58:05] "GET /api/status HTTP/1.1" 200 -
+2025-07-30 01:58:06,219 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-015731 - INFO - Browser closed
+2025-07-30 01:58:06,266 - CLOUD_MAIN - ERROR - Webhook trade execution failed for session BX64883-20250730-015731
+2025-07-30 01:58:06,268 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 01:58:06] "[35m[1mPOST /api/webhook HTTP/1.1[0m" 500 -
+2025-07-30 02:34:43,900 - CLOUD_MAIN - INFO - Starting AI Trading Sentinel Cloud API on port 5000
+2025-07-30 02:34:43,900 - CLOUD_MAIN - INFO - Debug mode: False
+2025-07-30 02:34:43,900 - CLOUD_MAIN - INFO - Environment: cloud
+2025-07-30 02:34:43,925 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.87.78.55:5000
+2025-07-30 02:34:43,926 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-30 02:37:02,957 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 02:37:02] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 02:37:05,032 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-023705 for account BX64883
+2025-07-30 02:37:05,033 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-023705
+2025-07-30 02:37:05,034 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Running in headless mode
+2025-07-30 02:37:05,035 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 02:37:38,191 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Login successful and driver returned.
+2025-07-30 02:37:38,358 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-023738.png
+2025-07-30 02:37:38,359 - CLOUD_MAIN - INFO - Login successful for session BX64883-20250730-023705
+2025-07-30 02:37:38,360 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 02:37:38] "POST /api/login HTTP/1.1" 200 -
+2025-07-30 02:37:40,409 - CLOUD_MAIN - INFO - Using existing session BX64883-20250730-023705
+2025-07-30 02:37:40,410 - CLOUD_MAIN - INFO - Executing trade for session BX64883-20250730-023705: {'symbol': 'EURUSD', 'side': 'buy', 'quantity': 1, 'stop_loss': 50, 'take_profit': 100}
+2025-07-30 02:37:40,410 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Executing buy trade for 1 6EU25 (original: EURUSD)
+2025-07-30 02:37:40,411 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Navigating to: https://bulenox.projectx.com/trade
+2025-07-30 02:37:41,572 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Successfully navigated to trade page
+2025-07-30 02:37:44,963 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\trade_page_loaded_BX64883_20250730-023744.png
+2025-07-30 02:37:45,030 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Current URL after navigation: https://bulenox.projectx.com/trade
+2025-07-30 02:37:45,047 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Page title: Bulenox
+2025-07-30 02:37:45,049 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - DEMO MODE: Simulating trade execution without actual element interaction
+2025-07-30 02:37:45,321 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\demo_trade_simulation_BX64883_20250730-023745.png
+2025-07-30 02:37:45,325 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023705 - INFO - Trade status logged to C:\Users\Admin\Downloads\ai-trading-sentinel\logs\status.json
+2025-07-30 02:37:45,329 - CLOUD_MAIN - INFO - Trade executed successfully for session BX64883-20250730-023705
+2025-07-30 02:37:45,330 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 02:37:45] "POST /api/trade HTTP/1.1" 200 -
+2025-07-30 02:37:47,364 - CLOUD_MAIN - INFO - Received webhook: {'account_id': 'BX64883', 'signal': {'symbol': 'GBPUSD', 'side': 'sell', 'quantity': 1, 'stop_loss': 30, 'take_profit': 90}}
+2025-07-30 02:37:47,364 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-023747 for account BX64883 from webhook
+2025-07-30 02:37:47,365 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-023747
+2025-07-30 02:37:47,365 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Running in headless mode
+2025-07-30 02:37:47,366 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 02:38:12,612 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Login successful and driver returned.
+2025-07-30 02:38:12,840 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-023812.png
+2025-07-30 02:38:12,841 - CLOUD_MAIN - INFO - Executing trade for webhook session BX64883-20250730-023747: {'symbol': 'GBPUSD', 'side': 'sell', 'quantity': 1, 'stop_loss': 30, 'take_profit': 90}
+2025-07-30 02:38:12,841 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Executing sell trade for 1 MBTQ25 (original: GBPUSD)
+2025-07-30 02:38:12,842 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Navigating to: https://bulenox.projectx.com/trade
+2025-07-30 02:38:14,569 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Successfully navigated to trade page
+2025-07-30 02:38:17,897 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\trade_page_loaded_BX64883_20250730-023817.png
+2025-07-30 02:38:17,911 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Current URL after navigation: https://bulenox.projectx.com/trade
+2025-07-30 02:38:17,919 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Page title: Bulenox
+2025-07-30 02:38:17,920 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - DEMO MODE: Simulating trade execution without actual element interaction
+2025-07-30 02:38:18,184 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\demo_trade_simulation_BX64883_20250730-023817.png
+2025-07-30 02:38:18,188 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Trade status logged to C:\Users\Admin\Downloads\ai-trading-sentinel\logs\status.json
+2025-07-30 02:38:19,435 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 02:38:19] "GET /api/sessions HTTP/1.1" 200 -
+2025-07-30 02:38:20,574 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-023747 - INFO - Browser closed
+2025-07-30 02:38:20,575 - CLOUD_MAIN - INFO - Webhook trade executed successfully for session BX64883-20250730-023747
+2025-07-30 02:38:20,575 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 02:38:20] "POST /api/webhook HTTP/1.1" 200 -
+2025-07-30 02:38:21,492 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 02:38:21] "GET /api/status HTTP/1.1" 200 -
+2025-07-30 02:46:31,666 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 02:46:31] "GET /api/health HTTP/1.1" 200 -
+2025-07-30 02:46:33,741 - CLOUD_MAIN - INFO - Creating new session BX64883-20250730-024633 for account BX64883
+2025-07-30 02:46:33,742 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-024633 - INFO - CloudTradeExecutor initialized for account BX64883 with session BX64883-20250730-024633
+2025-07-30 02:46:33,743 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-024633 - INFO - Running in headless mode
+2025-07-30 02:46:33,743 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-024633 - INFO - Attempting to login to Bulenox for account BX64883
+2025-07-30 02:49:07,419 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-024633 - INFO - Login successful and driver returned.
+2025-07-30 02:49:07,606 - CLOUD_TRADE_EXECUTOR_BX64883-20250730-024633 - INFO - Screenshot saved to: C:\Users\Admin\Downloads\ai-trading-sentinel\logs\screenshots\login_success_BX64883_20250730-024907.png
+2025-07-30 02:49:07,607 - CLOUD_MAIN - INFO - Login successful for session BX64883-20250730-024633
+2025-07-30 02:49:07,607 - werkzeug - INFO - 127.0.0.1 - - [30/Jul/2025 02:49:07] "POST /api/login HTTP/1.1" 200 -

@@ -1,0 +1,56 @@
+{
+  "system": {
+    "cpu_usage": 42.9,
+    "memory_usage": 77.5,
+    "disk_usage": 93.7,
+    "uptime": 6886.940620660782,
+    "last_update": "2025-07-30T12:50:06.488708"
+  },
+  "trading": {
+    "active_sessions": 1,
+    "total_trades": 5,
+    "successful_trades": 4,
+    "failed_trades": 1,
+    "pending_trades": 0,
+    "last_trade_time": "2025-07-30T12:49:45.607775"
+  },
+  "brokers": {
+    "bulenox": {
+      "status": "active",
+      "session_count": 1,
+      "last_activity": "2025-07-30T12:49:45.630085"
+    },
+    "binance": {
+      "status": "unknown",
+      "session_count": 0,
+      "last_activity": null
+    },
+    "exness": {
+      "status": "unknown",
+      "session_count": 0,
+      "last_activity": null
+    }
+  },
+  "strategies": {
+    "active_strategy": "fibonacci_strategy",
+    "available_strategies": [
+      "fibonacci_strategy",
+      "default_strategy"
+    ],
+    "last_mutation": null
+  },
+  "signals": {
+    "total_signals": 10,
+    "processed_signals": 8,
+    "pending_signals": 2,
+    "last_signal_time": "2025-07-30T12:49:58.107539"
+  },
+  "health": {
+    "overall_status": "recovering",
+    "recovery_events": 1,
+    "last_recovery": "2025-07-30T12:50:04.335051",
+    "issues": [
+      "Test recovery event"
+    ]
+  }
+}

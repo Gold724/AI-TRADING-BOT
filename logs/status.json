@@ -1,0 +1,145 @@
+{
+  "trades": [
+    {
+      "timestamp": "2025-07-30T00:04:11.634839",
+      "account_id": "BX64883",
+      "session_id": "BX64883-20250730-000323",
+      "signal": {
+        "symbol": "EURUSD",
+        "side": "buy",
+        "quantity": 1,
+        "stop_loss": 50,
+        "take_profit": 100
+      },
+      "status": "failed",
+      "error": "'bool' object has no attribute 'get'"
+    },
+    {
+      "timestamp": "2025-07-30T00:05:07.435497",
+      "account_id": "BX64883",
+      "session_id": "BX64883-20250730-000413",
+      "signal": {
+        "symbol": "GBPUSD",
+        "side": "sell",
+        "quantity": 1,
+        "stop_loss": 30,
+        "take_profit": 90
+      },
+      "status": "failed",
+      "error": "'bool' object has no attribute 'get'"
+    },
+    {
+      "timestamp": "2025-07-30T00:07:46.448124",
+      "account_id": "BX64883",
+      "session_id": "BX64883-20250730-000644",
+      "signal": {
+        "symbol": "EURUSD",
+        "side": "buy",
+        "quantity": 1,
+        "stop_loss": 50,
+        "take_profit": 100
+      },
+      "status": "failed",
+      "error": "Message: \nStacktrace:\n\tGetHandleVerifier [0x0x7ff6fd53e935+77845]\n\tGetHandleVerifier [0x0x7ff6fd53e990+77936]\n\t(No symbol) [0x0x7ff6fd2f9cda]\n\t(No symbol) [0x0x7ff6fd3506aa]\n\t(No symbol) [0x0x7ff6fd35095c]\n\t(No symbol) [0x0x7ff6fd3a3d07]\n\t(No symbol) [0x0x7ff6fd37890f]\n\t(No symbol) [0x0x7ff6fd3a0b07]\n\t(No symbol) [0x0x7ff6fd3786a3]\n\t(No symbol) [0x0x7ff6fd341791]\n\t(No symbol) [0x0x7ff6fd342523]\n\tGetHandleVerifier [0x0x7ff6fd81684d+3059501]\n\tGetHandleVerifier [0x0x7ff6fd810c0d+3035885]\n\tGetHandleVerifier [0x0x7ff6fd830400+3164896]\n\tGetHandleVerifier [0x0x7ff6fd558c3e+185118]\n\tGetHandleVerifier [0x0x7ff6fd56054f+216111]\n\tGetHandleVerifier [0x0x7ff6fd5472e4+113092]\n\tGetHandleVerifier [0x0x7ff6fd547499+113529]\n\tGetHandleVerifier [0x0x7ff6fd52e298+10616]\n\tBaseThreadInitThunk [0x0x7ff9798c7374+20]\n\tRtlUserThreadStart [0x0x7ff97a23cc91+33]\n"
+    },
+    {
+      "timestamp": "2025-07-30T00:08:49.266626",
+      "account_id": "BX64883",
+      "session_id": "BX64883-20250730-000748",
+      "signal": {
+        "symbol": "GBPUSD",
+        "side": "sell",
+        "quantity": 1,
+        "stop_loss": 30,
+        "take_profit": 90
+      },
+      "status": "failed",
+      "error": "Message: \nStacktrace:\n\tGetHandleVerifier [0x0x7ff6fd53e935+77845]\n\tGetHandleVerifier [0x0x7ff6fd53e990+77936]\n\t(No symbol) [0x0x7ff6fd2f9cda]\n\t(No symbol) [0x0x7ff6fd3506aa]\n\t(No symbol) [0x0x7ff6fd35095c]\n\t(No symbol) [0x0x7ff6fd3a3d07]\n\t(No symbol) [0x0x7ff6fd37890f]\n\t(No symbol) [0x0x7ff6fd3a0b07]\n\t(No symbol) [0x0x7ff6fd3786a3]\n\t(No symbol) [0x0x7ff6fd341791]\n\t(No symbol) [0x0x7ff6fd342523]\n\tGetHandleVerifier [0x0x7ff6fd81684d+3059501]\n\tGetHandleVerifier [0x0x7ff6fd810c0d+3035885]\n\tGetHandleVerifier [0x0x7ff6fd830400+3164896]\n\tGetHandleVerifier [0x0x7ff6fd558c3e+185118]\n\tGetHandleVerifier [0x0x7ff6fd56054f+216111]\n\tGetHandleVerifier [0x0x7ff6fd5472e4+113092]\n\tGetHandleVerifier [0x0x7ff6fd547499+113529]\n\tGetHandleVerifier [0x0x7ff6fd52e298+10616]\n\tBaseThreadInitThunk [0x0x7ff9798c7374+20]\n\tRtlUserThreadStart [0x0x7ff97a23cc91+33]\n"
+    },
+    {
+      "timestamp": "2025-07-30T00:11:11.932199",
+      "account_id": "BX64883",
+      "session_id": "BX64883-20250730-001011",
+      "signal": {
+        "symbol": "EURUSD",
+        "side": "buy",
+        "quantity": 1,
+        "stop_loss": 50,
+        "take_profit": 100
+      },
+      "status": "failed",
+      "error": "Message: \nStacktrace:\n\tGetHandleVerifier [0x0x7ff6fd53e935+77845]\n\tGetHandleVerifier [0x0x7ff6fd53e990+77936]\n\t(No symbol) [0x0x7ff6fd2f9cda]\n\t(No symbol) [0x0x7ff6fd3506aa]\n\t(No symbol) [0x0x7ff6fd35095c]\n\t(No symbol) [0x0x7ff6fd3a3d07]\n\t(No symbol) [0x0x7ff6fd37890f]\n\t(No symbol) [0x0x7ff6fd3a0b07]\n\t(No symbol) [0x0x7ff6fd3786a3]\n\t(No symbol) [0x0x7ff6fd341791]\n\t(No symbol) [0x0x7ff6fd342523]\n\tGetHandleVerifier [0x0x7ff6fd81684d+3059501]\n\tGetHandleVerifier [0x0x7ff6fd810c0d+3035885]\n\tGetHandleVerifier [0x0x7ff6fd830400+3164896]\n\tGetHandleVerifier [0x0x7ff6fd558c3e+185118]\n\tGetHandleVerifier [0x0x7ff6fd56054f+216111]\n\tGetHandleVerifier [0x0x7ff6fd5472e4+113092]\n\tGetHandleVerifier [0x0x7ff6fd547499+113529]\n\tGetHandleVerifier [0x0x7ff6fd52e298+10616]\n\tBaseThreadInitThunk [0x0x7ff9798c7374+20]\n\tRtlUserThreadStart [0x0x7ff97a23cc91+33]\n"
+    },
+    {
+      "timestamp": "2025-07-30T00:12:15.210176",
+      "account_id": "BX64883",
+      "session_id": "BX64883-20250730-001113",
+      "signal": {
+        "symbol": "GBPUSD",
+        "side": "sell",
+        "quantity": 1,
+        "stop_loss": 30,
+        "take_profit": 90
+      },
+      "status": "failed",
+      "error": "Message: \nStacktrace:\n\tGetHandleVerifier [0x0x7ff6fd53e935+77845]\n\tGetHandleVerifier [0x0x7ff6fd53e990+77936]\n\t(No symbol) [0x0x7ff6fd2f9cda]\n\t(No symbol) [0x0x7ff6fd3506aa]\n\t(No symbol) [0x0x7ff6fd35095c]\n\t(No symbol) [0x0x7ff6fd3a3d07]\n\t(No symbol) [0x0x7ff6fd37890f]\n\t(No symbol) [0x0x7ff6fd3a0b07]\n\t(No symbol) [0x0x7ff6fd3786a3]\n\t(No symbol) [0x0x7ff6fd341791]\n\t(No symbol) [0x0x7ff6fd342523]\n\tGetHandleVerifier [0x0x7ff6fd81684d+3059501]\n\tGetHandleVerifier [0x0x7ff6fd810c0d+3035885]\n\tGetHandleVerifier [0x0x7ff6fd830400+3164896]\n\tGetHandleVerifier [0x0x7ff6fd558c3e+185118]\n\tGetHandleVerifier [0x0x7ff6fd56054f+216111]\n\tGetHandleVerifier [0x0x7ff6fd5472e4+113092]\n\tGetHandleVerifier [0x0x7ff6fd547499+113529]\n\tGetHandleVerifier [0x0x7ff6fd52e298+10616]\n\tBaseThreadInitThunk [0x0x7ff9798c7374+20]\n\tRtlUserThreadStart [0x0x7ff97a23cc91+33]\n"
+    },
+    {
+      "timestamp": "2025-07-30T01:57:28.994941",
+      "account_id": "BX64883",
+      "session_id": "BX64883-20250730-015654",
+      "signal": {
+        "symbol": "EURUSD",
+        "side": "buy",
+        "quantity": 1,
+        "stop_loss": 50,
+        "take_profit": 100
+      },
+      "status": "failed",
+      "error": "Message: \nStacktrace:\n\tGetHandleVerifier [0x0x7ff7354ce415+77285]\n\tGetHandleVerifier [0x0x7ff7354ce470+77376]\n\t(No symbol) [0x0x7ff735299a6a]\n\t(No symbol) [0x0x7ff7352f0406]\n\t(No symbol) [0x0x7ff7352f06bc]\n\t(No symbol) [0x0x7ff735343ac7]\n\t(No symbol) [0x0x7ff73531864f]\n\t(No symbol) [0x0x7ff73534087f]\n\t(No symbol) [0x0x7ff7353183e3]\n\t(No symbol) [0x0x7ff7352e1521]\n\t(No symbol) [0x0x7ff7352e22b3]\n\tGetHandleVerifier [0x0x7ff7357b1efd+3107021]\n\tGetHandleVerifier [0x0x7ff7357ac29d+3083373]\n\tGetHandleVerifier [0x0x7ff7357cbedd+3213485]\n\tGetHandleVerifier [0x0x7ff7354e884e+184862]\n\tGetHandleVerifier [0x0x7ff7354f055f+216879]\n\tGetHandleVerifier [0x0x7ff7354d7084+113236]\n\tGetHandleVerifier [0x0x7ff7354d7239+113673]\n\tGetHandleVerifier [0x0x7ff7354be298+11368]\n\tBaseThreadInitThunk [0x0x7ff9798c7374+20]\n\tRtlUserThreadStart [0x0x7ff97a23cc91+33]\n"
+    },
+    {
+      "timestamp": "2025-07-30T01:58:03.881797",
+      "account_id": "BX64883",
+      "session_id": "BX64883-20250730-015731",
+      "signal": {
+        "symbol": "GBPUSD",
+        "side": "sell",
+        "quantity": 1,
+        "stop_loss": 30,
+        "take_profit": 90
+      },
+      "status": "failed",
+      "error": "Message: \nStacktrace:\n\tGetHandleVerifier [0x0x7ff7354ce415+77285]\n\tGetHandleVerifier [0x0x7ff7354ce470+77376]\n\t(No symbol) [0x0x7ff735299a6a]\n\t(No symbol) [0x0x7ff7352f0406]\n\t(No symbol) [0x0x7ff7352f06bc]\n\t(No symbol) [0x0x7ff735343ac7]\n\t(No symbol) [0x0x7ff73531864f]\n\t(No symbol) [0x0x7ff73534087f]\n\t(No symbol) [0x0x7ff7353183e3]\n\t(No symbol) [0x0x7ff7352e1521]\n\t(No symbol) [0x0x7ff7352e22b3]\n\tGetHandleVerifier [0x0x7ff7357b1efd+3107021]\n\tGetHandleVerifier [0x0x7ff7357ac29d+3083373]\n\tGetHandleVerifier [0x0x7ff7357cbedd+3213485]\n\tGetHandleVerifier [0x0x7ff7354e884e+184862]\n\tGetHandleVerifier [0x0x7ff7354f055f+216879]\n\tGetHandleVerifier [0x0x7ff7354d7084+113236]\n\tGetHandleVerifier [0x0x7ff7354d7239+113673]\n\tGetHandleVerifier [0x0x7ff7354be298+11368]\n\tBaseThreadInitThunk [0x0x7ff9798c7374+20]\n\tRtlUserThreadStart [0x0x7ff97a23cc91+33]\n"
+    },
+    {
+      "timestamp": "2025-07-30T02:37:45.322744",
+      "account_id": "BX64883",
+      "session_id": "BX64883-20250730-023705",
+      "signal": {
+        "symbol": "EURUSD",
+        "side": "buy",
+        "quantity": 1,
+        "stop_loss": 50,
+        "take_profit": 100
+      },
+      "status": "success",
+      "error": "Demo trade simulation completed"
+    },
+    {
+      "timestamp": "2025-07-30T02:38:18.185929",
+      "account_id": "BX64883",
+      "session_id": "BX64883-20250730-023747",
+      "signal": {
+        "symbol": "GBPUSD",
+        "side": "sell",
+        "quantity": 1,
+        "stop_loss": 30,
+        "take_profit": 90
+      },
+      "status": "success",
+      "error": "Demo trade simulation completed"
+    }
+  ],
+  "last_update": "2025-07-30T02:38:18.186655"
+}

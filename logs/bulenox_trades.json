@@ -1,0 +1,164 @@
+[
+  {
+    "timestamp": "2025-07-25T02:43:24.175633",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.1,
+    "stopLoss": 1.05,
+    "takeProfit": 1.07,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-25T02:45:07.200375",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-25T11:32:29.463995",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-25T12:06:06.466082",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-25T12:06:53.723657",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-25T12:07:20.477822",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-25T12:07:56.536143",
+    "symbol": "6EU25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-25T12:20:20.315907",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T10:14:20.703841",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T10:15:29.558057",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T10:17:24.700800",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-28T10:18:55.112114",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-28T10:19:22.186701",
+    "original_symbol": "XAUUSD",
+    "futures_symbol": "GC",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-28T10:20:57.796870",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-28T10:21:29.868262",
+    "original_symbol": "XAUUSD",
+    "futures_symbol": "XAUUSD",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-28T10:21:56.129148",
+    "original_symbol": "GBPUSD",
+    "futures_symbol": "MBTQ25",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-28T10:22:28.192690",
+    "original_symbol": "XAUUSD",
+    "futures_symbol": "GC",
+    "side": "buy",
+    "quantity": 1,
+    "stopLoss": 1.25,
+    "takeProfit": 1.27,
+    "success": true
+  }
+]

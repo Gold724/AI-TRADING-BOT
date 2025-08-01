@@ -1,0 +1,10 @@
+2025-07-29 15:41:29,550 - AUTO_TRADE_DEMO - INFO - Starting automated trade execution demo
+2025-07-29 15:41:29,551 - AUTO_TRADE_DEMO - INFO - BulenoxExecutor instance created (headless: False)
+2025-07-29 15:41:29,551 - backend.executor_bulenox - ERROR - Login failed with exception: login_bulenox_with_profile() got an unexpected keyword argument 'profile_path'
+2025-07-29 15:41:29,552 - AUTO_TRADE_DEMO - ERROR - Failed to login to Bulenox. Exiting.
+2025-07-29 15:42:11,962 - AUTO_TRADE_DEMO - INFO - Starting automated trade execution demo
+2025-07-29 15:42:11,963 - AUTO_TRADE_DEMO - INFO - BulenoxExecutor instance created (headless: False)
+2025-07-29 15:42:11,963 - backend.executor_bulenox - ERROR - Login failed with exception: login_bulenox_with_profile() got an unexpected keyword argument 'retries'
+2025-07-29 15:42:11,964 - AUTO_TRADE_DEMO - ERROR - Failed to login to Bulenox. Exiting.
+2025-07-29 15:42:54,741 - AUTO_TRADE_DEMO - INFO - Starting automated trade execution demo
+2025-07-29 15:42:54,741 - AUTO_TRADE_DEMO - INFO - BulenoxExecutor instance created (headless: False)

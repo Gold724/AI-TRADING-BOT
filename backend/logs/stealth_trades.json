@@ -1,0 +1,172 @@
+[
+  {
+    "timestamp": "2025-07-28T00:21:58.043960",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 2,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:22:19.583285",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 1,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:23:41.452050",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 2,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:25:03.288186",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 2,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:25:42.378318",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 1,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:32:39.242789",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 2,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:33:26.298572",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 2,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:34:16.087752",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 2,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:35:44.883291",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 2,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:36:16.262396",
+    "symbol": "EURUSD",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 2,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:38:46.177624",
+    "symbol": "-v",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 2,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:45:30.006193",
+    "symbol": "-s",
+    "side": "btcusdt",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 2,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:46:32.321259",
+    "symbol": "BTCUSDT",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 1,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:52:10.918445",
+    "symbol": "BTCUSDT",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 1,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:54:02.871889",
+    "symbol": "BTCUSDT",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 1,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T00:58:33.394989",
+    "symbol": "BTCUSDT",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 1,
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-28T01:18:34.861510",
+    "symbol": "BTCUSDT",
+    "side": "buy",
+    "quantity": 0.01,
+    "stopLoss": 1.08,
+    "takeProfit": 1.12,
+    "stealth_level": 1,
+    "success": false
+  }
+]

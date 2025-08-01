@@ -1,0 +1,11 @@
+[11616:17856:0728/021319.569:INFO:components\enterprise\browser\controller\chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[11616:17856:0728/021322.497:INFO:CONSOLE:4] "process.env.NODE_ENV production", source: https://bulenox.projectx.com/static/js/main.04a6e9e0.js (4)
+[11616:17856:0728/021323.266:INFO:CONSOLE:2] "Service worker install", source: https://bulenox.projectx.com/service-worker.js (2)
+[11616:17856:0728/021323.272:INFO:CONSOLE:8] "Service worker activate", source: https://bulenox.projectx.com/service-worker.js (8)
+[11616:17856:0728/021323.272:INFO:CONSOLE:13] "Service worker activated and clients claimed.", source: https://bulenox.projectx.com/service-worker.js (13)
+[11616:17856:0728/021323.277:INFO:CONSOLE:18] "Cache: [object Request],[object Request],[object Request],[object Request],[object Request],[object Request],[object Request]", source: https://bulenox.projectx.com/service-worker.js (18)
+[11616:17856:0728/021324.852:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://bulenox.projectx.com/login (0)
+[11616:17856:0728/021325.995:INFO:CONSOLE:4] "Time difference: -353 ms", source: https://bulenox.projectx.com/static/js/main.04a6e9e0.js (4)
+[11616:10808:0728/021327.388:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[16304:6156:0728/021333.385:WARNING:net\extras\sqlite\sqlite_persistent_store_backend_base.cc:176] Failed to post task from FlushAndNotifyInBackground@net\extras\sqlite\sqlite_persistent_store_backend_base.cc:226 to client_task_runner_.
+[16304:6156:0728/021333.385:WARNING:net\extras\sqlite\sqlite_persistent_store_backend_base.cc:176] Failed to post task from FlushAndNotifyInBackground@net\extras\sqlite\sqlite_persistent_store_backend_base.cc:226 to client_task_runner_.

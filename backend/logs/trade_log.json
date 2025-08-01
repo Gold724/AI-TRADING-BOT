@@ -1,0 +1,37 @@
+{
+  "account_id": "BX64883-11",
+  "initial_account_size": 250000.0,
+  "max_profit_target": 15000.0,
+  "max_trailing_drawdown": 5500.0,
+  "daily_loss_limit": 550.0,
+  "days": [
+    {
+      "day": 1,
+      "daily_target": 400,
+      "actual_pnl": 0.0,
+      "suggested_contracts": 2,
+      "trades": [
+        {
+          "pnl": 0,
+          "contracts": 25,
+          "timestamp": "2025-07-30T13:41:03.465188"
+        }
+      ],
+      "status": "in_progress",
+      "date": "2025-07-27"
+    },
+    {
+      "day": 18,
+      "daily_target": 450,
+      "actual_pnl": 0.0,
+      "suggested_contracts": 20,
+      "trades": [],
+      "status": "in_progress",
+      "date": "2025-07-30"
+    }
+  ],
+  "current_day": 1,
+  "total_pnl": 0.0,
+  "remaining_drawdown": 5500.0,
+  "last_updated": "2025-07-30T13:41:03.465215"
+}
