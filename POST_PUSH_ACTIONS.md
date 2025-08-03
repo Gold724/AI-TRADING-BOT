@@ -22,6 +22,7 @@ This document outlines the steps to take after successfully pushing your AI Trad
 - The `.gitignore` file has been updated to exclude sensitive files
 - Key exclusions: `.env`, `.env.*`, logs, databases, and Chrome profiles
 - Verify no sensitive files are tracked using: `git ls-files | grep -i env`
+- Use the null byte detection tools to find and fix problematic files: `python find_null_bytes.py`
 
 ### 3. Environment Variables Documentation
 
@@ -79,9 +80,16 @@ This document outlines the steps to take after successfully pushing your AI Trad
 - [GitHub Secrets Guide](.github/workflows/setup_secrets.yml) - Guide for setting up secrets
 - [Environment Example](.env.example) - Template for environment variables
 - [Frontend Environment Example](frontend/.env.example) - Template for frontend variables
+- [Null Byte Detection](NULL_BYTE_DETECTION.md) - Tools to find and fix null bytes in files
 
 ## Verification Scripts
 
 - `verify_cicd_setup.sh` - Linux/macOS script to verify and fix CI/CD setup
 - `verify_cicd_setup.bat` - Windows batch script to verify and fix CI/CD setup
 - `verify_cicd_setup.ps1` - PowerShell script to verify and fix CI/CD setup
+
+## Code Quality Tools
+
+- `find_null_bytes.py` - Python script to detect and fix null bytes in files
+- `find_null_bytes.ps1` - PowerShell script for null byte detection
+- `find_null_bytes.bat` - Windows batch wrapper for the Python script
