@@ -1,0 +1,3 @@
+@echo off
+echo Running SSH Key Deployment Tool...
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0deploy_ssh_key.ps1"

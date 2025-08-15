@@ -1,0 +1,15 @@
+[Unit]
+Description=TRAE AI Trading Sentinel LiveOps Service
+After=network.target
+
+[Service]
+Type=simple
+User=trae
+WorkingDirectory=/home/trae/ai-trading-sentinel
+ExecStart=/usr/bin/python3 main.py --liveops --webhook
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

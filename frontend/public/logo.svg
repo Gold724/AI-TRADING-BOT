@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="500" height="400">
+  <!-- Background -->
+  <rect width="500" height="400" fill="#1a0536" />
+  
+  <!-- ARTIFICIAL INTELLIGENCE Text -->
+  <text x="250" y="40" font-family="Arial, sans-serif" font-weight="bold" font-size="20" fill="#ffffff" text-anchor="middle">ARTIFICIAL INTELLIGENCE</text>
+  
+  <!-- AI Head Icon -->
+  <g transform="translate(250, 180) scale(1.5)">
+    <circle cx="0" cy="0" r="40" fill="#1a0536" stroke="#ffd700" stroke-width="2" />
+    <path d="M-20 -15 L-10 0 L-20 15" stroke="#ffd700" stroke-width="2" fill="none" />
+    <path d="M20 -15 L10 0 L20 15" stroke="#ffd700" stroke-width="2" fill="none" />
+    <path d="M-15 25 L15 25" stroke="#ffd700" stroke-width="2" fill="none" />
+    
+    <!-- Circuit Board Pattern -->
+    <path d="M-40 -30 L-25 -30 L-25 -15 L-10 -15" stroke="#ffd700" stroke-width="1.5" fill="none" />
+    <path d="M-40 30 L-25 30 L-25 15 L-10 15" stroke="#ffd700" stroke-width="1.5" fill="none" />
+    <path d="M40 -30 L25 -30 L25 -15 L10 -15" stroke="#ffd700" stroke-width="1.5" fill="none" />
+    <path d="M40 30 L25 30 L25 15 L10 15" stroke="#ffd700" stroke-width="1.5" fill="none" />
+    
+    <!-- Glowing Elements -->
+    <circle cx="-30" cy="-20" r="2" fill="#ffd700">
+      <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="30" cy="-20" r="2" fill="#ffd700">
+      <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="0" cy="-30" r="2" fill="#ffd700">
+      <animate attributeName="opacity" values="1;0.3;1" dur="3s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="-20" cy="0" r="3" fill="#ff5555">
+      <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="0" cy="10" r="4" fill="#9900cc">
+      <animate attributeName="opacity" values="1;0.6;1" dur="3s" repeatCount="indefinite" />
+    </circle>
+  </g>
+  
+  <!-- Hand with Coins -->
+  <path d="M80 300 C90 290, 100 280, 110 290 C120 300, 130 290, 140 300" fill="#ff9900" stroke="#ff6600" stroke-width="2" />
+  
+  <!-- Coins -->
+  <g transform="translate(150, 350)">
+    <circle cx="0" cy="0" r="15" fill="#ffd700" />
+    <circle cx="-15" cy="10" r="15" fill="#ffd700" />
+    <circle cx="15" cy="10" r="15" fill="#ffd700" />
+    <circle cx="0" cy="20" r="15" fill="#ffd700" />
+    <circle cx="-30" cy="20" r="15" fill="#ffd700" />
+    <circle cx="30" cy="20" r="15" fill="#ffd700" />
+  </g>
+  
+  <!-- TRADING SENTINEL Text -->
+  <text x="250" y="300" font-family="Arial, sans-serif" font-weight="bold" font-size="40" fill="#ffd700" text-anchor="middle">TRADING</text>
+  <text x="250" y="340" font-family="Arial, sans-serif" font-weight="bold" font-size="30" fill="#ff5555" text-anchor="middle">SENTINEL</text>
+  
+  <!-- DAYS OF FUTURE WEALTH Text -->
+  <text x="250" y="380" font-family="Arial, sans-serif" font-size="14" fill="#ffffff" text-anchor="middle">DAYS OF FUTURE WEALTH.</text>
+</svg>

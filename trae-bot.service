@@ -1,0 +1,24 @@
+[Unit]
+Description=TRAE AI Trading Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/AI-TRADING-BOT
+ExecStart=/root/AI-TRADING-BOT/venv/bin/python main.py --auto
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+# Add standard logging to journalctl
+StandardOutput=journal
+StandardError=journal
+# Add file logging
+StandardOutput=append:/root/AI-TRADING-BOT/trae_output.log
+StandardError=append:/root/AI-TRADING-BOT/trae_output.log
+# Restart on failure with progressive backoff
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

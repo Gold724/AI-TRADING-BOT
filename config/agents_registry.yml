@@ -1,0 +1,152 @@
+# Multi-Agent Strategy Governance Configuration
+# This file defines the agents participating in the Strategy Voting Council
+
+# Global settings
+settings:
+  voting_method: weighted_majority  # weighted_majority, simple_majority, consensus
+  veto_enabled: true
+  governance_mode: dynamic_reputation  # dynamic_reputation, fixed_weights, equal_votes
+  minimum_quorum: 0.6  # 60% of agents must vote for a valid decision (TRAE Phase 6)
+  max_decision_time_ms: 5000  # Maximum time to wait for all agent votes (5 seconds)
+  strategy_governance: enabled
+  consensus_threshold: 0.6  # 60% consensus required for strategy decisions
+  voting_window: 100  # Number of trades to consider for voting
+  anomaly_guardrails: active  # Enable anomaly detection guardrails
+
+# Agent definitions
+agents:
+  # TRAE Phase 6 Strategy Voting Council Agents
+  - id: sentinel
+    type: SentinelAgent
+    module: agents.sentinel_agent
+    role: core
+    description: "Core executor and logic router"
+    weight: 1.0
+    veto_rights: false
+    active: true
+    specialization: ["scalping", "trend", "breakout", "reversal"]
+    performance_metrics:
+      win_rate: 0.0
+      profit_factor: 0.0
+      trades_count: 0
+  
+  - id: watcher
+    type: WatcherAgent
+    module: agents.watcher_agent
+    role: analyst
+    description: "Evaluates trade history and flags volatility clusters"
+    weight: 1.0
+    veto_rights: true
+    active: true
+    specialization: ["volatility", "anomaly"]
+    config:
+      volatility_threshold: 1.5
+      history_window: 50
+      min_trades_required: 10
+    performance_metrics:
+      win_rate: 0.0
+      profit_factor: 0.0
+      trades_count: 0
+  
+  - id: curator
+    type: CuratorAgent
+    module: agents.curator_agent
+    role: manager
+    description: "Maintains library of strategy variants and archives underperformers"
+    weight: 0.8
+    veto_rights: false
+    active: true
+    specialization: ["strategy_management"]
+    config:
+      min_trades_for_evaluation: 20
+      archive_threshold: 0.4
+      promotion_threshold: 0.7
+    performance_metrics:
+      win_rate: 0.0
+      profit_factor: 0.0
+      trades_count: 0
+  
+  - id: observer
+    type: ObserverAgent
+    module: agents.observer_agent
+    role: monitor
+    description: "Watches external factors (news, spikes, liquidity shifts)"
+    weight: 0.9
+    veto_rights: false
+    active: true
+    specialization: ["news", "liquidity", "external_factors"]
+    config:
+      news_impact_threshold: 0.6
+      price_spike_threshold: 1.5
+      liquidity_threshold: 0.5
+    performance_metrics:
+      win_rate: 0.0
+      profit_factor: 0.0
+      trades_count: 0
+  
+  - id: governor
+    type: GovernorAgent
+    module: agents.governor_agent
+    role: governance
+    description: "Resolves conflicts between agents and maintains balance"
+    weight: 1.2
+    veto_rights: true
+    active: true
+    specialization: ["conflict_resolution", "anomaly_detection"]
+    config:
+      conflict_threshold: 0.5
+      anomaly_threshold: 0.8
+      intervention_cooldown: 10
+    performance_metrics:
+      win_rate: 0.0
+      profit_factor: 0.0
+      trades_count: 0
+      
+  # Legacy agents - kept for backward compatibility
+  - id: trend_analyst
+    role: strategy
+    description: "Analyzes market trends and momentum indicators"
+    weight: 0.7
+    veto_rights: false
+    active: false
+    specialization: ["trend_following", "momentum", "breakout"]
+    performance_metrics:
+      win_rate: 0.0
+      profit_factor: 0.0
+      trades_count: 0
+
+  - id: news_guard
+    role: guard
+    description: "Monitors news events and economic calendar"
+    weight: 0.7
+    veto_rights: false
+    active: false
+    specialization: ["news_analysis", "sentiment_analysis"]
+    performance_metrics:
+      win_rate: 0.0
+      profit_factor: 0.0
+      trades_count: 0
+
+  - id: risk_auditor
+    role: guard
+    description: "Enforces risk management rules and position sizing"
+    weight: 0.7
+    veto_rights: false
+    active: false
+    specialization: ["risk_management", "drawdown_protection"]
+    performance_metrics:
+      win_rate: 0.0
+      profit_factor: 0.0
+      trades_count: 0
+
+  - id: regime_detector
+    role: context
+    description: "Detects market regimes and volatility conditions"
+    weight: 0.7
+    veto_rights: false
+    active: false
+    specialization: ["market_regime", "volatility_analysis"]
+    performance_metrics:
+      win_rate: 0.0
+      profit_factor: 0.0
+      trades_count: 0

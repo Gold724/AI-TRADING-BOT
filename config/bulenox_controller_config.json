@@ -1,0 +1,26 @@
+{
+  "dreamer_mode": {
+    "enabled": true,
+    "simulation_id": "test_1754569625"
+  },
+  "session": {
+    "auto_login": false,
+    "headless": true,
+    "debug": true,
+    "session_timeout": 3600
+  },
+  "trading": {
+    "default_quantity": 1,
+    "default_tp_pips": 50,
+    "default_sl_pips": 30,
+    "max_trades_per_day": 10,
+    "allowed_symbols": [
+      "EURUSD",
+      "XAUUSD"
+    ]
+  },
+  "security": {
+    "api_key_required": false,
+    "api_key": "${TRAE_API_KEY}"
+  }
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=Trae AI Trading Bot
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/home/root/ai-trading-sentinel
+ExecStart=/home/root/ai-trading-sentinel/venv/bin/python main.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

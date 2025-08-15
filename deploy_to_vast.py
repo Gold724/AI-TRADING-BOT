@@ -6,14 +6,19 @@ This script automates the deployment of the AI Trading Sentinel to a Vast.ai ins
 It loads environment variables, establishes an SSH connection, and sets up the trading bot.
 """
 
+import argparse
 import os
 import subprocess
-import argparse
+
 from dotenv import load_dotenv
 
 # Parse command line arguments
-parser = argparse.ArgumentParser(description='Deploy AI Trading Sentinel to Vast.ai')
-parser.add_argument('--dry-run', action='store_true', help='Validate configuration without connecting to the server')
+parser = argparse.ArgumentParser(description="Deploy AI Trading Sentinel to Vast.ai")
+parser.add_argument(
+    "--dry-run",
+    action="store_true",
+    help="Validate configuration without connecting to the server",
+)
 args = parser.parse_args()
 
 # Load environment variables from .env file
@@ -30,11 +35,19 @@ USERNAME = os.getenv("GITHUB_USERNAME")
 PROJECT_DIR = os.getenv("PROJECT_DIR", "ai-trading-sentinel")
 
 # Validate required environment variables
-required_vars = ["VAST_INSTANCE_IP", "SSH_KEY_PATH", "GITHUB_REPO", "GITHUB_USERNAME", "GITHUB_PAT"]
+required_vars = [
+    "VAST_INSTANCE_IP",
+    "SSH_KEY_PATH",
+    "GITHUB_REPO",
+    "GITHUB_USERNAME",
+    "GITHUB_PAT",
+]
 missing_vars = [var for var in required_vars if not os.getenv(var)]
 
 if missing_vars:
-    print(f"❌ Error: Missing required environment variables: {', '.join(missing_vars)}")
+    print(
+        f"❌ Error: Missing required environment variables: {', '.join(missing_vars)}"
+    )
     print("Please check your .env file and ensure all required variables are set.")
     exit(1)
 
@@ -92,27 +105,38 @@ if args.dry_run:
     print(masked_commands)
     print("-------------------------------------------")
     print("\n✅ Dry run completed. No connection was made to the server.")
-    print("🔒 Remember: Your .env file contains sensitive information. Keep it secure and excluded from Git commits.")
+    print(
+        "🔒 Remember: Your .env file contains sensitive information. Keep it secure and excluded from Git commits."
+    )
     exit(0)
 
 try:
     # Run the SSH command
     print("\n📡 Connecting to Vast.ai instance...")
-    result = subprocess.run([
-        "ssh", "-i", SSH_KEY, "-p", SSH_PORT, f"{SSH_USER}@{IP}",
-        f'bash -c "{commands}"'
-    ], capture_output=True, text=True)
-    
+    result = subprocess.run(
+        [
+            "ssh",
+            "-i",
+            SSH_KEY,
+            "-p",
+            SSH_PORT,
+            f"{SSH_USER}@{IP}",
+            f'bash -c "{commands}"',
+        ],
+        capture_output=True,
+        text=True,
+    )
+
     # Print the output
     if result.stdout:
         print("\n📤 Output:")
         print(result.stdout)
-    
+
     # Print any errors
     if result.stderr:
         print("\n⚠️ Errors:")
         print(result.stderr)
-    
+
     # Check if the deployment was successful
     if result.returncode == 0:
         print("\n✅ Deployment successful!")
@@ -123,4 +147,6 @@ try:
 except Exception as e:
     print(f"\n❌ Error during deployment: {str(e)}")
 
-print("\n🔒 Remember: Your .env file contains sensitive information. Keep it secure and excluded from Git commits.")
+print(
+    "\n🔒 Remember: Your .env file contains sensitive information. Keep it secure and excluded from Git commits."
+)

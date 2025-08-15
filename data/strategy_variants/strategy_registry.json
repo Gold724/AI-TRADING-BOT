@@ -1,0 +1,64 @@
+{
+  "active_strategies": [
+    {
+      "id": "trend_following_v1",
+      "base_type": "trend_following",
+      "version": 1,
+      "parameters": {
+        "sma_period": 20,
+        "ema_period": 10,
+        "rsi_period": 14,
+        "rsi_overbought": 70,
+        "rsi_oversold": 30
+      },
+      "performance": {
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "trades_count": 0,
+        "last_updated": "2023-08-07T00:00:00Z"
+      },
+      "status": "active"
+    },
+    {
+      "id": "breakout_v1",
+      "base_type": "breakout",
+      "version": 1,
+      "parameters": {
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "lookback_period": 20
+      },
+      "performance": {
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "trades_count": 0,
+        "last_updated": "2023-08-07T00:00:00Z"
+      },
+      "status": "active"
+    },
+    {
+      "id": "scalping_v1",
+      "base_type": "scalping",
+      "version": 1,
+      "parameters": {
+        "bollinger_period": 20,
+        "bollinger_std": 2.0,
+        "rsi_period": 7,
+        "rsi_overbought": 75,
+        "rsi_oversold": 25
+      },
+      "performance": {
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "trades_count": 0,
+        "last_updated": "2023-08-07T00:00:00Z"
+      },
+      "status": "active"
+    }
+  ],
+  "archived_strategies": [],
+  "last_updated": "2023-08-07T00:00:00Z",
+  "total_strategies": 3,
+  "active_count": 3,
+  "archived_count": 0
+}

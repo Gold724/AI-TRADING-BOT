@@ -1,0 +1,370 @@
+{
+  "trades": [
+    {
+      "date": "2023-08-04",
+      "symbol": "EURUSD",
+      "strategy": "OTE",
+      "confidence": 80,
+      "news_nearby": false,
+      "result": "win",
+      "pips": 15.5,
+      "profit": 155.0,
+      "entry_price": 1.0950,
+      "exit_price": 1.1105,
+      "direction": "long",
+      "risk_reward": 3.1,
+      "market_condition": "trending",
+      "time_of_day": "london_open",
+      "trade_duration_minutes": 240
+    },
+    {
+      "date": "2023-08-05",
+      "symbol": "GBPUSD",
+      "strategy": "FVG",
+      "confidence": 75,
+      "news_nearby": false,
+      "result": "loss",
+      "pips": -10.0,
+      "profit": -100.0,
+      "entry_price": 1.2850,
+      "exit_price": 1.2750,
+      "direction": "long",
+      "risk_reward": 2.5,
+      "market_condition": "ranging",
+      "time_of_day": "new_york_open",
+      "trade_duration_minutes": 120
+    },
+    {
+      "date": "2023-08-06",
+      "symbol": "USDJPY",
+      "strategy": "Cypher",
+      "confidence": 65,
+      "news_nearby": true,
+      "result": "loss",
+      "pips": -15.0,
+      "profit": -150.0,
+      "entry_price": 145.50,
+      "exit_price": 145.35,
+      "direction": "long",
+      "risk_reward": 3.0,
+      "market_condition": "volatile",
+      "time_of_day": "tokyo_open",
+      "trade_duration_minutes": 60
+    },
+    {
+      "date": "2023-08-07",
+      "symbol": "EURUSD",
+      "strategy": "OTE",
+      "confidence": 85,
+      "news_nearby": false,
+      "result": "win",
+      "pips": 20.0,
+      "profit": 200.0,
+      "entry_price": 1.0980,
+      "exit_price": 1.1180,
+      "direction": "long",
+      "risk_reward": 4.0,
+      "market_condition": "trending",
+      "time_of_day": "london_close",
+      "trade_duration_minutes": 180
+    },
+    {
+      "date": "2023-08-08",
+      "symbol": "AUDUSD",
+      "strategy": "FVG",
+      "confidence": 70,
+      "news_nearby": false,
+      "result": "win",
+      "pips": 12.0,
+      "profit": 120.0,
+      "entry_price": 0.6550,
+      "exit_price": 0.6670,
+      "direction": "long",
+      "risk_reward": 2.4,
+      "market_condition": "trending",
+      "time_of_day": "sydney_open",
+      "trade_duration_minutes": 300
+    },
+    {
+      "date": "2023-08-09",
+      "symbol": "GBPJPY",
+      "strategy": "Cypher",
+      "confidence": 60,
+      "news_nearby": true,
+      "result": "win",
+      "pips": 25.0,
+      "profit": 250.0,
+      "entry_price": 185.50,
+      "exit_price": 185.25,
+      "direction": "short",
+      "risk_reward": 2.5,
+      "market_condition": "volatile",
+      "time_of_day": "london_open",
+      "trade_duration_minutes": 90
+    },
+    {
+      "date": "2023-08-10",
+      "symbol": "USDCAD",
+      "strategy": "OTE",
+      "confidence": 75,
+      "news_nearby": false,
+      "result": "win",
+      "pips": 18.0,
+      "profit": 180.0,
+      "entry_price": 1.3450,
+      "exit_price": 1.3270,
+      "direction": "short",
+      "risk_reward": 3.6,
+      "market_condition": "trending",
+      "time_of_day": "new_york_open",
+      "trade_duration_minutes": 240
+    },
+    {
+      "date": "2023-08-11",
+      "symbol": "EURJPY",
+      "strategy": "FVG",
+      "confidence": 65,
+      "news_nearby": false,
+      "result": "loss",
+      "pips": -12.0,
+      "profit": -120.0,
+      "entry_price": 158.50,
+      "exit_price": 158.38,
+      "direction": "long",
+      "risk_reward": 2.4,
+      "market_condition": "ranging",
+      "time_of_day": "tokyo_close",
+      "trade_duration_minutes": 120
+    },
+    {
+      "date": "2023-08-12",
+      "symbol": "EURGBP",
+      "strategy": "Cypher",
+      "confidence": 70,
+      "news_nearby": false,
+      "result": "win",
+      "pips": 10.0,
+      "profit": 100.0,
+      "entry_price": 0.8650,
+      "exit_price": 0.8660,
+      "direction": "long",
+      "risk_reward": 2.0,
+      "market_condition": "ranging",
+      "time_of_day": "london_open",
+      "trade_duration_minutes": 150
+    },
+    {
+      "date": "2023-08-13",
+      "symbol": "EURUSD",
+      "strategy": "OTE",
+      "confidence": 80,
+      "news_nearby": false,
+      "result": "win",
+      "pips": 15.0,
+      "profit": 150.0,
+      "entry_price": 1.0920,
+      "exit_price": 1.0770,
+      "direction": "short",
+      "risk_reward": 3.0,
+      "market_condition": "trending",
+      "time_of_day": "new_york_close",
+      "trade_duration_minutes": 180
+    }
+  ],
+  "strategy_stats": {
+    "OTE": {
+      "win_rate": 100.0,
+      "total_trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "avg_profit": 171.25,
+      "avg_pips": 17.13,
+      "avg_risk_reward": 3.43,
+      "avg_confidence": 80.0,
+      "last_updated": "2023-08-13"
+    },
+    "FVG": {
+      "win_rate": 66.67,
+      "total_trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "avg_profit": 46.67,
+      "avg_pips": 4.67,
+      "avg_risk_reward": 2.43,
+      "avg_confidence": 70.0,
+      "last_updated": "2023-08-11"
+    },
+    "Cypher": {
+      "win_rate": 66.67,
+      "total_trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "avg_profit": 66.67,
+      "avg_pips": 6.67,
+      "avg_risk_reward": 2.5,
+      "avg_confidence": 65.0,
+      "last_updated": "2023-08-12"
+    }
+  },
+  "pair_stats": {
+    "EURUSD": {
+      "win_rate": 100.0,
+      "total_trades": 3,
+      "wins": 3,
+      "losses": 0,
+      "avg_profit": 168.33,
+      "avg_pips": 16.83,
+      "best_strategy": "OTE",
+      "best_time": "london_open"
+    },
+    "GBPUSD": {
+      "win_rate": 0.0,
+      "total_trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "avg_profit": -100.0,
+      "avg_pips": -10.0,
+      "best_strategy": null,
+      "best_time": null
+    },
+    "USDJPY": {
+      "win_rate": 0.0,
+      "total_trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "avg_profit": -150.0,
+      "avg_pips": -15.0,
+      "best_strategy": null,
+      "best_time": null
+    },
+    "AUDUSD": {
+      "win_rate": 100.0,
+      "total_trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "avg_profit": 120.0,
+      "avg_pips": 12.0,
+      "best_strategy": "FVG",
+      "best_time": "sydney_open"
+    },
+    "GBPJPY": {
+      "win_rate": 100.0,
+      "total_trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "avg_profit": 250.0,
+      "avg_pips": 25.0,
+      "best_strategy": "Cypher",
+      "best_time": "london_open"
+    },
+    "USDCAD": {
+      "win_rate": 100.0,
+      "total_trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "avg_profit": 180.0,
+      "avg_pips": 18.0,
+      "best_strategy": "OTE",
+      "best_time": "new_york_open"
+    },
+    "EURJPY": {
+      "win_rate": 0.0,
+      "total_trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "avg_profit": -120.0,
+      "avg_pips": -12.0,
+      "best_strategy": null,
+      "best_time": null
+    },
+    "EURGBP": {
+      "win_rate": 100.0,
+      "total_trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "avg_profit": 100.0,
+      "avg_pips": 10.0,
+      "best_strategy": "Cypher",
+      "best_time": "london_open"
+    }
+  },
+  "time_stats": {
+    "london_open": {
+      "win_rate": 100.0,
+      "total_trades": 3,
+      "wins": 3,
+      "losses": 0
+    },
+    "new_york_open": {
+      "win_rate": 50.0,
+      "total_trades": 2,
+      "wins": 1,
+      "losses": 1
+    },
+    "tokyo_open": {
+      "win_rate": 0.0,
+      "total_trades": 1,
+      "wins": 0,
+      "losses": 1
+    },
+    "london_close": {
+      "win_rate": 100.0,
+      "total_trades": 1,
+      "wins": 1,
+      "losses": 0
+    },
+    "sydney_open": {
+      "win_rate": 100.0,
+      "total_trades": 1,
+      "wins": 1,
+      "losses": 0
+    },
+    "tokyo_close": {
+      "win_rate": 0.0,
+      "total_trades": 1,
+      "wins": 0,
+      "losses": 1
+    },
+    "new_york_close": {
+      "win_rate": 100.0,
+      "total_trades": 1,
+      "wins": 1,
+      "losses": 0
+    }
+  },
+  "market_condition_stats": {
+    "trending": {
+      "win_rate": 100.0,
+      "total_trades": 5,
+      "wins": 5,
+      "losses": 0
+    },
+    "ranging": {
+      "win_rate": 33.33,
+      "total_trades": 3,
+      "wins": 1,
+      "losses": 2
+    },
+    "volatile": {
+      "win_rate": 50.0,
+      "total_trades": 2,
+      "wins": 1,
+      "losses": 1
+    }
+  },
+  "news_impact_stats": {
+    "with_news": {
+      "win_rate": 50.0,
+      "total_trades": 2,
+      "wins": 1,
+      "losses": 1
+    },
+    "without_news": {
+      "win_rate": 75.0,
+      "total_trades": 8,
+      "wins": 6,
+      "losses": 2
+    }
+  },
+  "last_updated": "2023-08-13T23:59:59Z"
+}

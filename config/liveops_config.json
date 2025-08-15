@@ -1,0 +1,127 @@
+{
+  "version": "1.0.0",
+  "system": {
+    "heartbeat_interval": 60,
+    "log_level": "INFO",
+    "data_dir": "data",
+    "logs_dir": "logs",
+    "max_retries": 3,
+    "retry_delay": 5
+  },
+  "signal_sources": {
+    "webhook": {
+      "enabled": true,
+      "port": 5000,
+      "require_auth": true
+    },
+    "file_drop": {
+      "enabled": true,
+      "watch_dir": "signals",
+      "file_patterns": [".json", ".csv"]
+    },
+    "tremius": {
+      "enabled": false,
+      "api_key": "${TREMIUS_API_KEY}",
+      "poll_interval": 60
+    },
+    "trae_ai": {
+      "enabled": false,
+      "api_key": "${TRAE_AI_API_KEY}",
+      "poll_interval": 60
+    }
+  },
+  "governance": {
+    "max_daily_loss_percent": 5,
+    "max_open_positions": 10,
+    "trading_hours": {
+      "start": "00:00",
+      "end": "23:59",
+      "timezone": "UTC"
+    },
+    "allowed_symbols": ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "NZDUSD", "USDCHF"],
+    "allowed_strategies": ["trend_following", "breakout", "mean_reversion", "momentum"],
+    "risk_per_trade_percent": 1.0,
+    "quorum_threshold": 0.6,
+    "immutable_rules": [
+      "never_trade_during_major_news",
+      "respect_max_daily_loss",
+      "verify_signal_source"
+    ]
+  },
+  "accounts": [
+    {
+      "account_id": "exness_main",
+      "broker": "exness",
+      "account_type": "funded",
+      "risk_profile": "moderate",
+      "lot_size": 0.1,
+      "max_daily_loss_percent": 3,
+      "max_open_positions": 5,
+      "allowed_symbols": ["EURUSD", "GBPUSD", "USDJPY"],
+      "enabled": true
+    },
+    {
+      "account_id": "bulenox_demo",
+      "broker": "bulenox",
+      "account_type": "demo",
+      "risk_profile": "aggressive",
+      "lot_size": 0.2,
+      "max_daily_loss_percent": 10,
+      "max_open_positions": 10,
+      "allowed_symbols": ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD"],
+      "enabled": true
+    }
+  ],
+  "brokers": {
+    "exness": {
+      "api_key": "${EXNESS_API_KEY}",
+      "api_secret": "${EXNESS_API_SECRET}",
+      "account_id": "${EXNESS_ACCOUNT_ID}",
+      "execution_mode": "stealth",
+      "login_method": "api",
+      "base_url": "https://api.exness.com"
+    },
+    "bulenox": {
+      "api_key": "${BULENOX_API_KEY}",
+      "api_secret": "${BULENOX_API_SECRET}",
+      "account_id": "${BULENOX_ACCOUNT_ID}",
+      "execution_mode": "stealth",
+      "login_method": "visual",
+      "base_url": "https://api.bulenox.com"
+    }
+  },
+  "notifications": {
+    "telegram": {
+      "enabled": true,
+      "bot_token": "${TELEGRAM_BOT_TOKEN}",
+      "chat_id": "${TELEGRAM_CHAT_ID}",
+      "notify_on_trade": true,
+      "notify_on_error": true
+    },
+    "slack": {
+      "enabled": false,
+      "webhook_url": "${SLACK_WEBHOOK_URL}",
+      "channel": "#trading-alerts",
+      "notify_on_trade": true,
+      "notify_on_error": true
+    },
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "${EMAIL_USERNAME}",
+      "password": "${EMAIL_PASSWORD}",
+      "recipients": ["alerts@example.com"],
+      "notify_on_trade": false,
+      "notify_on_error": true
+    }
+  },
+  "passive_learning": {
+    "enabled": true,
+    "record_signals": true,
+    "record_trades": true,
+    "record_outcomes": true,
+    "analyze_interval": 86400,
+    "min_samples_for_analysis": 30
+  }
+}

@@ -1,0 +1,31 @@
+name: Full Cloud System Check
+
+on: 
+  workflow_dispatch: 
+  schedule: 
+    - cron: '0 6 * * *'  # Every day at 6AM UTC 
+
+jobs: 
+  cloud-test: 
+    runs-on: ubuntu-latest 
+    steps: 
+    - name: Checkout Repo 
+      uses: actions/checkout@v3 
+
+    - name: Setup Python 
+      uses: actions/setup-python@v4 
+      with: 
+        python-version: '3.10' 
+
+    - name: Install SSH Client 
+      run: sudo apt-get install openssh-client -y 
+
+    - name: Run System Check Script 
+      env: 
+        SSH_KEY_PATH: ${{ secrets.SSH_KEY_PATH }} 
+        VAST_INSTANCE_IP: ${{ secrets.VAST_INSTANCE_IP }} 
+        SSH_USER: ${{ secrets.SSH_USER }} 
+        FLASK_PORT: ${{ secrets.FLASK_PORT }} 
+      run: | 
+        chmod +x run_full_check.sh 
+        ./run_full_check.sh

@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Non-Farm Payrolls",
+    "country": "United States",
+    "currency": "USD",
+    "impact": "high",
+    "datetime": "2025-08-04T22:33:51.959700",
+    "forecast": "200K",
+    "previous": "175K"
+  },
+  {
+    "title": "ECB Press Conference",
+    "country": "European Union",
+    "currency": "EUR",
+    "impact": "high",
+    "datetime": "2025-08-05T00:18:51.959700",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "title": "Retail Sales m/m",
+    "country": "United Kingdom",
+    "currency": "GBP",
+    "impact": "medium",
+    "datetime": "2025-08-04T22:28:51.959700",
+    "forecast": "0.3%",
+    "previous": "0.2%"
+  }
+]

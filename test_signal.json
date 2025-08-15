@@ -1,0 +1,13 @@
+{
+  "symbol": "EURUSD",
+  "action": "buy",
+  "lot_size": 0.01,
+  "tp_pips": 50,
+  "sl_pips": 30,
+  "strategy": "test_strategy",
+  "confidence": 0.85,
+  "market_data": {
+    "current_price": 1.0850,
+    "daily_range": 0.0045
+  }
+}

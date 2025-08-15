@@ -1,0 +1,100 @@
+{
+    "impact_levels": {
+        "high": {
+            "avoid_minutes_before": 30,
+            "avoid_minutes_after": 30,
+            "risk_multiplier": 0.5
+        },
+        "medium": {
+            "avoid_minutes_before": 15,
+            "avoid_minutes_after": 15,
+            "risk_multiplier": 0.75
+        },
+        "low": {
+            "avoid_minutes_before": 5,
+            "avoid_minutes_after": 5,
+            "risk_multiplier": 0.9
+        }
+    },
+    "currency_impact": {
+        "USD": [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "USDCHF",
+            "AUDUSD",
+            "USDCAD",
+            "NZDUSD",
+            "XAUUSD"
+        ],
+        "EUR": [
+            "EURUSD",
+            "EURGBP",
+            "EURJPY",
+            "EURCHF",
+            "EURAUD",
+            "EURCAD",
+            "EURNZD"
+        ],
+        "GBP": [
+            "GBPUSD",
+            "EURGBP",
+            "GBPJPY",
+            "GBPCHF",
+            "GBPAUD",
+            "GBPCAD",
+            "GBPNZD"
+        ],
+        "JPY": [
+            "USDJPY",
+            "EURJPY",
+            "GBPJPY",
+            "CHFJPY",
+            "AUDJPY",
+            "CADJPY",
+            "NZDJPY"
+        ],
+        "CHF": [
+            "USDCHF",
+            "EURCHF",
+            "GBPCHF",
+            "CHFJPY",
+            "AUDCHF",
+            "CADCHF",
+            "NZDCHF"
+        ],
+        "AUD": [
+            "AUDUSD",
+            "EURAUD",
+            "GBPAUD",
+            "AUDJPY",
+            "AUDCHF",
+            "AUDCAD",
+            "AUDNZD"
+        ],
+        "CAD": [
+            "USDCAD",
+            "EURCAD",
+            "GBPCAD",
+            "CADJPY",
+            "CADCHF",
+            "AUDCAD",
+            "NZDCAD"
+        ],
+        "NZD": [
+            "NZDUSD",
+            "EURNZD",
+            "GBPNZD",
+            "NZDJPY",
+            "NZDCHF",
+            "NZDCAD",
+            "AUDNZD"
+        ]
+    },
+    "api": {
+        "enabled": false,
+        "url": "https://api.forexfactory.com/news",
+        "api_key": ""
+    },
+    "refresh_interval_minutes": 60
+}

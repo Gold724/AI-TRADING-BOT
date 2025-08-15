@@ -1,0 +1,16 @@
+[
+  {
+    "currency": "USD",
+    "title": "Non-Farm Payrolls",
+    "impact": "high",
+    "start": "2025-08-04T22:03:51.959700",
+    "end": "2025-08-04T23:03:51.959700"
+  },
+  {
+    "currency": "EUR",
+    "title": "ECB Press Conference",
+    "impact": "high",
+    "start": "2025-08-04T23:48:51.959700",
+    "end": "2025-08-05T00:48:51.959700"
+  }
+]

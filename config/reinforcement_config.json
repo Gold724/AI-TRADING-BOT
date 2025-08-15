@@ -1,0 +1,26 @@
+{
+    "regime_awareness": true,
+    "reinforcement_learning": true,
+    "reward_threshold": 1.2,
+    "penalty_threshold": 0.8,
+    "ema_short": 50,
+    "ema_long": 200,
+    "atr_period": 14,
+    "atr_threshold": 0.0015,
+    "regime_reevaluation_hours": 2,
+    "min_trades_for_signal": 20,
+    "learning_rate": 0.1,
+    "discount_factor": 0.9,
+    "exploration_rate": 0.2,
+    "strategy_mapping": {
+        "bullish": ["breakout", "momentum"],
+        "bearish": ["pullback", "mean_reversion"],
+        "sideways": ["scalping", "high_rrr"]
+    },
+    "logging": {
+        "save_rl_decisions": true,
+        "save_regime_labels": true,
+        "log_regime_changes": true,
+        "alert_on_regime_change": true
+    }
+}

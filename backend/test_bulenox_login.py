@@ -1,22 +1,27 @@
-import undetected_chromedriver as uc
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import time
-import os
 import datetime
+import os
+import time
+
+import undetected_chromedriver as uc
 
 # Load environment variables for credentials
 from dotenv import load_dotenv
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
 load_dotenv()
 
-BULENOX_USERNAME = os.getenv('BULENOX_USERNAME')
-BULENOX_PASSWORD = os.getenv('BULENOX_PASSWORD')
+BULENOX_USERNAME = os.getenv("BULENOX_USERNAME")
+BULENOX_PASSWORD = os.getenv("BULENOX_PASSWORD")
 
-PROFILE_PATH = os.getenv('BULENOX_PROFILE_PATH', os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\User Data"))
-PROFILE_NAME = os.getenv('BULENOX_PROFILE_NAME', "Profile 15")
+PROFILE_PATH = os.getenv(
+    "BULENOX_PROFILE_PATH",
+    os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\User Data"),
+)
+PROFILE_NAME = os.getenv("BULENOX_PROFILE_NAME", "Profile 15")
 
-SCREENSHOT_DIR = os.path.join(os.path.dirname(__file__), 'screenshots')
+SCREENSHOT_DIR = os.path.join(os.path.dirname(__file__), "screenshots")
 if not os.path.exists(SCREENSHOT_DIR):
     os.makedirs(SCREENSHOT_DIR)
 
@@ -32,9 +37,9 @@ def main():
     options = uc.ChromeOptions()
     options.add_argument(f"--user-data-dir={PROFILE_PATH}")
     options.add_argument(f"--profile-directory={PROFILE_NAME}")
-    options.add_argument('--disable-blink-features=AutomationControlled')
-    options.add_argument('--disable-infobars')
-    options.add_argument('--disable-session-crashed-bubble')
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--disable-session-crashed-bubble")
 
     driver = uc.Chrome(options=options)
     driver.maximize_window()
@@ -51,7 +56,7 @@ def main():
             (By.ID, "username"),
             (By.NAME, "username"),
             (By.XPATH, "//input[@placeholder='Email']"),
-            (By.XPATH, "//input[@placeholder='Username']")
+            (By.XPATH, "//input[@placeholder='Username']"),
         ]
 
         username_field = None
@@ -78,7 +83,7 @@ def main():
             (By.ID, "password"),
             (By.NAME, "password"),
             (By.XPATH, "//input[@type='password']"),
-            (By.XPATH, "//input[@placeholder='Password']")
+            (By.XPATH, "//input[@placeholder='Password']"),
         ]
 
         password_field = None
@@ -103,9 +108,15 @@ def main():
         # Find and click login button
         login_button_selectors = [
             (By.XPATH, "//button[@type='submit']"),
-            (By.XPATH, "//button[contains(text(), 'Login') or contains(text(), 'Sign In')]"),
+            (
+                By.XPATH,
+                "//button[contains(text(), 'Login') or contains(text(), 'Sign In')]",
+            ),
             (By.XPATH, "//input[@type='submit']"),
-            (By.XPATH, "//button[contains(@class, 'login') or contains(@class, 'submit')]")
+            (
+                By.XPATH,
+                "//button[contains(@class, 'login') or contains(@class, 'submit')]",
+            ),
         ]
 
         login_button = None
@@ -130,7 +141,7 @@ def main():
         # Wait for dashboard or error
         try:
             WebDriverWait(driver, 15).until(
-                lambda d: 'dashboard' in d.current_url or 'login' not in d.current_url
+                lambda d: "dashboard" in d.current_url or "login" not in d.current_url
             )
             print("Login appears successful")
             save_screenshot(driver, "bulenox_dashboard")
@@ -143,5 +154,5 @@ def main():
         driver.quit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

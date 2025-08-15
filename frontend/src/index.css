@@ -1,12 +1,106 @@
 /* Basic CSS reset and styles */
+:root {
+  --primary-color: #00b4d8;
+  --secondary-color: #90e0ef;
+  --dark-bg: #0f0f1a;
+  --darker-bg: #16213e;
+  --text-light: #e6e6e6;
+  --text-primary: #ffffff;
+  --accent-gold: #ffd700;
+  --card-bg: rgba(26, 26, 46, 0.8);
+  --card-border: rgba(0, 180, 216, 0.2);
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #f3f4f6;
-  color: #111827;
+  font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--dark-bg);
+  background-image: url('/background.svg');
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+  color: var(--text-light);
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* Card styling */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Button styling */
+button {
+  background-color: var(--primary-color);
+  color: var(--dark-bg);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+button:hover {
+  background-color: var(--secondary-color);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Gold accent button */
+button.gold {
+  background-color: var(--accent-gold);
+  color: var(--darker-bg);
+}
+
+button.gold:hover {
+  background-color: #ffdf4d;
+}
+
+/* Outline button */
+button.outline {
+  background-color: transparent;
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+button.outline:hover {
+  background-color: rgba(0, 180, 216, 0.1);
+}
+
+/* Input styling */
+input, select {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.3);
 }

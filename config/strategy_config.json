@@ -21,6 +21,17 @@
       "trading_days": [1, 2, 3, 4, 5],
       "exclude_dates": ["2023-12-25", "2024-01-01"]
     },
+    "news_filter": {
+      "enabled": true,
+      "block_high_impact": true,
+      "block_medium_impact": false,
+      "block_window_minutes": 30,
+      "dynamic_risk_allocation": {
+        "enabled": true,
+        "high_impact_multiplier": 0.25,
+        "medium_impact_multiplier": 0.5
+      }
+    },
     "fibonacci": {
       "enabled": true,
       "min_level": 0.382,

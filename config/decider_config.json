@@ -1,0 +1,25 @@
+{
+    "llm": {
+        "enabled": true,
+        "provider": "openai",
+        "model": "gpt-3.5-turbo",
+        "api_key": "",
+        "api_endpoint": "https://api.openai.com/v1/chat/completions",
+        "temperature": 0.2,
+        "max_tokens": 500
+    },
+    "confidence_thresholds": {
+        "high": 80.0,
+        "medium": 60.0,
+        "low": 40.0
+    },
+    "weighting": {
+        "technical": 0.3,
+        "psychology": 0.6,
+        "news": 0.1
+    },
+    "history_lookback": {
+        "trades": 10,
+        "days": 7
+    }
+}

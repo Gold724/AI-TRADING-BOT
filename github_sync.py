@@ -15,11 +15,11 @@ instance and the GitHub repository. It can be used to:
 It integrates with the heartbeat system to provide status updates.
 """
 
+import argparse
+import json
+import logging
 import os
 import sys
-import argparse
-import logging
-import json
 from datetime import datetime
 from pathlib import Path
 
@@ -28,74 +28,79 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import the GitHub integration module
 from utils.github_integration import (
-    validate_github_config,
     check_for_updates,
+    create_github_issue,
     pull_updates,
     push_changes,
-    create_github_issue,
     sync_trading_results,
-    update_heartbeat_status
+    update_heartbeat_status,
+    validate_github_config,
 )
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join('logs', 'github_sync.log'))
-    ]
+        logging.FileHandler(os.path.join("logs", "github_sync.log")),
+    ],
 )
-logger = logging.getLogger('github_sync')
+logger = logging.getLogger("github_sync")
+
 
 def setup_logging():
     """Ensure the logs directory exists"""
-    os.makedirs('logs', exist_ok=True)
+    os.makedirs("logs", exist_ok=True)
+
 
 def parse_arguments():
     """Parse command line arguments"""
-    parser = argparse.ArgumentParser(description='GitHub Sync for AI Trading Sentinel')
-    
+    parser = argparse.ArgumentParser(description="GitHub Sync for AI Trading Sentinel")
+
     # Create a subparser for different commands
-    subparsers = parser.add_subparsers(dest='command', help='Command to execute')
-    
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+
     # Check for updates command
-    check_parser = subparsers.add_parser('check', help='Check for updates')
-    
+    check_parser = subparsers.add_parser("check", help="Check for updates")
+
     # Pull updates command
-    pull_parser = subparsers.add_parser('pull', help='Pull updates')
-    
+    pull_parser = subparsers.add_parser("pull", help="Pull updates")
+
     # Push changes command
-    push_parser = subparsers.add_parser('push', help='Push local changes')
-    push_parser.add_argument('--message', '-m', required=True, help='Commit message')
-    
+    push_parser = subparsers.add_parser("push", help="Push local changes")
+    push_parser.add_argument("--message", "-m", required=True, help="Commit message")
+
     # Sync trading results command
-    sync_parser = subparsers.add_parser('sync', help='Sync trading results')
-    sync_parser.add_argument('--file', '-f', required=True, help='Path to the trading results file')
-    
+    sync_parser = subparsers.add_parser("sync", help="Sync trading results")
+    sync_parser.add_argument(
+        "--file", "-f", required=True, help="Path to the trading results file"
+    )
+
     # Create issue command
-    issue_parser = subparsers.add_parser('issue', help='Create a GitHub issue')
-    issue_parser.add_argument('--title', '-t', required=True, help='Issue title')
-    issue_parser.add_argument('--body', '-b', required=True, help='Issue body')
-    issue_parser.add_argument('--labels', '-l', nargs='+', help='Issue labels')
-    
+    issue_parser = subparsers.add_parser("issue", help="Create a GitHub issue")
+    issue_parser.add_argument("--title", "-t", required=True, help="Issue title")
+    issue_parser.add_argument("--body", "-b", required=True, help="Issue body")
+    issue_parser.add_argument("--labels", "-l", nargs="+", help="Issue labels")
+
     return parser.parse_args()
+
 
 def main():
     """Main function"""
     # Setup logging
     setup_logging()
-    
+
     # Parse arguments
     args = parse_arguments()
-    
+
     # Validate GitHub configuration
     if not validate_github_config():
         logger.error("GitHub configuration is invalid. Please check your .env file.")
         sys.exit(1)
-    
+
     # Execute the requested command
-    if args.command == 'check':
+    if args.command == "check":
         updates_available, details = check_for_updates()
         if updates_available:
             logger.info(f"Updates available:\n{details}")
@@ -103,8 +108,8 @@ def main():
         else:
             logger.info(details)
             print(f"\n✓ {details}")
-    
-    elif args.command == 'pull':
+
+    elif args.command == "pull":
         success, result = pull_updates()
         if success:
             logger.info(f"Updates pulled successfully:\n{result}")
@@ -112,8 +117,8 @@ def main():
         else:
             logger.error(f"Failed to pull updates:\n{result}")
             print(f"\n✗ Failed to pull updates:\n{result}")
-    
-    elif args.command == 'push':
+
+    elif args.command == "push":
         success, result = push_changes(args.message)
         if success:
             logger.info(f"Changes pushed successfully:\n{result}")
@@ -121,8 +126,8 @@ def main():
         else:
             logger.error(f"Failed to push changes:\n{result}")
             print(f"\n✗ Failed to push changes:\n{result}")
-    
-    elif args.command == 'sync':
+
+    elif args.command == "sync":
         success, result = sync_trading_results(args.file)
         if success:
             logger.info(f"Trading results synced successfully:\n{result}")
@@ -130,8 +135,8 @@ def main():
         else:
             logger.error(f"Failed to sync trading results:\n{result}")
             print(f"\n✗ Failed to sync trading results:\n{result}")
-    
-    elif args.command == 'issue':
+
+    elif args.command == "issue":
         success, result = create_github_issue(args.title, args.body, args.labels)
         if success:
             logger.info(f"GitHub issue created successfully:\n{result}")
@@ -139,7 +144,7 @@ def main():
         else:
             logger.error(f"Failed to create GitHub issue:\n{result}")
             print(f"\n✗ Failed to create GitHub issue:\n{result}")
-    
+
     else:
         # If no command is provided, show help
         print("\nAI Trading Sentinel - GitHub Sync")
@@ -152,6 +157,7 @@ def main():
         print("  issue  - Create a GitHub issue\n")
         print("Use --help with any command for more information.")
 
+
 if __name__ == "__main__":
     try:
         main()
@@ -161,8 +167,8 @@ if __name__ == "__main__":
     except Exception as e:
         logger.exception("An unexpected error occurred")
         print(f"\n✗ An unexpected error occurred: {str(e)}")
-        
+
         # Update heartbeat status
         update_heartbeat_status("error", {"error": str(e)})
-        
+
         sys.exit(1)

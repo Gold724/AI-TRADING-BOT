@@ -23,7 +23,9 @@ def test_api_connection(base_url):
         response = requests.get(f"{base_url}/api/health", timeout=10)
         if response.status_code == 200:
             data = response.json()
-            print(f"✅ Connection successful! API version: {data.get('version', 'unknown')}")
+            print(
+                f"✅ Connection successful! API version: {data.get('version', 'unknown')}"
+            )
             return True
         else:
             print(f"❌ Connection failed with status code: {response.status_code}")
@@ -40,10 +42,14 @@ def test_strategy_endpoint(base_url):
         response = requests.get(f"{base_url}/api/strategy", timeout=10)
         if response.status_code == 200:
             data = response.json()
-            print(f"✅ Strategy endpoint working! Current strategy: {data.get('name', 'unknown')}")
+            print(
+                f"✅ Strategy endpoint working! Current strategy: {data.get('name', 'unknown')}"
+            )
             return True
         else:
-            print(f"❌ Strategy endpoint failed with status code: {response.status_code}")
+            print(
+                f"❌ Strategy endpoint failed with status code: {response.status_code}"
+            )
             return False
     except requests.exceptions.RequestException as e:
         print(f"❌ Strategy endpoint error: {e}")
@@ -59,7 +65,9 @@ def test_logs_endpoint(base_url):
         )
         if response.status_code == 200:
             data = response.json()
-            print(f"✅ Logs endpoint working! Retrieved {len(data.get('lines', []))} log lines")
+            print(
+                f"✅ Logs endpoint working! Retrieved {len(data.get('lines', []))} log lines"
+            )
             return True
         else:
             print(f"❌ Logs endpoint failed with status code: {response.status_code}")
@@ -74,27 +82,27 @@ def run_all_tests(base_url):
     print(f"\n🚀 Starting Remote UI Tests for {base_url}")
     print(f"📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("-" * 50)
-    
+
     tests = [
         ("API Connection", test_api_connection(base_url)),
         ("Strategy Endpoint", test_strategy_endpoint(base_url)),
         ("Logs Endpoint", test_logs_endpoint(base_url)),
     ]
-    
+
     print("\n" + "-" * 50)
     print("📊 Test Results Summary:")
-    
+
     all_passed = True
     for name, result in tests:
         status = "✅ PASS" if result else "❌ FAIL"
         if not result:
             all_passed = False
         print(f"{status} - {name}")
-    
+
     print("-" * 50)
     overall = "✅ ALL TESTS PASSED" if all_passed else "❌ SOME TESTS FAILED"
     print(f"\n{overall}")
-    
+
     return all_passed
 
 
@@ -107,7 +115,7 @@ def main():
         help="Base URL of the remote API (default: http://localhost:5000)",
     )
     args = parser.parse_args()
-    
+
     success = run_all_tests(args.url)
     return 0 if success else 1
 

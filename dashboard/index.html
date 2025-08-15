@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAE AI Trading Sentinel - Control Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex flex-col h-screen">
+        <!-- Header -->
+        <header class="bg-blue-600 text-white shadow-lg">
+            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-robot text-2xl"></i>
+                    <h1 class="text-xl font-bold">TRAE AI Trading Sentinel</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="connection-status" class="px-2 py-1 rounded bg-green-500 text-xs font-semibold flex items-center">
+                        <span class="h-2 w-2 bg-white rounded-full mr-1"></span>
+                        Connected
+                    </span>
+                    <div class="relative">
+                        <button id="user-menu" class="flex items-center space-x-1">
+                            <i class="fas fa-user-circle text-xl"></i>
+                            <span>Admin</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow overflow-auto">
+            <div class="container mx-auto px-4 py-6">
+                <!-- Dashboard Header -->
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+                    <div class="flex space-x-2">
+                        <select id="license-tier" class="bg-white border border-gray-300 rounded px-3 py-1 text-sm">
+                            <option value="free">Free Tier</option>
+                            <option value="standard">Standard Tier</option>
+                            <option value="pro">Pro Tier</option>
+                            <option value="elite">Elite Tier</option>
+                        </select>
+                        <button id="refresh-btn" class="bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-1 text-sm flex items-center">
+                            <i class="fas fa-sync-alt mr-1"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-gray-500 text-sm font-medium">Active Accounts</h3>
+                            <i class="fas fa-user-check text-blue-500"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-800">2</p>
+                        <p class="text-xs text-gray-500 mt-1">Exness, Bulenox</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-gray-500 text-sm font-medium">Signals Today</h3>
+                            <i class="fas fa-bell text-yellow-500"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-800">12</p>
+                        <p class="text-xs text-gray-500 mt-1">8 executed, 4 pending</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-gray-500 text-sm font-medium">Daily P&L</h3>
+                            <i class="fas fa-chart-line text-green-500"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-green-500">+$127.45</p>
+                        <p class="text-xs text-gray-500 mt-1">+2.3% today</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-gray-500 text-sm font-medium">System Status</h3>
+                            <i class="fas fa-heartbeat text-red-500"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-800">Healthy</p>
+                        <p class="text-xs text-gray-500 mt-1">Last heartbeat: 2 min ago</p>
+                    </div>
+                </div>
+
+                <!-- Main Content Sections -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Chart Section -->
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Performance Overview</h3>
+                                <div class="flex space-x-2">
+                                    <button class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-600">Day</button>
+                                    <button class="text-xs px-2 py-1 rounded">Week</button>
+                                    <button class="text-xs px-2 py-1 rounded">Month</button>
+                                </div>
+                            </div>
+                            <div class="h-64">
+                                <canvas id="performance-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Recent Trades -->
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Recent Trades</h3>
+                                <button class="text-blue-500 text-sm hover:underline">View All</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Direction</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P&L</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">10:45 AM</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">EURUSD</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-green-500">BUY</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">0.10</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-green-500">+$32.40</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm"><span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Closed</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">09:30 AM</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">GBPUSD</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-red-500">SELL</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">0.15</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-red-500">-$18.75</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm"><span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Closed</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">08:15 AM</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">XAUUSD</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-green-500">BUY</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">0.05</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-green-500">+$87.20</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm"><span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Closed</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">11:20 AM</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">USDJPY</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-green-500">BUY</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">0.20</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">$0.00</td>
+                                            <td class="px-4 py-2 whitespace-nowrap text-sm"><span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Open</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                        <!-- Manual Trade Execution -->
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Execute Trade</h3>
+                            <form id="trade-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Broker</label>
+                                    <select id="broker" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="exness">Exness</option>
+                                        <option value="bulenox">Bulenox</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Symbol</label>
+                                    <select id="symbol" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="EURUSD">EURUSD</option>
+                                        <option value="GBPUSD">GBPUSD</option>
+                                        <option value="USDJPY">USDJPY</option>
+                                        <option value="XAUUSD">XAUUSD</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Direction</label>
+                                    <div class="flex space-x-4">
+                                        <label class="flex items-center">
+                                            <input type="radio" name="direction" value="BUY" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                                            <span class="ml-2 text-sm text-gray-700">BUY</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" name="direction" value="SELL" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm text-gray-700">SELL</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Lot Size</label>
+                                    <input type="number" id="lot-size" value="0.01" min="0.01" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="flex space-x-4">
+                                    <div class="flex-1">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Stop Loss (pips)</label>
+                                        <input type="number" id="stop-loss" value="30" min="0" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Take Profit (pips)</label>
+                                        <input type="number" id="take-profit" value="60" min="0" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                                <div class="pt-2">
+                                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                        Execute Trade
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Dreamer Mode Toggle -->
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-lg font-semibold text-gray-800">Dreamer Mode</h3>
+                                <label class="flex items-center cursor-pointer">
+                                    <div class="relative">
+                                        <input type="checkbox" id="dreamer-toggle" class="sr-only">
+                                        <div class="block bg-gray-300 w-14 h-8 rounded-full"></div>
+                                        <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
+                                    </div>
+                                </label>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-2">Enable simulation mode to test strategies without real execution.</p>
+                            <div id="dreamer-stats" class="mt-4 hidden">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Simulated Balance:</span>
+                                    <span class="font-medium">$10,000.00</span>
+                                </div>
+                                <div class="flex justify-between text-sm mt-1">
+                                    <span class="text-gray-500">Simulated P&L:</span>
+                                    <span class="font-medium text-green-500">+$342.18</span>
+                                </div>
+                                <div class="flex justify-between text-sm mt-1">
+                                    <span class="text-gray-500">Win Rate:</span>
+                                    <span class="font-medium">68%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Agent Status -->
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Market AI Agent</h3>
+                                <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Last Analysis:</span>
+                                    <span>10:45 AM</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Signals Generated:</span>
+                                    <span>8 today</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Current Focus:</span>
+                                    <span>EURUSD (Bullish)</span>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                                    View AI Insights
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-gray-200 py-4">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="text-sm text-gray-500">
+                        &copy; 2023 TRAE AI Trading Sentinel. All rights reserved.
+                    </div>
+                    <div class="flex space-x-4 mt-2 md:mt-0">
+                        <a href="#" class="text-gray-400 hover:text-gray-600"><i class="fab fa-github"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-gray-600"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-gray-600"><i class="fas fa-envelope"></i></a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Toggle user dropdown
+        document.getElementById('user-menu').addEventListener('click', function() {
+            document.getElementById('user-dropdown').classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!document.getElementById('user-menu').contains(event.target)) {
+                document.getElementById('user-dropdown').classList.add('hidden');
+            }
+        });
+
+        // Toggle Dreamer Mode
+        document.getElementById('dreamer-toggle').addEventListener('change', function() {
+            const dreamerStats = document.getElementById('dreamer-stats');
+            if (this.checked) {
+                dreamerStats.classList.remove('hidden');
+            } else {
+                dreamerStats.classList.add('hidden');
+            }
+        });
+
+        // Handle trade form submission
+        document.getElementById('trade-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const broker = document.getElementById('broker').value;
+            const symbol = document.getElementById('symbol').value;
+            const direction = document.querySelector('input[name="direction"]:checked').value;
+            const lotSize = document.getElementById('lot-size').value;
+            const stopLoss = document.getElementById('stop-loss').value;
+            const takeProfit = document.getElementById('take-profit').value;
+
+            // Prepare payload for API
+            const payload = {
+                broker,
+                symbol,
+                direction,
+                lot_size: parseFloat(lotSize),
+                stop_loss: parseInt(stopLoss),
+                take_profit: parseInt(takeProfit),
+                strategy: 'manual',
+                source: 'dashboard'
+            };
+
+            console.log('Executing trade:', payload);
+
+            // In a real implementation, you would send this to your API
+            // fetch('/api/trade/stealth', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'X-API-Key': 'your-api-key-here'
+            //     },
+            //     body: JSON.stringify(payload)
+            // })
+            // .then(response => response.json())
+            // .then(data => {
+            //     console.log('Trade executed:', data);
+            //     // Show success message
+            // })
+            // .catch(error => {
+            //     console.error('Error executing trade:', error);
+            //     // Show error message
+            // });
+
+            // For demo purposes, show an alert
+            alert(`Trade submitted: ${direction} ${lotSize} ${symbol} on ${broker}`);
+        });
+
+        // Initialize performance chart
+        const ctx = document.getElementById('performance-chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'],
+                datasets: [{
+                    label: 'Account Balance',
+                    data: [10000, 10050, 10025, 10075, 10150, 10125, 10200, 10250],
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        grid: {
+                            borderDash: [2, 4],
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Refresh button functionality
+        document.getElementById('refresh-btn').addEventListener('click', function() {
+            // In a real implementation, you would fetch updated data
+            this.classList.add('animate-spin');
+            setTimeout(() => {
+                this.classList.remove('animate-spin');
+            }, 1000);
+        });
+    </script>
+
+    <style>
+        /* Custom styles */
+        #dreamer-toggle:checked ~ .dot {
+            transform: translateX(100%);
+        }
+        #dreamer-toggle:checked ~ .block {
+            background-color: #3B82F6;
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</body>
+</html>

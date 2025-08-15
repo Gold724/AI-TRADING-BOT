@@ -1,0 +1,147 @@
+name: Deploy to Contabo VPS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Run backend tests
+        run: |
+          pytest
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+      
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          npm test
+  
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+          if_key_exists: replace
+      
+      - name: Create .env file
+        run: |
+          echo "API_KEY=${{ secrets.API_KEY }}" >> .env
+          echo "API_SECRET=${{ secrets.API_SECRET }}" >> .env
+          echo "BROKER_URL=${{ secrets.BROKER_URL }}" >> .env
+          echo "ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}" >> .env
+          echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
+      
+      - name: Deploy to VPS
+        run: |
+          # Install rsync
+          sudo apt-get update && sudo apt-get install -y rsync
+          
+          # Exclude unnecessary files
+          rsync -avz --exclude '.git' --exclude '__pycache__' --exclude 'venv' --exclude 'node_modules' \
+            -e "ssh -p ${{ secrets.CONTABO_SSH_PORT || '22' }} -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.CONTABO_USERNAME || 'root' }}@${{ secrets.CONTABO_VPS_IP || '161.97.112.146' }}:~/ai-trading-sentinel/
+          
+          # Setup and restart service
+          ssh -p ${{ secrets.CONTABO_SSH_PORT || '22' }} -o StrictHostKeyChecking=no ${{ secrets.CONTABO_USERNAME || 'root' }}@${{ secrets.CONTABO_VPS_IP || '161.97.112.146' }} \
+            "cd ~/ai-trading-sentinel && \
+             python3 -m venv venv && \
+             source venv/bin/activate && \
+             pip install --upgrade pip && \
+             pip install -r requirements.txt && \
+             cd frontend && npm install && \
+             cd .. && \
+             sudo systemctl daemon-reload && \
+             sudo systemctl restart trae"
+      
+      - name: Wait for service to start
+        run: sleep 10
+        
+      - name: Healthcheck
+        id: healthcheck
+        run: |
+          python -c "import requests, sys, json; \
+          try: \
+            response = requests.get('http://${{ secrets.CONTABO_VPS_IP }}:5000/api/health', timeout=10); \
+            print(f'Status code: {response.status_code}'); \
+            print(f'Response: {response.text}'); \
+            if response.status_code == 200 and json.loads(response.text).get('status') == 'ok': \
+              sys.exit(0); \
+            else: \
+              sys.exit(1); \
+          except Exception as e: \
+            print(f'Error: {str(e)}'); \
+            sys.exit(1)"
+        continue-on-error: true
+
+      - name: Send Slack notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          custom_payload: |
+            {
+              "attachments": [
+                {
+                  "color": "${{ job.status == 'success' && steps.healthcheck.outcome == 'success' && 'good' || 'danger' }}",
+                  "text": "${{ job.status == 'success' && steps.healthcheck.outcome == 'success' && ':white_check_mark: Deployment successful' || ':x: Deployment failed' }}",
+                  "fields": [
+                    {
+                      "title": "Status",
+                      "value": "${{ job.status == 'success' && steps.healthcheck.outcome == 'success' && 'Healthy' || 'Unhealthy' }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Time",
+                      "value": "${{ github.event.repository.updated_at }}",
+                      "short": true
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

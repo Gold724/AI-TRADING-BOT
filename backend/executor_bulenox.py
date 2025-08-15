@@ -1,12 +1,18 @@
-import json
 import datetime
+import json
 
 from base_executor import BaseExecutor
-import json
-import datetime
+
 
 class ExecutorBulenox(BaseExecutor):
-    def __init__(self, signal=None, stopLoss=None, takeProfit=None, risk_percent=1.0, max_trades_per_day=6):
+    def __init__(
+        self,
+        signal=None,
+        stopLoss=None,
+        takeProfit=None,
+        risk_percent=1.0,
+        max_trades_per_day=6,
+    ):
         super().__init__(signal, stopLoss, takeProfit)
         self.risk_percent = risk_percent
         self.max_trades_per_day = max_trades_per_day
@@ -18,9 +24,9 @@ class ExecutorBulenox(BaseExecutor):
             print("No signal provided, skipping trade")
             return False
 
-        symbol = self.signal.get('symbol')
-        side = self.signal.get('side')
-        quantity = self.signal.get('quantity')
+        symbol = self.signal.get("symbol")
+        side = self.signal.get("side")
+        quantity = self.signal.get("quantity")
 
         if not symbol or not side or not quantity:
             print("Incomplete signal data, skipping trade")
@@ -31,7 +37,7 @@ class ExecutorBulenox(BaseExecutor):
             "side": side,
             "quantity": quantity,
             "stopLoss": self.stopLoss,
-            "takeProfit": self.takeProfit
+            "takeProfit": self.takeProfit,
         }
 
         reason = "Trade executed from signal"
@@ -50,7 +56,7 @@ class ExecutorBulenox(BaseExecutor):
             "risk_percent": self.risk_percent,
             "order_details": order_details,
             "reason": reason,
-            "profit_loss": None
+            "profit_loss": None,
         }
         try:
             with open(self.log_file, "r") as f:

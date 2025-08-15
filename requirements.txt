@@ -1,6 +1,29 @@
-flask
-requests
-selenium
-pandas
-python-binance
-python-dotenv
+# TradeBot Sentinel - Core Requirements
+# Essential dependencies for Playwright automation and trading platform interaction
+
+# Playwright for browser automation
+playwright>=1.40.0
+
+# cURL to Python converter for trade request conversion
+curlconverter>=1.0.1
+
+# HTTP requests and API handling
+requests>=2.31.0
+aiohttp>=3.9.0
+
+# Environment management
+python-dotenv>=1.0.0
+
+# Logging and rich console output
+rich>=13.7.0
+
+# Data handling
+pandas>=2.1.0
+numpy>=1.24.0
+
+# Testing framework
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Optional: Enhanced screenshot capabilities
+Pillow>=10.0.0

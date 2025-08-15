@@ -1,0 +1,18 @@
+[Unit]
+Description=TRAE AI Trading Sentinel
+After=network.target
+
+[Service]
+Type=simple
+User=trae
+WorkingDirectory=/home/trae/AI-Sentinel
+ExecStart=/usr/bin/python3 /home/trae/AI-Sentinel/main.py
+Restart=always
+RestartSec=10
+Environment="PYTHONUNBUFFERED=1"
+Environment="TRAE_ENV=production"
+Environment="TRAE_PHASE=10"
+Environment="TRAE_LIVEOPS=true"
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,25 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only the necessary files for the heartbeat monitor
+COPY dashboard_heartbeat.py /app/
+COPY requirements.txt /app/
+
+# Install Python dependencies for the monitor
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create necessary directories
+RUN mkdir -p /app/logs
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV MONITOR_INTERVAL=60
+
+# Run the heartbeat monitor
+CMD ["python", "dashboard_heartbeat.py", "--interval", "${MONITOR_INTERVAL}", "--dashboard-url", "${DASHBOARD_URL}", "--api-key", "${API_KEY}"]

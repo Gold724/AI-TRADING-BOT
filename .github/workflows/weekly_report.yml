@@ -1,0 +1,187 @@
+name: Weekly Trading Report Generator
+
+on:
+  schedule:
+    # Run every Friday at 3:00 PM UTC
+    - cron: '0 15 * * 5'
+  workflow_dispatch:
+    # Allow manual triggering
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas matplotlib seaborn
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Generate weekly report
+        run: |
+          python weekly_report.py --format markdown
+      
+      - name: Upload report as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: weekly-trading-report
+          path: reports/weekly_*
+      
+      - name: Create GitHub Issue with report summary
+        if: success()
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Find the latest report directory
+            const reportsDir = path.join(process.env.GITHUB_WORKSPACE, 'reports');
+            const reportDirs = fs.readdirSync(reportsDir)
+              .filter(dir => dir.startsWith('weekly_'))
+              .sort()
+              .reverse();
+            
+            if (reportDirs.length === 0) {
+              console.log('No report directories found');
+              return;
+            }
+            
+            const latestReportDir = path.join(reportsDir, reportDirs[0]);
+            const mdReportPath = path.join(latestReportDir, 'weekly_report.md');
+            
+            if (!fs.existsSync(mdReportPath)) {
+              console.log(`Report file not found: ${mdReportPath}`);
+              return;
+            }
+            
+            // Read the report content
+            const reportContent = fs.readFileSync(mdReportPath, 'utf8');
+            
+            // Extract the date range from the first line
+            const titleMatch = reportContent.match(/# Weekly Trading Report: ([\d-]+) to ([\d-]+)/);
+            const dateRange = titleMatch ? `${titleMatch[1]} to ${titleMatch[2]}` : 'Latest Week';
+            
+            // Create the issue
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Weekly Trading Report: ${dateRange}`,
+              body: reportContent,
+              labels: ['report', 'automated']
+            });
+      
+      - name: Send report to Slack
+        if: success() && env.SLACK_WEBHOOK_URL
+        run: |
+          # Find the latest report directory
+          LATEST_REPORT_DIR=$(find reports -type d -name "weekly_*" | sort -r | head -n 1)
+          
+          if [ -z "$LATEST_REPORT_DIR" ]; then
+            echo "No report directories found"
+            exit 0
+          fi
+          
+          MD_REPORT_PATH="$LATEST_REPORT_DIR/weekly_report.md"
+          
+          if [ ! -f "$MD_REPORT_PATH" ]; then
+            echo "Report file not found: $MD_REPORT_PATH"
+            exit 0
+          fi
+          
+          # Extract the date range from the first line
+          DATE_RANGE=$(head -n 1 "$MD_REPORT_PATH" | sed -E 's/# Weekly Trading Report: ([0-9-]+) to ([0-9-]+)/\1 to \2/')
+          
+          # Create a summary for Slack
+          SUMMARY=$(cat "$MD_REPORT_PATH" | head -n 15)
+          
+          # Send to Slack
+          curl -X POST -H 'Content-type: application/json' --data "{
+            \"text\": \"Weekly Trading Report: $DATE_RANGE\",
+            \"blocks\": [
+              {
+                \"type\": \"header\",
+                \"text\": {
+                  \"type\": \"plain_text\",
+                  \"text\": \"Weekly Trading Report: $DATE_RANGE\"
+                }
+              },
+              {
+                \"type\": \"section\",
+                \"text\": {
+                  \"type\": \"mrkdwn\",
+                  \"text\": \"$SUMMARY\"
+                }
+              },
+              {
+                \"type\": \"section\",
+                \"text\": {
+                  \"type\": \"mrkdwn\",
+                  \"text\": \"*<$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID|View full report>*\"
+                }
+              }
+            ]
+          }" $SLACK_WEBHOOK_URL
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      
+      - name: Send report via email
+        if: success() && env.EMAIL_RECIPIENT
+        run: |
+          # Find the latest report directory
+          LATEST_REPORT_DIR=$(find reports -type d -name "weekly_*" | sort -r | head -n 1)
+          
+          if [ -z "$LATEST_REPORT_DIR" ]; then
+            echo "No report directories found"
+            exit 0
+          fi
+          
+          HTML_REPORT_PATH="$LATEST_REPORT_DIR/weekly_report.html"
+          
+          if [ ! -f "$HTML_REPORT_PATH" ]; then
+            echo "HTML report file not found: $HTML_REPORT_PATH"
+            exit 0
+          fi
+          
+          # Install email sending tool
+          apt-get update && apt-get install -y msmtp mailutils
+          
+          # Configure msmtp
+          echo "account default" > ~/.msmtprc
+          echo "host $EMAIL_SMTP_SERVER" >> ~/.msmtprc
+          echo "port $EMAIL_SMTP_PORT" >> ~/.msmtprc
+          echo "auth on" >> ~/.msmtprc
+          echo "user $EMAIL_USERNAME" >> ~/.msmtprc
+          echo "password $EMAIL_PASSWORD" >> ~/.msmtprc
+          echo "from $EMAIL_FROM" >> ~/.msmtprc
+          echo "tls on" >> ~/.msmtprc
+          echo "tls_starttls on" >> ~/.msmtprc
+          echo "tls_trust_file /etc/ssl/certs/ca-certificates.crt" >> ~/.msmtprc
+          chmod 600 ~/.msmtprc
+          
+          # Extract the date range from the HTML file
+          DATE_RANGE=$(grep -o "Weekly Trading Report: [0-9-]\+ to [0-9-]\+" "$HTML_REPORT_PATH" | head -n 1 | sed 's/Weekly Trading Report: //')
+          
+          # Send the email
+          (echo "Subject: Weekly Trading Report: $DATE_RANGE"
+           echo "To: $EMAIL_RECIPIENT"
+           echo "Content-Type: text/html"
+           echo ""
+           cat "$HTML_REPORT_PATH") | msmtp -a default $EMAIL_RECIPIENT
+        env:
+          EMAIL_SMTP_SERVER: ${{ secrets.EMAIL_SMTP_SERVER }}
+          EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}
+          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}

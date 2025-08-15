@@ -1,0 +1,16 @@
+{
+  "agent_id": "curator",
+  "role": "manager",
+  "win_rate": 0.0,
+  "profit_factor": 0.0,
+  "trades_count": 0,
+  "wins": 0,
+  "losses": 0,
+  "total_profit": 0.0,
+  "total_loss": 0.0,
+  "last_updated": "2023-08-07T00:00:00Z",
+  "specialization": ["strategy_management"],
+  "performance_history": [],
+  "strategies_archived": 0,
+  "strategies_promoted": 0
+}

@@ -25,3 +25,92 @@ services:
       - "5173:80"
     environment:
       - VITE_API_URL=http://localhost:5000/api
+      
+  bulenox-trade-sentinel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bulenox-trade-sentinel
+    ports:
+      - "5001:5000"
+      - "8501:8501"  # Streamlit dashboard
+    volumes:
+      - ./logs:/app/logs
+      - ./chrome_profiles:/app/chrome_profiles
+    environment:
+      - DISPLAY=:99
+      - BULENOX_USERNAME=${BULENOX_USERNAME}
+      - BULENOX_PASSWORD=${BULENOX_PASSWORD}
+      - API_KEY=${API_KEY}
+      - DEBUG_MODE=${DEBUG_MODE:-false}
+      - AUTO_LOGIN=true
+      - BULENOX_PROFILE_PATH=/app/chrome_profiles
+      - BULENOX_PROFILE_NAME=profile-13
+      - DASHBOARD_URL=${DASHBOARD_URL}
+    restart: unless-stopped
+
+  # Heartbeat monitoring service
+  heartbeat-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
+    container_name: heartbeat-monitor
+    restart: unless-stopped
+    environment:
+      - DASHBOARD_URL=${DASHBOARD_URL}
+      - API_KEY=${API_KEY}
+      - MONITOR_INTERVAL=${MONITOR_INTERVAL:-60}
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - bulenox-trade-sentinel
+
+  # Fallback account service (profile-14)
+  bulenox-fallback-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bulenox-fallback-1
+    restart: unless-stopped
+    environment:
+      - DISPLAY=:99
+      - BULENOX_USERNAME=${BULENOX_USERNAME_FALLBACK_1}
+      - BULENOX_PASSWORD=${BULENOX_PASSWORD_FALLBACK_1}
+      - BULENOX_PROFILE_PATH=/app/chrome_profiles
+      - BULENOX_PROFILE_NAME=profile-14
+      - USE_BULENOX=true
+      - AUTO_LOGIN=false  # Only login when needed
+      - DEBUG_MODE=${DEBUG_MODE:-false}
+      - API_KEY=${API_KEY}
+      - DASHBOARD_URL=${DASHBOARD_URL}
+      - SERVICE_PORT=5002
+    volumes:
+      - ./logs:/app/logs
+      - ./chrome_profiles_fallback_1:/app/chrome_profiles
+    ports:
+      - "5002:5002"  # API port
+
+  # Fallback account service (profile-15)
+  bulenox-fallback-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bulenox-fallback-2
+    restart: unless-stopped
+    environment:
+      - DISPLAY=:99
+      - BULENOX_USERNAME=${BULENOX_USERNAME_FALLBACK_2}
+      - BULENOX_PASSWORD=${BULENOX_PASSWORD_FALLBACK_2}
+      - BULENOX_PROFILE_PATH=/app/chrome_profiles
+      - BULENOX_PROFILE_NAME=profile-15
+      - USE_BULENOX=true
+      - AUTO_LOGIN=false  # Only login when needed
+      - DEBUG_MODE=${DEBUG_MODE:-false}
+      - API_KEY=${API_KEY}
+      - DASHBOARD_URL=${DASHBOARD_URL}
+      - SERVICE_PORT=5003
+    volumes:
+      - ./logs:/app/logs
+      - ./chrome_profiles_fallback_2:/app/chrome_profiles
+    ports:
+      - "5003:5003"  # API port

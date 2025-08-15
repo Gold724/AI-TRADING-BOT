@@ -75,6 +75,15 @@ jobs:
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
+          
+      - name: Notify Slack on Test Completion
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always() && secrets.SLACK_WEBHOOK_URL != ''
 
   deploy:
     runs-on: ubuntu-latest
@@ -100,3 +109,33 @@ jobs:
           SSH_PORT: ${{ secrets.CONTABO_SSH_PORT }}
         run: |
           python deploy_to_contabo.py --ip "$VPS_IP" --password "$VPS_PASSWORD" --port "$SSH_PORT" --env-file .env.example
+          
+      - name: Notify Slack on Deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          text: 'Deployment to production completed :rocket:'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        
+      - name: Send Email Notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: TraeAI Deployment ${{ job.status }}
+          body: |
+            Deployment of TraeAI to production ${{ job.status }}.
+            
+            Commit: ${{ github.event.head_commit.message }}
+            Author: ${{ github.event.head_commit.author.name }}
+            Repository: ${{ github.repository }}
+            
+            See details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          to: ${{ secrets.EMAIL_RECIPIENT }}
+          from: TraeAI CI/CD <${{ secrets.EMAIL_USERNAME }}>
+        if: always() && secrets.EMAIL_RECIPIENT != ''

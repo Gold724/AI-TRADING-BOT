@@ -1,18 +1,25 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-import time
 import os
+import time
+
 from dotenv import load_dotenv
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+
 
 def login_bulenox_with_profile():
     # Load environment variables
     load_dotenv()
-    
+
     # Get profile paths from environment variables or use defaults
-    profile_path = os.getenv('BULENOX_PROFILE_PATH', r"C:\Users\Admin\AppData\Local\Google\Chrome\User Data")
-    profile_name = os.getenv('BULENOX_PROFILE_NAME', "Profile 13")
-    chromedriver_path = os.getenv('CHROMEDRIVER_PATH', r"D:\aibot\chromedriver-win64\chromedriver-win64\chromedriver.exe")
+    profile_path = os.getenv(
+        "BULENOX_PROFILE_PATH", r"C:\Users\Admin\AppData\Local\Google\Chrome\User Data"
+    )
+    profile_name = os.getenv("BULENOX_PROFILE_NAME", "Profile 13")
+    chromedriver_path = os.getenv(
+        "CHROMEDRIVER_PATH",
+        r"D:\aibot\chromedriver-win64\chromedriver-win64\chromedriver.exe",
+    )
 
     try:
         # Try to use the specified chromedriver path if available
@@ -45,13 +52,14 @@ def login_bulenox_with_profile():
     except Exception as e:
         print(f"Error initializing Chrome: {e}")
         print("Trying alternative approach...")
-        
+
         try:
             # Try with WebDriver Manager
             from webdriver_manager.chrome import ChromeDriverManager
+
             service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
-            
+
             # Open Bulenox
             driver.get("https://bulenox.projectx.com/login")
             print(f"✅ Loaded Bulenox login page using Chrome profile: {profile_name}")
@@ -61,8 +69,9 @@ def login_bulenox_with_profile():
             print(f"Error with alternative approach: {e2}")
             return
     finally:
-        if 'driver' in locals() and driver:
+        if "driver" in locals() and driver:
             driver.quit()
+
 
 if __name__ == "__main__":
     login_bulenox_with_profile()

@@ -1,0 +1,48 @@
+{
+  "data_dir": "data/ai_agent",
+  "analysis_interval": 300,
+  "symbols": ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD"],
+  "timeframes": ["M5", "M15", "H1", "H4"],
+  "indicators": {
+    "moving_averages": ["SMA", "EMA"],
+    "oscillators": ["RSI", "MACD", "Stochastic"],
+    "volatility": ["Bollinger Bands", "ATR"],
+    "trend": ["ADX", "Ichimoku"]
+  },
+  "strategies": {
+    "trend_following": {
+      "enabled": true,
+      "weight": 0.4
+    },
+    "mean_reversion": {
+      "enabled": true,
+      "weight": 0.3
+    },
+    "breakout": {
+      "enabled": true,
+      "weight": 0.2
+    },
+    "pattern_recognition": {
+      "enabled": true,
+      "weight": 0.1
+    }
+  },
+  "risk_management": {
+    "max_risk_per_trade": 0.01,
+    "max_daily_risk": 0.05,
+    "default_stop_loss": 30,
+    "default_take_profit": 60
+  },
+  "execution": {
+    "endpoint": "http://localhost:5000/api/trade/stealth",
+    "api_key": "${TRAE_API_KEY}",
+    "auto_execute": false,
+    "confirmation_required": true
+  },
+  "learning": {
+    "enabled": true,
+    "learn_from_trades": true,
+    "adaptation_rate": 0.1,
+    "min_samples": 30
+  }
+}

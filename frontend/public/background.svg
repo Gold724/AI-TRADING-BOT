@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <!-- Dark gradient background -->
+  <defs>
+    <linearGradient id="darkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0f1a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="glowCenter" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" style="stop-color:#00b4d8;stop-opacity:0.05" />
+      <stop offset="100%" style="stop-color:#00b4d8;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Base background -->
+  <rect width="1920" height="1080" fill="url(#darkGradient)" />
+  <rect width="1920" height="1080" fill="url(#glowCenter)" />
+  
+  <!-- Grid pattern -->
+  <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
+    <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#16213e" stroke-width="1" opacity="0.2" />
+  </pattern>
+  <rect width="1920" height="1080" fill="url(#grid)" />
+  
+  <!-- Abstract trading chart lines -->
+  <path d="M0,500 Q480,400 960,600 T1920,400" stroke="#00b4d8" stroke-width="2" fill="none" opacity="0.15" />
+  <path d="M0,550 Q480,650 960,450 T1920,550" stroke="#00b4d8" stroke-width="2" fill="none" opacity="0.1" />
+  <path d="M0,650 Q480,550 960,700 T1920,600" stroke="#ffd700" stroke-width="1.5" fill="none" opacity="0.05" />
+  
+  <!-- Digital circuit patterns -->
+  <path d="M100,100 L100,300 L300,300 L300,500 L500,500 L500,700" stroke="#16213e" stroke-width="2" fill="none" opacity="0.3" />
+  <path d="M1800,200 L1600,200 L1600,400 L1400,400 L1400,600 L1200,600" stroke="#16213e" stroke-width="2" fill="none" opacity="0.3" />
+  
+  <!-- Glowing dots representing data points -->
+  <g>
+    <circle cx="200" cy="500" r="3" fill="#00b4d8">
+      <animate attributeName="opacity" values="0.8;0.2;0.8" dur="3s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="400" cy="450" r="3" fill="#00b4d8">
+      <animate attributeName="opacity" values="0.8;0.2;0.8" dur="4s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="600" cy="550" r="3" fill="#00b4d8">
+      <animate attributeName="opacity" values="0.8;0.2;0.8" dur="5s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="800" cy="500" r="3" fill="#00b4d8">
+      <animate attributeName="opacity" values="0.8;0.2;0.8" dur="3.5s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="1000" cy="600" r="3" fill="#00b4d8">
+      <animate attributeName="opacity" values="0.8;0.2;0.8" dur="4.5s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="1200" cy="550" r="3" fill="#00b4d8">
+      <animate attributeName="opacity" values="0.8;0.2;0.8" dur="3.2s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="1400" cy="450" r="3" fill="#00b4d8">
+      <animate attributeName="opacity" values="0.8;0.2;0.8" dur="4.2s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="1600" cy="500" r="3" fill="#00b4d8">
+      <animate attributeName="opacity" values="0.8;0.2;0.8" dur="3.7s" repeatCount="indefinite" />
+    </circle>
+    
+    <!-- Gold coin indicators -->
+    <circle cx="300" cy="700" r="4" fill="#ffd700">
+      <animate attributeName="opacity" values="0.6;0.1;0.6" dur="4s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="700" cy="800" r="4" fill="#ffd700">
+      <animate attributeName="opacity" values="0.6;0.1;0.6" dur="5s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="1500" cy="300" r="4" fill="#ffd700">
+      <animate attributeName="opacity" values="0.6;0.1;0.6" dur="3.5s" repeatCount="indefinite" />
+    </circle>
+  </g>
+</svg>

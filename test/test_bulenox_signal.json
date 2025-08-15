@@ -1,0 +1,20 @@
+{
+    "signal_id": "test_bulenox_1",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "quantity": 1,
+    "take_profit": 50,
+    "stop_loss": 30,
+    "timestamp": "2023-07-01T12:00:00Z",
+    "source": "trae_ai",
+    "account_id": "default",
+    "metadata": {
+        "strategy": "trend_following",
+        "confidence": 0.85,
+        "indicators": {
+            "ema_cross": true,
+            "rsi": 65,
+            "macd": "bullish"
+        }
+    }
+}

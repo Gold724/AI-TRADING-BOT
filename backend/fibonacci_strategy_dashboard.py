@@ -1,12 +1,13 @@
+import argparse
+import json
 import os
 import sys
-import json
-import time
-import argparse
 import threading
+import time
 import webbrowser
 from datetime import datetime
-from flask import Flask, render_template, jsonify, request, send_from_directory
+
+from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.serving import make_server
 
 # Import Fibonacci strategy modules
@@ -14,7 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.executor_fibonacci import FibonacciExecutor
 
 # Initialize Flask app
-app = Flask(__name__, template_folder='templates')
+app = Flask(__name__, template_folder="templates")
 
 # Global variables
 server = None
@@ -24,7 +25,9 @@ history_file = "logs/fibonacci_trades.json"
 signals_file = "sample_fibonacci_signals.json"
 
 # Create templates directory if it doesn't exist
-os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'), exist_ok=True)
+os.makedirs(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"), exist_ok=True
+)
 
 # Create HTML template for the dashboard
 html_template = """
@@ -856,15 +859,21 @@ html_template = """
 """
 
 # Create HTML template file
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', 'dashboard.html'), 'w') as f:
+with open(
+    os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "templates", "dashboard.html"
+    ),
+    "w",
+) as f:
     f.write(html_template)
+
 
 # Load trade history
 def load_trade_history(file_path=history_file):
     """Load trade history from the logs file"""
     try:
         if os.path.exists(file_path):
-            with open(file_path, 'r') as f:
+            with open(file_path, "r") as f:
                 history = json.load(f)
             return history
         return []
@@ -872,12 +881,13 @@ def load_trade_history(file_path=history_file):
         print(f"Error loading trade history: {e}")
         return []
 
+
 # Load signals
 def load_signals(file_path=signals_file):
     """Load sample signals from JSON file"""
     try:
         if os.path.exists(file_path):
-            with open(file_path, 'r') as f:
+            with open(file_path, "r") as f:
                 signals = json.load(f)
             return signals
         return []
@@ -885,16 +895,18 @@ def load_signals(file_path=signals_file):
         print(f"Error loading signals: {e}")
         return []
 
+
 # Save signals
 def save_signals(signals, file_path=signals_file):
     """Save signals to a JSON file"""
     try:
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             json.dump(signals, f, indent=2)
         return True
     except Exception as e:
         print(f"Error saving signals: {e}")
         return False
+
 
 # Calculate metrics
 def calculate_metrics(trades):
@@ -904,54 +916,73 @@ def calculate_metrics(trades):
             "total_trades": 0,
             "successful_trades": 0,
             "success_rate": 0,
-            "total_pnl": 0
+            "total_pnl": 0,
         }
-    
+
     successful_trades = sum(1 for trade in trades if trade.get("success", False))
     success_rate = (successful_trades / len(trades)) * 100 if trades else 0
-    
+
     # Simple PnL calculation (would be more complex in a real system)
     total_pnl = 0
     for trade in trades:
         if trade.get("action") == "entry" or trade.get("action") == "reentry":
             # Deduct from PnL for entries
-            total_pnl -= trade.get("quantity", 0) * trade.get("price", 0) if trade.get("price") else 0
-        elif trade.get("action") == "partial_exit" or trade.get("action") == "take_profit" or trade.get("action") == "stop_loss":
+            total_pnl -= (
+                trade.get("quantity", 0) * trade.get("price", 0)
+                if trade.get("price")
+                else 0
+            )
+        elif (
+            trade.get("action") == "partial_exit"
+            or trade.get("action") == "take_profit"
+            or trade.get("action") == "stop_loss"
+        ):
             # Add to PnL for exits
-            total_pnl += trade.get("quantity", 0) * trade.get("price", 0) if trade.get("price") else 0
-    
+            total_pnl += (
+                trade.get("quantity", 0) * trade.get("price", 0)
+                if trade.get("price")
+                else 0
+            )
+
     return {
         "total_trades": len(trades),
         "successful_trades": successful_trades,
         "success_rate": success_rate,
-        "total_pnl": total_pnl
+        "total_pnl": total_pnl,
     }
 
-# Flask routes
-@app.route('/')
-def index():
-    return render_template('dashboard.html')
 
-@app.route('/api/active-trades')
+# Flask routes
+@app.route("/")
+def index():
+    return render_template("dashboard.html")
+
+
+@app.route("/api/active-trades")
 def get_active_trades():
     return jsonify(active_trades)
 
-@app.route('/api/trade-history')
+
+@app.route("/api/trade-history")
 def get_trade_history():
     trades = load_trade_history()
     return jsonify(trades)
 
-@app.route('/api/signals')
+
+@app.route("/api/signals")
 def get_signals():
     signals = load_signals()
     return jsonify(signals)
 
-@app.route('/api/recent-activity')
+
+@app.route("/api/recent-activity")
 def get_recent_activity():
     trades = load_trade_history()
     # Get the 5 most recent trades
-    recent_trades = sorted(trades, key=lambda x: x.get("timestamp", ""), reverse=True)[:5]
-    
+    recent_trades = sorted(trades, key=lambda x: x.get("timestamp", ""), reverse=True)[
+        :5
+    ]
+
     activity = []
     for trade in recent_trades:
         timestamp = trade.get("timestamp", "")
@@ -959,160 +990,32 @@ def get_recent_activity():
         side = trade.get("side", "Unknown")
         action = trade.get("action", "trade")
         success = trade.get("success", False)
-        
+
         message = f"{symbol} {side} {action} - {'Successful' if success else 'Failed'}"
         activity.append({"timestamp": timestamp, "message": message})
-    
+
     return jsonify(activity)
 
-@app.route('/api/metrics')
+
+@app.route("/api/metrics")
 def get_metrics():
     trades = load_trade_history()
     metrics = calculate_metrics(trades)
     return jsonify(metrics)
 
-@app.route('/api/execute-trade', methods=['POST'])
+
+@app.route("/api/execute-trade", methods=["POST"])
 def execute_trade():
     data = request.json
-    
+
     # Validate required fields
     required_fields = ["symbol", "side", "quantity", "entry", "fib_low", "fib_high"]
     for field in required_fields:
         if field not in data:
-            return jsonify({"success": False, "message": f"Missing required field: {field}"})
-    
-    # Create signal dictionary
-    signal = {
-        "symbol": data["symbol"],
-        "side": data["side"],
-        "quantity": float(data["quantity"]),
-        "entry": float(data["entry"]),
-        "fib_low": float(data["fib_low"]),
-        "fib_high": float(data["fib_high"]),
-        "direction": "long" if data["side"].lower() == "buy" else "short"
-    }
-    
-    # Add optional fields
-    if "stop_loss" in data and data["stop_loss"]:
-        signal["stopLoss"] = float(data["stop_loss"])
-    if "take_profit" in data and data["take_profit"]:
-        signal["takeProfit"] = float(data["take_profit"])
-    if "stealth_level" in data:
-        signal["stealth_level"] = int(data["stealth_level"])
-    
-    # Execute trade in a separate thread
-    def execute_fibonacci_trade(signal):
-        try:
-            # Create executor
-            executor = FibonacciExecutor(
-                signal=signal,
-                stopLoss=signal.get("stopLoss"),
-                takeProfit=signal.get("takeProfit"),
-                stealth_level=signal.get("stealth_level", 2)
+            return jsonify(
+                {"success": False, "message": f"Missing required field: {field}"}
             )
-            
-            # Execute trade
-            success = executor.execute_trade()
-            
-            # Update active trades
-            if success:
-                global active_trades
-                trade_id = len(active_trades) + 1
-                active_trades.append({
-                    "id": trade_id,
-                    "symbol": signal["symbol"],
-                    "side": signal["side"],
-                    "quantity": signal["quantity"],
-                    "entry": signal["entry"],
-                    "current_level": "Entry",
-                    "next_target": executor.fib_targets[0] if executor.fib_targets else None,
-                    "status": "active"
-                })
-        except Exception as e:
-            print(f"Error executing Fibonacci trade: {e}")
-    
-    # Start execution thread
-    thread = threading.Thread(target=execute_fibonacci_trade, args=(signal,))
-    thread.daemon = True
-    thread.start()
-    
-    return jsonify({"success": True, "message": "Trade execution started"})
 
-@app.route('/api/execute-signal/<int:index>', methods=['POST'])
-def execute_signal(index):
-    signals = load_signals()
-    
-    if index < 0 or index >= len(signals):
-        return jsonify({"success": False, "message": "Invalid signal index"})
-    
-    signal = signals[index]
-    
-    # Execute trade in a separate thread
-    def execute_fibonacci_trade(signal):
-        try:
-            # Create executor
-            executor = FibonacciExecutor(
-                signal=signal,
-                stopLoss=signal.get("stopLoss"),
-                takeProfit=signal.get("takeProfit"),
-                stealth_level=signal.get("stealth_level", 2)
-            )
-            
-            # Execute trade
-            success = executor.execute_trade()
-            
-            # Update active trades
-            if success:
-                global active_trades
-                trade_id = len(active_trades) + 1
-                active_trades.append({
-                    "id": trade_id,
-                    "symbol": signal["symbol"],
-                    "side": signal["side"],
-                    "quantity": signal["quantity"],
-                    "entry": signal["entry"],
-                    "current_level": "Entry",
-                    "next_target": executor.fib_targets[0] if executor.fib_targets else None,
-                    "status": "active"
-                })
-        except Exception as e:
-            print(f"Error executing Fibonacci trade: {e}")
-    
-    # Start execution thread
-    thread = threading.Thread(target=execute_fibonacci_trade, args=(signal,))
-    thread.daemon = True
-    thread.start()
-    
-    return jsonify({"success": True, "message": "Signal execution started"})
-
-@app.route('/api/close-trade/<int:id>', methods=['POST'])
-def close_trade(id):
-    global active_trades
-    
-    # Find trade by ID
-    trade = next((t for t in active_trades if t["id"] == id), None)
-    
-    if not trade:
-        return jsonify({"success": False, "message": "Trade not found"})
-    
-    # Remove trade from active trades
-    active_trades = [t for t in active_trades if t["id"] != id]
-    
-    # In a real implementation, you would also close the actual trade
-    # through the broker interface
-    
-    return jsonify({"success": True, "message": "Trade closed successfully"})
-
-@app.route('/api/add-signal', methods=['POST'])
-def add_signal():
-    data = request.json
-    
-    # Validate required fields
-    required_fields = ["symbol", "side", "quantity", "entry", "fib_low", "fib_high", "description"]
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"success": False, "message": f"Missing required field: {field}"})
-    
     # Create signal dictionary
     signal = {
         "symbol": data["symbol"],
@@ -1122,9 +1025,8 @@ def add_signal():
         "fib_low": float(data["fib_low"]),
         "fib_high": float(data["fib_high"]),
         "direction": "long" if data["side"].lower() == "buy" else "short",
-        "description": data["description"]
     }
-    
+
     # Add optional fields
     if "stop_loss" in data and data["stop_loss"]:
         signal["stopLoss"] = float(data["stop_loss"])
@@ -1132,85 +1034,246 @@ def add_signal():
         signal["takeProfit"] = float(data["take_profit"])
     if "stealth_level" in data:
         signal["stealth_level"] = int(data["stealth_level"])
-    
+
+    # Execute trade in a separate thread
+    def execute_fibonacci_trade(signal):
+        try:
+            # Create executor
+            executor = FibonacciExecutor(
+                signal=signal,
+                stopLoss=signal.get("stopLoss"),
+                takeProfit=signal.get("takeProfit"),
+                stealth_level=signal.get("stealth_level", 2),
+            )
+
+            # Execute trade
+            success = executor.execute_trade()
+
+            # Update active trades
+            if success:
+                global active_trades
+                trade_id = len(active_trades) + 1
+                active_trades.append(
+                    {
+                        "id": trade_id,
+                        "symbol": signal["symbol"],
+                        "side": signal["side"],
+                        "quantity": signal["quantity"],
+                        "entry": signal["entry"],
+                        "current_level": "Entry",
+                        "next_target": (
+                            executor.fib_targets[0] if executor.fib_targets else None
+                        ),
+                        "status": "active",
+                    }
+                )
+        except Exception as e:
+            print(f"Error executing Fibonacci trade: {e}")
+
+    # Start execution thread
+    thread = threading.Thread(target=execute_fibonacci_trade, args=(signal,))
+    thread.daemon = True
+    thread.start()
+
+    return jsonify({"success": True, "message": "Trade execution started"})
+
+
+@app.route("/api/execute-signal/<int:index>", methods=["POST"])
+def execute_signal(index):
+    signals = load_signals()
+
+    if index < 0 or index >= len(signals):
+        return jsonify({"success": False, "message": "Invalid signal index"})
+
+    signal = signals[index]
+
+    # Execute trade in a separate thread
+    def execute_fibonacci_trade(signal):
+        try:
+            # Create executor
+            executor = FibonacciExecutor(
+                signal=signal,
+                stopLoss=signal.get("stopLoss"),
+                takeProfit=signal.get("takeProfit"),
+                stealth_level=signal.get("stealth_level", 2),
+            )
+
+            # Execute trade
+            success = executor.execute_trade()
+
+            # Update active trades
+            if success:
+                global active_trades
+                trade_id = len(active_trades) + 1
+                active_trades.append(
+                    {
+                        "id": trade_id,
+                        "symbol": signal["symbol"],
+                        "side": signal["side"],
+                        "quantity": signal["quantity"],
+                        "entry": signal["entry"],
+                        "current_level": "Entry",
+                        "next_target": (
+                            executor.fib_targets[0] if executor.fib_targets else None
+                        ),
+                        "status": "active",
+                    }
+                )
+        except Exception as e:
+            print(f"Error executing Fibonacci trade: {e}")
+
+    # Start execution thread
+    thread = threading.Thread(target=execute_fibonacci_trade, args=(signal,))
+    thread.daemon = True
+    thread.start()
+
+    return jsonify({"success": True, "message": "Signal execution started"})
+
+
+@app.route("/api/close-trade/<int:id>", methods=["POST"])
+def close_trade(id):
+    global active_trades
+
+    # Find trade by ID
+    trade = next((t for t in active_trades if t["id"] == id), None)
+
+    if not trade:
+        return jsonify({"success": False, "message": "Trade not found"})
+
+    # Remove trade from active trades
+    active_trades = [t for t in active_trades if t["id"] != id]
+
+    # In a real implementation, you would also close the actual trade
+    # through the broker interface
+
+    return jsonify({"success": True, "message": "Trade closed successfully"})
+
+
+@app.route("/api/add-signal", methods=["POST"])
+def add_signal():
+    data = request.json
+
+    # Validate required fields
+    required_fields = [
+        "symbol",
+        "side",
+        "quantity",
+        "entry",
+        "fib_low",
+        "fib_high",
+        "description",
+    ]
+    for field in required_fields:
+        if field not in data:
+            return jsonify(
+                {"success": False, "message": f"Missing required field: {field}"}
+            )
+
+    # Create signal dictionary
+    signal = {
+        "symbol": data["symbol"],
+        "side": data["side"],
+        "quantity": float(data["quantity"]),
+        "entry": float(data["entry"]),
+        "fib_low": float(data["fib_low"]),
+        "fib_high": float(data["fib_high"]),
+        "direction": "long" if data["side"].lower() == "buy" else "short",
+        "description": data["description"],
+    }
+
+    # Add optional fields
+    if "stop_loss" in data and data["stop_loss"]:
+        signal["stopLoss"] = float(data["stop_loss"])
+    if "take_profit" in data and data["take_profit"]:
+        signal["takeProfit"] = float(data["take_profit"])
+    if "stealth_level" in data:
+        signal["stealth_level"] = int(data["stealth_level"])
+
     # Load existing signals
     signals = load_signals()
-    
+
     # Add new signal
     signals.append(signal)
-    
+
     # Save signals
     if save_signals(signals):
         return jsonify({"success": True, "message": "Signal added successfully"})
     else:
         return jsonify({"success": False, "message": "Error saving signal"})
 
-@app.route('/api/delete-signal/<int:index>', methods=['DELETE'])
+
+@app.route("/api/delete-signal/<int:index>", methods=["DELETE"])
 def delete_signal(index):
     signals = load_signals()
-    
+
     if index < 0 or index >= len(signals):
         return jsonify({"success": False, "message": "Invalid signal index"})
-    
+
     # Remove signal
     signals.pop(index)
-    
+
     # Save signals
     if save_signals(signals):
         return jsonify({"success": True, "message": "Signal deleted successfully"})
     else:
         return jsonify({"success": False, "message": "Error deleting signal"})
 
-@app.route('/api/update-settings', methods=['POST'])
+
+@app.route("/api/update-settings", methods=["POST"])
 def update_settings():
     data = request.json
-    
+
     global history_file, signals_file
-    
+
     # Update settings
     if "history-file" in data:
         history_file = data["history-file"]
     if "signals-file" in data:
         signals_file = data["signals-file"]
-    
+
     return jsonify({"success": True, "message": "Settings updated successfully"})
 
-@app.route('/generate-report')
+
+@app.route("/generate-report")
 def generate_report():
     # In a real implementation, this would generate a report
     # For now, we'll just redirect to the dashboard
     return "<script>alert('Report generation would be implemented here'); window.location.href='/';</script>"
 
-@app.route('/visualize')
+
+@app.route("/visualize")
 def visualize():
     # In a real implementation, this would visualize the data
     # For now, we'll just redirect to the dashboard
     return "<script>alert('Data visualization would be implemented here'); window.location.href='/';</script>"
 
-@app.route('/simulate')
+
+@app.route("/simulate")
 def simulate():
     # In a real implementation, this would run a simulation
     # For now, we'll just redirect to the dashboard
     return "<script>alert('Simulation would be implemented here'); window.location.href='/';</script>"
 
-def start_server(host='127.0.0.1', port=5001, open_browser=True):
+
+def start_server(host="127.0.0.1", port=5001, open_browser=True):
     """Start the Flask server"""
     global server, server_thread
-    
+
     # Create server
     server = make_server(host, port, app)
-    
+
     # Start server in a separate thread
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.daemon = True
     server_thread.start()
-    
+
     print(f"\n🚀 Fibonacci Strategy Dashboard running at http://{host}:{port}")
     print("Press Ctrl+C to stop the server")
-    
+
     # Open browser if requested
     if open_browser:
         webbrowser.open(f"http://{host}:{port}")
+
 
 def stop_server():
     """Stop the Flask server"""
@@ -1219,25 +1282,38 @@ def stop_server():
         server.shutdown()
         print("\n⏹️ Server stopped")
 
+
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Fibonacci Strategy Dashboard")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Server host")
     parser.add_argument("--port", type=int, default=5001, help="Server port")
-    parser.add_argument("--history", type=str, default="logs/fibonacci_trades.json", help="Trade history file")
-    parser.add_argument("--signals", type=str, default="sample_fibonacci_signals.json", help="Signals file")
-    parser.add_argument("--no-browser", action="store_true", help="Don't open browser automatically")
-    
+    parser.add_argument(
+        "--history",
+        type=str,
+        default="logs/fibonacci_trades.json",
+        help="Trade history file",
+    )
+    parser.add_argument(
+        "--signals",
+        type=str,
+        default="sample_fibonacci_signals.json",
+        help="Signals file",
+    )
+    parser.add_argument(
+        "--no-browser", action="store_true", help="Don't open browser automatically"
+    )
+
     args = parser.parse_args()
-    
+
     global history_file, signals_file
     history_file = args.history
     signals_file = args.signals
-    
+
     try:
         # Start server
         start_server(args.host, args.port, not args.no_browser)
-        
+
         # Keep the main thread alive
         while True:
             time.sleep(1)
@@ -1247,6 +1323,7 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
         stop_server()
+
 
 if __name__ == "__main__":
     main()

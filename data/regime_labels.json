@@ -1,0 +1,11 @@
+[
+    {
+        "timestamp": "2025-08-05T02:42:36.221454",
+        "regime": "bullish",
+        "indicators": {
+            "ema_short": 50,
+            "ema_long": 200,
+            "atr_period": 14
+        }
+    }
+]

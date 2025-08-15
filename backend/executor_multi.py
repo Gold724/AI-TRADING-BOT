@@ -1,10 +1,14 @@
-import json
 import datetime
+import json
 import os
+
 from dotenv import load_dotenv
 
+
 class ExecutorMulti:
-    def __init__(self, risk_percent=1.0, max_trades_per_day=6, accounts_file="accounts.json"):
+    def __init__(
+        self, risk_percent=1.0, max_trades_per_day=6, accounts_file="accounts.json"
+    ):
         self.risk_percent = risk_percent
         self.max_trades_per_day = max_trades_per_day
         self.trades_executed = 0
@@ -44,7 +48,7 @@ class ExecutorMulti:
             "risk_percent": self.risk_percent,
             "order_details": order_details,
             "reason": reason,
-            "profit_loss": None
+            "profit_loss": None,
         }
         try:
             with open(self.log_file, "r") as f:

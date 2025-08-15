@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class BaseExecutor(ABC):
     def __init__(self, signal, stopLoss=None, takeProfit=None):
         self.signal = signal

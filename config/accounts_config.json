@@ -1,0 +1,37 @@
+{
+    "accounts": {
+        "main_funded_01": {
+            "name": "Main Funded Account",
+            "login_url": "https://bulenox.com/login",
+            "username": "${BROKER_USERNAME}",
+            "password": "${BROKER_PASSWORD}",
+            "min_confidence": 80,
+            "max_risk": 2.0,
+            "active": true
+        },
+        "backup_funded_02": {
+            "name": "Backup Funded Account",
+            "login_url": "https://bulenox.com/login",
+            "username": "${BROKER_USERNAME_BACKUP}",
+            "password": "${BROKER_PASSWORD_BACKUP}",
+            "min_confidence": 60,
+            "max_risk": 1.0,
+            "active": true
+        },
+        "demo_account": {
+            "name": "Demo Account",
+            "login_url": "https://bulenox.com/login",
+            "username": "${BROKER_USERNAME_DEMO}",
+            "password": "${BROKER_PASSWORD_DEMO}",
+            "min_confidence": 40,
+            "max_risk": 0.5,
+            "active": true
+        }
+    },
+    "default_account": "demo_account",
+    "confidence_thresholds": {
+        "high": 80,
+        "medium": 60,
+        "low": 40
+    }
+}

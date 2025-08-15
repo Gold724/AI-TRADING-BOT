@@ -1,0 +1,26 @@
+[
+    {
+        "timestamp": "2025-08-05T17:42:39.394688",
+        "pair": "EURUSD",
+        "direction": "buy",
+        "status": "aborted_news",
+        "account": null,
+        "error": null
+    },
+    {
+        "timestamp": "2025-08-05T17:42:54.468698",
+        "pair": "GBPJPY",
+        "direction": "sell",
+        "status": "aborted_news",
+        "account": null,
+        "error": null
+    },
+    {
+        "timestamp": "2025-08-05T17:43:13.294148",
+        "pair": "GBPJPY",
+        "direction": "sell",
+        "status": "aborted_news",
+        "account": null,
+        "error": null
+    }
+]

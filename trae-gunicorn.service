@@ -1,0 +1,24 @@
+[Unit]
+Description=Trae AI Trading Bot (Gunicorn)
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/ai-trading-sentinel
+ExecStart=/root/ai-trading-sentinel/venv/bin/gunicorn -w 2 -b 0.0.0.0:8000 main:app
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+# Add standard logging to journalctl
+StandardOutput=journal
+StandardError=journal
+# Add file logging
+LogsDirectory=trae
+RuntimeDirectory=trae
+RuntimeDirectoryMode=0755
+# Restart on failure with progressive backoff
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

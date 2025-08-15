@@ -1,13 +1,15 @@
-import os
 import ast
-import autopep8
+import os
 from pathlib import Path
+
+import autopep8
 
 # ✅ Set this to your actual project path (edit this line only)
 PROJECT_DIR = Path("C:/Users/Admin/Downloads/ai-trading-sentinel")
 
 # Track files that were modified or had issues
 fixed_files = []
+
 
 def analyze_and_fix_python_files(base_dir: Path):
     for filepath in base_dir.rglob("*.py"):
@@ -40,6 +42,7 @@ def analyze_and_fix_python_files(base_dir: Path):
             print(f" - {f}")
     else:
         print("No issues found.")
+
 
 # Main entry point
 if __name__ == "__main__":

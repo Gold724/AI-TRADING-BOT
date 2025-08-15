@@ -1,0 +1,112 @@
+# Trae Sentinel Configuration File
+# This file controls the behavior of the Trae AI Trading Sentinel system
+
+# News-Aware Trading System Configuration
+news_aware_trading:
+  # Enable or disable the news-aware trading features
+  enabled: true
+  
+  # News data source configuration
+  data_source:
+    provider: "forexfactory"  # Options: forexfactory, myfxbook, investing
+    update_frequency: "daily"  # Options: daily, hourly
+    cache_duration_hours: 24
+  
+  # News filtering configuration
+  filtering:
+    # Block trades around high-impact news
+    block_high_impact: true
+    # Time window in minutes to block trades before and after high-impact news
+    block_window_minutes: 45
+    # Block trades for medium-impact news
+    block_medium_impact: true
+    # Time window for medium-impact news if enabled
+    medium_impact_window_minutes: 20
+  
+  # Dynamic risk allocation
+  risk_allocation:
+    # Enable dynamic risk adjustment based on news impact
+    enabled: true
+    # Risk multipliers for different news impact levels
+    high_impact_multiplier: 0.2  # Reduce position size to 20% for high-impact news periods
+    medium_impact_multiplier: 0.4  # Reduce position size to 40% for medium-impact news periods
+    low_impact_multiplier: 0.8     # Slight reduction for low-impact news periods
+    
+  # Gold futures trading configuration
+  gold_futures:
+    # Enable gold futures trading
+    enabled: true
+    # Symbol for gold futures
+    symbol: "XAUUSD"
+    # Use contracts instead of lot sizes for gold futures
+    use_contracts: true
+    # Base contract size for gold futures
+    base_contract_size: 1
+    # Maximum allowed contract size
+    max_contract_size: 10
+  
+  # News-driven opportunity detection
+  opportunity_detection:
+    # Enable trading based on news volatility
+    enabled: true
+    # Minimum minutes to wait after news release before entering a trade
+    min_wait_after_news_minutes: 5
+    # Maximum minutes to consider for news-driven opportunities
+    max_opportunity_window_minutes: 45
+    # Minimum volatility increase required to trigger opportunity detection
+    min_volatility_increase_percent: 40
+
+# Notification settings
+notifications:
+  # Send notifications when trades are blocked due to news
+  notify_on_news_block: true
+  # Send notifications about upcoming high-impact news events
+  notify_upcoming_news: true
+  # Hours in advance to notify about upcoming high-impact news
+  upcoming_news_hours_ahead: 24
+  
+  # Notification channels
+  channels:
+    slack:
+      enabled: true
+      # Use the SLACK_WEBHOOK_URL environment variable
+    telegram:
+      enabled: false
+      # Configure in separate secure environment variables
+
+# Markdown-to-action triggers configuration
+markdown_triggers:
+  # Enable or disable markdown-based automation triggers
+  enabled: true
+  
+  # Phase prompt configuration
+  phase_prompts:
+    # Directory containing phase prompt markdown files
+    directory: "trae_prompts"
+    # Enable automatic loading of phase prompts
+    auto_load: true
+    # Default phase to load if none specified
+    default_phase: 1
+    # History tracking
+    track_history: true
+    history_file: "logs/prompts_history.json"
+  
+  # GitHub integration
+  github_integration:
+    # Enable GitHub Issue template integration
+    enabled: true
+    # Issue template to use for phase prompts
+    template: "phase_prompt.yml"
+    # Auto-tags for issues created with the template
+    auto_tags:
+      - "trae-phase"
+      - "auto-trigger"
+      - "review-needed"
+    # Actions that can be triggered from issues
+    actions:
+      # Enable phase deployment from issues
+      phase_deployment: true
+      # Enable test suite execution from issues
+      test_suite: true
+      # Enable data collection from issues
+      data_collection: true

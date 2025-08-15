@@ -23,21 +23,38 @@ function App() {
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
 
+  // Trade parameters
+  const [tradeParams, setTradeParams] = useState({
+    symbol: 'BTCUSDT',
+    side: 'BUY',
+    quantity: 0.001,
+    confidence: 0.8,
+    stopLoss: '',
+    takeProfit: ''
+  })
+
   React.useEffect(() => {
     async function fetchStrategies() {
       try {
-        const response = await fetch('http://localhost:5000/api/strategies')
+        const response = await fetch('http://localhost:5000/api/strategy', {
+          credentials: 'include',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        })
         if (response.status === 401) {
           setIsAuthenticated(false)
           return
         }
         setIsAuthenticated(true)
         const data = await response.json()
-        if (data.strategies) {
-          setVaultStrategies(data.strategies)
-          if (data.strategies.length > 0) {
-            setSelectedStrategy(data.strategies[0])
-          }
+        // Adapt the response format from /api/strategy to match what the frontend expects
+        if (data.strategy) {
+          const strategies = [data.strategy];
+          setVaultStrategies(strategies)
+          setSelectedStrategy(data.strategy)
         }
       } catch (error) {
         console.error('Failed to fetch strategies', error)
@@ -51,73 +68,35 @@ function App() {
     try {
       const response = await fetch('http://localhost:5000/api/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        mode: 'cors',
+        body: JSON.stringify({ account_id: username })
       })
       if (response.ok) {
         setIsAuthenticated(true)
       } else {
         const data = await response.json()
-        setAuthError(data.error || 'Login failed')
+        setAuthError(data.message || 'Login failed')
       }
     } catch (error) {
+      console.error('Login error:', error)
       setAuthError('Login failed')
     }
   }
 
   const handleLogout = async () => {
-    await fetch('http://localhost:5000/api/logout', { method: 'POST' })
+    await fetch('http://localhost:5000/api/logout', { 
+      method: 'POST',
+      credentials: 'include'
+    })
     setIsAuthenticated(false)
     setUsername('')
     setPassword('')
   }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="container mx-auto p-4 max-w-md">
-        <h2 className="text-2xl font-bold mb-4">Login</h2>
-        {authError && <div className="text-red-600 mb-2">{authError}</div>}
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={e => setUsername(e.target.value)}
-          className="mb-2 p-2 border rounded w-full"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          className="mb-4 p-2 border rounded w-full"
-        />
-        <button
-          onClick={handleLogin}
-          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
-        >
-          Login
-        </button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="container mx-auto p-4">
-      <button
-        onClick={handleLogout}
-        className="mb-4 bg-red-600 text-white px-4 py-2 rounded"
-      >
-        Logout
-      </button>
-
-  const [tradeParams, setTradeParams] = useState({
-    symbol: 'BTCUSDT',
-    side: 'BUY',
-    quantity: 0.001,
-    confidence: 0.8,
-    stopLoss: '',
-    takeProfit: ''
-  })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -212,9 +191,45 @@ function App() {
     fetchTradeHistory()
   }, [])
 
+  if (!isAuthenticated) {
+    return (
+      <div className="container mx-auto p-4 max-w-md">
+        <h2 className="text-2xl font-bold mb-4">Login</h2>
+        {authError && <div className="text-red-600 mb-2">{authError}</div>}
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          className="mb-2 p-2 border rounded w-full"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          className="mb-4 p-2 border rounded w-full"
+        />
+        <button
+          onClick={handleLogin}
+          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+        >
+          Login
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       <h1 className="text-3xl font-bold mb-6">AI Trading Sentinel Dashboard</h1>
+      
+      <button
+        onClick={handleLogout}
+        className="mb-4 bg-red-600 text-white px-4 py-2 rounded"
+      >
+        Logout
+      </button>
 
       <div className="mb-6">
         <button

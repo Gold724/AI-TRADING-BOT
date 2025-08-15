@@ -1,0 +1,77 @@
+name: TRAE Phase Prompt - Phase 10
+description: Transition to LiveOps with 24/7 Automated Trading
+title: "[PHASE]: 10 - LiveOps Activation"
+labels: ["trae-phase", "liveops", "production", "auto-trigger"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## TRAE Phase 10 Prompt
+        This issue will transition TRAE from development to full-time automated trading operations.
+  
+  - type: input
+    id: phase_number
+    attributes:
+      label: Phase Number
+      description: The phase number for this prompt
+      placeholder: "10"
+    validations:
+      required: true
+  
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: Describe the main aim of this phase
+      placeholder: "Transition to 24/7 automated trading with governance enforcement"
+    validations:
+      required: true
+  
+  - type: textarea
+    id: system_components
+    attributes:
+      label: System Components Affected
+      description: List files/modules to be modified
+      placeholder: "- sentinel_decider.py\n- stealth_executor.py\n- heartbeat.py\n- account_manager.py"
+    validations:
+      required: true
+  
+  - type: textarea
+    id: execution_commands
+    attributes:
+      label: Execution Commands
+      description: Any specific commands that should be run for this phase
+      placeholder: "./deploy_to_vps.sh --mode production"
+    validations:
+      required: false
+  
+  - type: checkboxes
+    id: trigger_action
+    attributes:
+      label: Trigger GitHub Action?
+      options:
+        - label: Yes, deploy LiveOps configuration
+          required: false
+  
+  - type: dropdown
+    id: action_type
+    attributes:
+      label: Action Type
+      description: If triggering an action, which type?
+      options:
+        - LiveOps Deployment
+        - Multi-Account Setup
+        - Broker Integration Test
+        - Governance Enforcement Test
+    validations:
+      required: false
+  
+  - type: markdown
+    attributes:
+      value: |
+        ## Additional Information
+        
+        This issue will be automatically tagged with `trae-phase`, `liveops`, `production`, and `auto-trigger` labels.
+        
+        The associated markdown prompt file will be created in the `/trae_prompts/` directory.

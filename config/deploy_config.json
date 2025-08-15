@@ -1,0 +1,97 @@
+{
+    "version": "1.0.0",
+    "environment": "development",
+    "run_integration_test": true,
+    "components": {
+        "monitoring_system": true,
+        "capital_allocator": true,
+        "model_refinement": true,
+        "metrics_dashboard": true,
+        "live_trading": true,
+        "emergency_protocol": true,
+        "signal_router": true
+    },
+    "broker": {
+        "name": "mock",
+        "api_key": "",
+        "api_secret": "",
+        "account_id": ""
+    },
+    "dashboard": {
+        "port": 8501,
+        "host": "localhost"
+    },
+    "monitoring": {
+        "metrics_interval_seconds": 60,
+        "alert_thresholds": {
+            "daily_drawdown_percent": 5.0,
+            "consecutive_losses": 5,
+            "win_rate_minimum": 40.0,
+            "balance_drop_percent": 10.0,
+            "cpu_usage_percent": 80.0,
+            "memory_usage_percent": 80.0,
+            "api_latency_ms": 2000
+        },
+        "notifications": {
+            "slack": {
+                "enabled": false,
+                "webhook_url": ""
+            },
+            "email": {
+                "enabled": false,
+                "smtp_server": "",
+                "smtp_port": 587,
+                "sender_email": "",
+                "receiver_email": "",
+                "username": "",
+                "password": ""
+            }
+        }
+    },
+    "capital_allocation": {
+        "update_interval_hours": 24,
+        "phases": {
+            "phase1": {
+                "max_capital_percent": 5.0,
+                "min_trades": 20,
+                "min_win_rate": 50.0,
+                "max_drawdown_percent": 5.0
+            },
+            "phase2": {
+                "max_capital_percent": 15.0,
+                "min_trades": 50,
+                "min_win_rate": 55.0,
+                "max_drawdown_percent": 10.0
+            },
+            "phase3": {
+                "max_capital_percent": 30.0,
+                "min_trades": 100,
+                "min_win_rate": 60.0,
+                "max_drawdown_percent": 15.0
+            },
+            "phase4": {
+                "max_capital_percent": 50.0,
+                "min_trades": 200,
+                "min_win_rate": 65.0,
+                "max_drawdown_percent": 20.0
+            },
+            "phase5": {
+                "max_capital_percent": 100.0,
+                "min_trades": 500,
+                "min_win_rate": 70.0,
+                "max_drawdown_percent": 25.0
+            }
+        }
+    },
+    "model_refinement": {
+        "update_interval_hours": 24,
+        "min_trades_for_analysis": 50,
+        "prompt_variants_to_generate": 5,
+        "performance_metrics": [
+            "win_rate",
+            "profit_factor",
+            "average_win_loss_ratio",
+            "max_drawdown"
+        ]
+    }
+}
