@@ -1,0 +1,303 @@
+# Promtail Configuration for TradeBot Sentinel Log Collection
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: info
+  log_format: logfmt
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    tenant_id: tradebot-sentinel
+    batchwait: 1s
+    batchsize: 1048576
+    timeout: 10s
+    backoff_config:
+      min_period: 500ms
+      max_period: 5m
+      max_retries: 10
+    # Optional: Basic auth if Loki requires authentication
+    # basic_auth:
+    #   username: ${LOKI_USERNAME}
+    #   password: ${LOKI_PASSWORD}
+
+scrape_configs:
+  # TradeBot Sentinel Application Logs
+  - job_name: tradebot-app
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: tradebot-sentinel
+          service: application
+          environment: ${ENVIRONMENT:-production}
+          __path__: /app/logs/tradebot*.log
+    pipeline_stages:
+      - match:
+          selector: '{job="tradebot-sentinel"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (?P<logger>\S+) - (?P<level>\S+) - (?P<message>.*)$'
+            - timestamp:
+                source: timestamp
+                format: '2006-01-02 15:04:05,000'
+            - labels:
+                level:
+                logger:
+            - output:
+                source: message
+
+  # Health Check Logs
+  - job_name: tradebot-health
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: tradebot-health
+          service: health-check
+          environment: ${ENVIRONMENT:-production}
+          __path__: /app/logs/health*.log
+    pipeline_stages:
+      - match:
+          selector: '{job="tradebot-health"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (?P<logger>\S+) - (?P<level>\S+) - (?P<message>.*)$'
+            - timestamp:
+                source: timestamp
+                format: '2006-01-02 15:04:05,000'
+            - labels:
+                level:
+                logger:
+            - output:
+                source: message
+
+  # Trading Logs (specific to trading operations)
+  - job_name: tradebot-trading
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: tradebot-trading
+          service: trading
+          environment: ${ENVIRONMENT:-production}
+          __path__: /app/logs/trading*.log
+    pipeline_stages:
+      - match:
+          selector: '{job="tradebot-trading"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (?P<logger>\S+) - (?P<level>\S+) - (?P<message>.*)$'
+            - timestamp:
+                source: timestamp
+                format: '2006-01-02 15:04:05,000'
+            - labels:
+                level:
+                logger:
+            - output:
+                source: message
+
+  # Error Logs (all error-level logs)
+  - job_name: tradebot-errors
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: tradebot-errors
+          service: error-tracking
+          environment: ${ENVIRONMENT:-production}
+          __path__: /app/logs/error*.log
+    pipeline_stages:
+      - match:
+          selector: '{job="tradebot-errors"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (?P<logger>\S+) - (?P<level>\S+) - (?P<message>.*)$'
+            - timestamp:
+                source: timestamp
+                format: '2006-01-02 15:04:05,000'
+            - labels:
+                level:
+                logger:
+            - output:
+                source: message
+
+  # System Logs (syslog)
+  - job_name: system-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: system
+          service: syslog
+          environment: ${ENVIRONMENT:-production}
+          __path__: /var/log/syslog
+    pipeline_stages:
+      - match:
+          selector: '{job="system"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}) (?P<hostname>\S+) (?P<process>\S+): (?P<message>.*)$'
+            - timestamp:
+                source: timestamp
+                format: 'Jan 02 15:04:05'
+            - labels:
+                hostname:
+                process:
+            - output:
+                source: message
+
+  # Nginx Access Logs
+  - job_name: nginx-access
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          service: web-server
+          log_type: access
+          environment: ${ENVIRONMENT:-production}
+          __path__: /var/log/nginx/access.log
+    pipeline_stages:
+      - match:
+          selector: '{job="nginx", log_type="access"}'
+          stages:
+            - regex:
+                expression: '^(?P<remote_addr>\S+) - (?P<remote_user>\S+) \[(?P<timestamp>[^\]]+)\] "(?P<method>\S+) (?P<path>\S+) (?P<protocol>\S+)" (?P<status>\d+) (?P<body_bytes_sent>\d+) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"'
+            - timestamp:
+                source: timestamp
+                format: '02/Jan/2006:15:04:05 -0700'
+            - labels:
+                method:
+                status:
+                remote_addr:
+            - output:
+                source: message
+
+  # Nginx Error Logs
+  - job_name: nginx-error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          service: web-server
+          log_type: error
+          environment: ${ENVIRONMENT:-production}
+          __path__: /var/log/nginx/error.log
+    pipeline_stages:
+      - match:
+          selector: '{job="nginx", log_type="error"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>\w+)\] (?P<pid>\d+)#(?P<tid>\d+): (?P<message>.*)$'
+            - timestamp:
+                source: timestamp
+                format: '2006/01/02 15:04:05'
+            - labels:
+                level:
+                pid:
+            - output:
+                source: message
+
+  # Docker Container Logs
+  - job_name: docker-containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["logging=promtail"]
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*?)'
+        target_label: 'container_name'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'logstream'
+      - source_labels: ['__meta_docker_container_label_logging_jobname']
+        target_label: 'job'
+    pipeline_stages:
+      - match:
+          selector: '{job=~".+"}'
+          stages:
+            - docker: {}
+            - timestamp:
+                source: timestamp
+                format: RFC3339Nano
+            - output:
+                source: output
+
+  # Journal Logs (systemd)
+  - job_name: journal
+    journal:
+      max_age: 12h
+      labels:
+        job: systemd-journal
+        service: systemd
+        environment: ${ENVIRONMENT:-production}
+    pipeline_stages:
+      - match:
+          selector: '{job="systemd-journal"}'
+          stages:
+            - json:
+                expressions:
+                  priority: PRIORITY
+                  unit: _SYSTEMD_UNIT
+                  hostname: _HOSTNAME
+                  message: MESSAGE
+            - labels:
+                priority:
+                unit:
+                hostname:
+            - timestamp:
+                source: __REALTIME_TIMESTAMP
+                format: Unix
+            - output:
+                source: message
+
+  # Custom Application Metrics Logs
+  - job_name: tradebot-metrics
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: tradebot-metrics
+          service: metrics
+          environment: ${ENVIRONMENT:-production}
+          __path__: /app/logs/metrics*.log
+    pipeline_stages:
+      - match:
+          selector: '{job="tradebot-metrics"}'
+          stages:
+            - json:
+                expressions:
+                  timestamp: timestamp
+                  metric_name: metric_name
+                  metric_value: metric_value
+                  labels: labels
+            - timestamp:
+                source: timestamp
+                format: RFC3339
+            - labels:
+                metric_name:
+            - output:
+                source: message
+
+# Limits configuration
+limits_config:
+  readline_rate: 10000
+  readline_burst: 20000
+
+# Target configuration
+target_config:
+  sync_period: 10s
+
+# Tracing configuration (optional)
+# tracing:
+#   enabled: true
+#   jaeger:
+#     agent:
+#       host: jaeger
+#       port: 6831

@@ -1,0 +1,56 @@
+{
+  "timestamp": "2025-08-17T09:52:44.126302",
+  "total_tests": 6,
+  "passed_tests": 5,
+  "failed_tests": 1,
+  "success_rate": 83.33333333333334,
+  "overall_status": "FAIL",
+  "risk_parameters": {
+    "max_position_size": 10.0,
+    "max_risk_per_trade": 2.0,
+    "max_daily_loss": 100.0,
+    "max_drawdown": 20.0,
+    "stop_loss_percentage": 1.0,
+    "take_profit_percentage": 2.0,
+    "max_concurrent_positions": 5,
+    "risk_reward_ratio": 2.0
+  },
+  "test_results": [
+    {
+      "test_name": "Contract Size Validation",
+      "passed": true,
+      "message": "Validated 8 contract size scenarios",
+      "timestamp": "2025-08-17T09:52:44.124071"
+    },
+    {
+      "test_name": "Position Size Calculation",
+      "passed": true,
+      "message": "Tested 3 position sizing scenarios",
+      "timestamp": "2025-08-17T09:52:44.124482"
+    },
+    {
+      "test_name": "Risk Limits Enforcement",
+      "passed": true,
+      "message": "Tested concurrent positions, daily loss, and position size limits",
+      "timestamp": "2025-08-17T09:52:44.124864"
+    },
+    {
+      "test_name": "Stop Loss / Take Profit",
+      "passed": false,
+      "message": "Tested 3 SL/TP scenarios",
+      "timestamp": "2025-08-17T09:52:44.125322"
+    },
+    {
+      "test_name": "Drawdown Protection",
+      "passed": true,
+      "message": "Tested 4 drawdown scenarios",
+      "timestamp": "2025-08-17T09:52:44.125685"
+    },
+    {
+      "test_name": "Emergency Stop Conditions",
+      "passed": true,
+      "message": "Tested 6 emergency scenarios",
+      "timestamp": "2025-08-17T09:52:44.126008"
+    }
+  ]
+}

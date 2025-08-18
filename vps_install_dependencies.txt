@@ -1,0 +1,96 @@
+# VPS DEPENDENCY INSTALLATION - Fix Missing Python Packages
+# Copy and paste this ENTIRE block to install required dependencies
+
+# STEP 1: Ensure we're in the correct directory with virtual environment
+cd /root/AI-TRADING-BOT
+source venv/bin/activate
+
+# STEP 2: Upgrade pip first
+pip install --upgrade pip
+
+# STEP 3: Install essential dependencies for AI Trading Sentinel
+echo "📦 Installing core dependencies..."
+pip install python-dotenv
+pip install requests
+pip install flask
+pip install flask-cors
+pip install playwright
+pip install pandas
+pip install numpy
+pip install schedule
+pip install websocket-client
+pip install python-telegram-bot
+pip install slack-sdk
+
+# STEP 4: Install Playwright browsers
+echo "🌐 Installing Playwright browsers..."
+playwright install
+playwright install-deps
+
+# STEP 5: Create basic .env file if missing
+if [ ! -f ".env" ]; then
+    echo "📝 Creating basic .env file..."
+    cat > .env << 'ENVEOF'
+# AI Trading Sentinel Configuration
+BROKER_USERNAME=BX64883
+BROKER_PASSWORD=XujhMzFf6K
+BROKER_URL=https://bulenox.projectx.com/loginhttps://hooks.slack.com/services/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
+TRADING_MODE=paper
+RISK_LEVEL=conservative
+MAX_POSITION_SIZE=1000
+STOP_LOSS_PERCENT=2.0
+TAKE_PROFIT_PERCENT=4.0
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/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
+TELEGRAM_BOT_TOKEN=8373070728:AAGKIl4lYLyUBtkEj46RgTl-HE6xSj15WOw
+TELEGRAM_CHAT_ID=@AITRADINGSENTINEL_BOT
+LOG_LEVEL=INFO
+ENVEOF
+fi
+
+# STEP 6: Test the installation
+echo "🧪 Testing Python dependencies..."
+python -c "import dotenv; print('✅ dotenv installed')"
+python -c "import requests; print('✅ requests installed')"
+python -c "import flask; print('✅ flask installed')"
+python -c "import playwright; print('✅ playwright installed')"
+
+# STEP 7: Test main.py again
+echo "🧪 Testing main.py with dependencies..."
+timeout 10s python main.py || echo "Test completed (this is expected)"
+
+# STEP 8: Check if requirements.txt exists and install from it
+if [ -f "requirements.txt" ]; then
+    echo "📋 Installing from requirements.txt..."
+    pip install -r requirements.txt
+else
+    echo "📝 Creating requirements.txt for future use..."
+    cat > requirements.txt << 'REQEOF'
+python-dotenv==1.0.0
+requests==2.31.0
+flask==2.3.3
+flask-cors==4.0.0
+playwright==1.40.0
+pandas==2.1.4
+numpy==1.24.3
+schedule==1.2.0
+websocket-client==1.6.4
+python-telegram-bot==20.7
+slack-sdk==3.26.1
+REQEOF
+    pip install -r requirements.txt
+fi
+
+# STEP 9: Final verification
+echo "✅ DEPENDENCY INSTALLATION COMPLETE!"
+echo "📊 Installed packages:"
+pip list | grep -E "(dotenv|requests|flask|playwright|pandas|numpy|schedule|websocket|telegram|slack)"
+
+echo ""
+echo "🚀 Ready to test the service!"
+echo "📝 Next steps:"
+echo "   1. Edit .env with your Bulenox credentials: nano .env"
+echo "   2. Test manually: python main.py"
+echo "   3. Start service: systemctl start trae-bot"
+echo "   4. Monitor: journalctl -u trae-bot -f"
+echo ""
+echo "⚠️  Make sure to configure your broker credentials in .env before starting!"

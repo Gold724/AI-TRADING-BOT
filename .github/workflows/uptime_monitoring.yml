@@ -27,10 +27,12 @@ jobs:
         run: |
           python -c "import requests, sys, json; \
           try: \
-            response = requests.get('http://${{ secrets.CONTABO_VPS_IP }}:5000/api/health', timeout=10); \
+            vps_ip = '${{ secrets.CONTABO_VPS_IP }}' or '161.97.112.146'; \
+            response = requests.get(f'http://{vps_ip}:5000/health', timeout=10); \
             print(f'Status code: {response.status_code}'); \
             print(f'Response: {response.text}'); \
-            if response.status_code == 200 and json.loads(response.text).get('status') == 'ok': \
+            data = json.loads(response.text); \
+            if response.status_code == 200 and (data.get('status') in ['ok', 'healthy']): \
               sys.exit(0); \
             else: \
               sys.exit(1); \
@@ -40,7 +42,7 @@ jobs:
         continue-on-error: true
 
       - name: Send success notification
-        if: steps.health_check.outcome == 'success'
+        if: steps.health_check.outcome == 'success' && secrets.SLACK_WEBHOOK_URL != null
         uses: 8398a7/action-slack@v3
         with:
           status: custom
@@ -70,7 +72,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Send failure notification
-        if: steps.health_check.outcome == 'failure'
+        if: steps.health_check.outcome == 'failure' && secrets.SLACK_WEBHOOK_URL != null
         uses: 8398a7/action-slack@v3
         with:
           status: custom
@@ -100,14 +102,14 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Trigger auto-restart if needed
-        if: steps.health_check.outcome == 'failure'
+        if: steps.health_check.outcome == 'failure' && secrets.SSH_PRIVATE_KEY != null
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.CONTABO_VPS_IP }}
+          host: ${{ secrets.CONTABO_VPS_IP || '161.97.112.146' }}
           username: ${{ secrets.CONTABO_USERNAME || 'root' }}
           port: ${{ secrets.CONTABO_SSH_PORT || '22' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/ai-trading-sentinel
-            sudo systemctl restart trae
-            echo "Attempted to restart trae service"
+            sudo systemctl restart trae-backend
+            echo "Attempted to restart trae-backend service"

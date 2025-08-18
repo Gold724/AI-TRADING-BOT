@@ -368,8 +368,29 @@ def start_webhook_server(port: int = 5000):
                 logger.info(f"Received signal: {signal_data}")
                 
                 # Save signal to file for processing
-                with open("data/incoming_signals.json", "a") as f:
-                    f.write(json.dumps(signal_data) + "\n")
+                signals_file = "data/incoming_signals.json"
+                
+                # Load existing signals
+                existing_signals = []
+                if os.path.exists(signals_file):
+                    try:
+                        with open(signals_file, "r") as f:
+                            content = f.read().strip()
+                            if content:
+                                data = json.loads(content)
+                                if isinstance(data, dict) and "signals" in data:
+                                    existing_signals = data["signals"]
+                                elif isinstance(data, list):
+                                    existing_signals = data
+                    except json.JSONDecodeError:
+                        existing_signals = []
+                
+                # Add new signal
+                existing_signals.append(signal_data)
+                
+                # Write back to file
+                with open(signals_file, "w") as f:
+                    json.dump({"signals": existing_signals}, f, indent=2)
                 
                 return jsonify({"status": "success", "message": "Signal received"})
             except Exception as e:
@@ -414,49 +435,71 @@ def process_signals(decider: SentinelDecider, bulenox=None):
     # Check for new signals
     if os.path.exists(signals_file):
         new_processed = []
-        with open(signals_file, "r") as f:
-            for line in f:
-                try:
-                    signal = json.loads(line.strip())
-                    signal_id = signal.get("id", str(hash(line)))
+        
+        # Load signals from structured JSON
+        try:
+            with open(signals_file, "r") as f:
+                content = f.read().strip()
+                if content:
+                    try:
+                        # Try to parse as structured JSON first
+                        data = json.loads(content)
+                        if isinstance(data, dict) and "signals" in data:
+                            signals = data["signals"]
+                        elif isinstance(data, list):
+                            signals = data
+                        else:
+                            signals = [data]
+                    except json.JSONDecodeError:
+                        logger.warning("Invalid JSON in signals file, skipping")
+                        signals = []
+                else:
+                    signals = []
+        except Exception as e:
+            logger.error(f"Error reading signals file: {e}")
+            signals = []
+        
+        for signal in signals:
+            try:
+                signal_id = signal.get("id", str(hash(json.dumps(signal))))
+                
+                # Skip already processed signals
+                if signal_id in [p.get("id") for p in processed_signals]:
+                    continue
+                
+                # Process the signal
+                logger.info(f"Processing signal: {signal_id}")
+                result = decider.decide_trade(signal)
+                
+                # Execute via Bulenox if integration is enabled and trade should be executed
+                if bulenox and result.get("action") == "execute":
+                    logger.info(f"Executing trade via Bulenox: {signal_id}")
                     
-                    # Skip already processed signals
-                    if signal_id in [p.get("id") for p in processed_signals]:
-                        continue
+                    # Ensure we're logged in
+                    if not bulenox.driver:
+                        logger.info("Not logged in to Bulenox. Attempting login...")
+                        if not bulenox.login():
+                            logger.error("Failed to login to Bulenox. Cannot execute trade.")
+                            raise Exception("Bulenox login failed")
                     
-                    # Process the signal
-                    logger.info(f"Processing signal: {signal_id}")
-                    result = decider.decide_trade(signal)
+                    # Execute the trade
+                    trade_result = bulenox.execute_trade(signal)
+                    logger.info(f"Bulenox trade execution result: {trade_result}")
                     
-                    # Execute via Bulenox if integration is enabled and trade should be executed
-                    if bulenox and result.get("action") == "execute":
-                        logger.info(f"Executing trade via Bulenox: {signal_id}")
-                        
-                        # Ensure we're logged in
-                        if not bulenox.driver:
-                            logger.info("Not logged in to Bulenox. Attempting login...")
-                            if not bulenox.login():
-                                logger.error("Failed to login to Bulenox. Cannot execute trade.")
-                                raise Exception("Bulenox login failed")
-                        
-                        # Execute the trade
-                        trade_result = bulenox.execute_trade(signal)
-                        logger.info(f"Bulenox trade execution result: {trade_result}")
-                        
-                        # Add trade result to result
-                        result["trade_result"] = trade_result
-                    
-                    # Record processed signal
-                    processed_record = {
-                        "id": signal_id,
-                        "timestamp": datetime.now().isoformat(),
-                        "signal": signal,
-                        "result": result
-                    }
-                    new_processed.append(processed_record)
-                    
-                except Exception as e:
-                    logger.error(f"Error processing signal: {e}")
+                    # Add trade result to result
+                    result["trade_result"] = trade_result
+                
+                # Record processed signal
+                processed_record = {
+                    "id": signal_id,
+                    "timestamp": datetime.now().isoformat(),
+                    "signal": signal,
+                    "result": result
+                }
+                new_processed.append(processed_record)
+                
+            except Exception as e:
+                logger.error(f"Error processing signal: {e}")
         
         # Update processed signals file
         if new_processed:
@@ -464,9 +507,9 @@ def process_signals(decider: SentinelDecider, bulenox=None):
             with open(processed_file, "w") as f:
                 json.dump(processed_signals, f, indent=2)
             
-            # Truncate signals file after processing
+            # Clear processed signals from file
             with open(signals_file, "w") as f:
-                pass
+                json.dump({"signals": []}, f, indent=2)
 
 
 def main():
@@ -526,11 +569,7 @@ def main():
     
     # Initialize the sentinel decider
     decider = SentinelDecider(
-        phase=args.phase,
-        liveops_mode=args.liveops,
-        automated_trading=True,
-        multi_account=True,
-        passive_learning=True
+        phase=args.phase
     )
     
     # Start webhook server if requested

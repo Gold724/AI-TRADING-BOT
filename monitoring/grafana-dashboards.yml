@@ -1,0 +1,109 @@
+# Grafana Dashboard Provisioning Configuration for TradeBot Sentinel
+# Auto-provisions dashboards on Grafana startup
+
+apiVersion: 1
+
+providers:
+  # TradeBot Sentinel Main Dashboard
+  - name: 'TradeBot Sentinel'
+    orgId: 1
+    folder: 'TradeBot'
+    folderUid: 'tradebot'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true
+
+  # System Monitoring Dashboards
+  - name: 'System Monitoring'
+    orgId: 1
+    folder: 'Infrastructure'
+    folderUid: 'infrastructure'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 60
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/system
+      foldersFromFilesStructure: true
+
+  # Application Monitoring Dashboards
+  - name: 'Application Monitoring'
+    orgId: 1
+    folder: 'Applications'
+    folderUid: 'applications'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/apps
+      foldersFromFilesStructure: true
+
+  # Trading Analytics Dashboards
+  - name: 'Trading Analytics'
+    orgId: 1
+    folder: 'Trading'
+    folderUid: 'trading'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 15
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/trading
+      foldersFromFilesStructure: true
+
+  # Security Monitoring Dashboards
+  - name: 'Security Monitoring'
+    orgId: 1
+    folder: 'Security'
+    folderUid: 'security'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 60
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/security
+      foldersFromFilesStructure: true
+
+  # Business Intelligence Dashboards
+  - name: 'Business Intelligence'
+    orgId: 1
+    folder: 'Business'
+    folderUid: 'business'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 300
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/business
+      foldersFromFilesStructure: true
+
+  # External Services Monitoring
+  - name: 'External Services'
+    orgId: 1
+    folder: 'External'
+    folderUid: 'external'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 60
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/external
+      foldersFromFilesStructure: true
+
+  # Development and Testing Dashboards
+  - name: 'Development'
+    orgId: 1
+    folder: 'Development'
+    folderUid: 'development'
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 120
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/dev
+      foldersFromFilesStructure: true

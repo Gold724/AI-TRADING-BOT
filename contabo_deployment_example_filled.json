@@ -1,0 +1,128 @@
+{
+  "deployment_info": {
+    "project_name": "bulenox-trading-bot",
+    "version": "2.0.0",
+    "environment": "production",
+    "deployment_date": "2025-01-17",
+    "deployed_by": "TRAE-SentinelOps"
+  },
+  "vps_connection": {
+    "host": "your-contabo-vps-ip",
+    "port": 22,
+    "username": "root",
+    "key_file": "/path/to/your/ssh/key",
+    "password": "",
+    "connection_timeout": 30
+  },
+  "project_configuration": {
+    "install_directory": "/opt/trading-bot",
+    "service_name": "bulenox-trader",
+    "service_user": "trader",
+    "log_directory": "/var/log/trading-bot",
+    "backup_directory": "/opt/backups/trading-bot"
+  },
+  "github_repository": {
+    "url": "https://github.com/yourusername/ai-trading-sentinel.git",
+    "branch": "main",
+    "deploy_key": "",
+    "auto_pull": true
+  },
+  "environment_variables": {
+    "BULENOX_USERNAME": "your_bulenox_username",
+    "BULENOX_PASSWORD": "your_bulenox_password",
+    "FLASK_SECRET_KEY": "your_flask_secret_key_here",
+    "ALERT_EMAIL": "alerts@yourdomain.com",
+    "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+    "ENVIRONMENT": "production",
+    "LOG_LEVEL": "INFO",
+    "MAX_POSITION_SIZE": "10",
+    "RISK_PERCENTAGE": "2",
+    "STOP_LOSS_PERCENTAGE": "1",
+    "TAKE_PROFIT_PERCENTAGE": "2"
+  },
+  "system_requirements": {
+    "python_version": "3.10+",
+    "nodejs_version": "18+",
+    "memory_gb": 4,
+    "disk_gb": 20,
+    "cpu_cores": 2
+  },
+  "security_configuration": {
+    "firewall_enabled": true,
+    "fail2ban_enabled": true,
+    "ssh_key_only": true,
+    "ssl_enabled": true,
+    "auto_updates": true,
+    "allowed_ports": [22, 80, 443, 5000]
+  },
+  "monitoring_configuration": {
+    "health_check_interval": 60,
+    "log_rotation_days": 7,
+    "backup_retention_days": 30,
+    "alert_thresholds": {
+      "cpu_usage": 80,
+      "memory_usage": 85,
+      "disk_usage": 90,
+      "error_rate": 5
+    }
+  },
+  "backup_configuration": {
+    "enabled": true,
+    "schedule": "0 2 * * *",
+    "retention_days": 30,
+    "backup_types": ["config", "logs", "data"]
+  },
+  "scaling_configuration": {
+    "auto_scaling": false,
+    "max_instances": 1,
+    "load_balancer": false,
+    "cdn_enabled": false
+  },
+  "trading_configuration": {
+    "contract_based_trading": true,
+    "default_contract_size": 1,
+    "max_contract_size": 10,
+    "supported_symbols": ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD"],
+    "trading_hours": {
+      "start": "00:00",
+      "end": "23:59",
+      "timezone": "UTC"
+    }
+  },
+  "ci_cd_integration": {
+    "github_actions": true,
+    "auto_deploy": true,
+    "test_before_deploy": true,
+    "rollback_enabled": true
+  },
+  "troubleshooting": {
+    "common_issues": {
+      "login_failed": "Check BULENOX_USERNAME and BULENOX_PASSWORD in .env",
+      "service_not_starting": "Check systemctl status bulenox-trader and logs",
+      "high_memory_usage": "Restart service or check for memory leaks",
+      "api_not_responding": "Check nginx status and backend service"
+    },
+    "log_locations": {
+      "application": "/var/log/trading-bot/app.log",
+      "system": "/var/log/syslog",
+      "nginx": "/var/log/nginx/",
+      "systemd": "journalctl -u bulenox-trader"
+    }
+  },
+  "compliance_and_risk": {
+    "data_encryption": true,
+    "audit_logging": true,
+    "compliance_checks": true,
+    "risk_limits": {
+      "max_daily_loss": 100,
+      "max_position_size": 10,
+      "max_drawdown": 20
+    }
+  },
+  "support_information": {
+    "documentation_url": "https://github.com/yourusername/ai-trading-sentinel/wiki",
+    "support_email": "support@yourdomain.com",
+    "emergency_contact": "+1-xxx-xxx-xxxx",
+    "maintenance_window": "Sunday 02:00-04:00 UTC"
+  }
+}

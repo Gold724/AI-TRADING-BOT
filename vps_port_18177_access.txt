@@ -1,0 +1,245 @@
+# Contabo VPS Access Guide - Port 18177
+# =====================================
+
+## 🖥️ VPS Details from Contabo Panel
+- **Server IP**: 161.97.112.146
+- **SSH Port**: 18177 (Custom port - NOT default 22)
+- **Status**: Running ✅
+- **OS**: Ubuntu (likely 22.04 or 24.04)
+- **User**: root
+
+## 🔐 Correct SSH Connection Commands
+
+### Standard SSH (with custom port)
+```bash
+ssh -p 18177 root@161.97.112.146
+```
+
+### Alternative SSH formats
+```bash
+# Using explicit port flag
+ssh root@161.97.112.146 -p 18177
+
+# Using SSH config format
+ssh -o Port=18177 root@161.97.112.146
+```
+
+### For Windows PowerShell/CMD
+```powershell
+ssh -p 18177 root@161.97.112.146
+```
+
+### For PuTTY Users
+- Host: 161.97.112.146
+- Port: 18177
+- Connection Type: SSH
+- Username: root
+
+## 🚨 Common Connection Issues & Solutions
+
+### Issue 1: Permission Denied
+**Cause**: Wrong password or account locked
+**Solutions**:
+1. **Reset password via Contabo panel**:
+   - Login to my.contabo.com
+   - Go to VPS management
+   - Click "Reset Root Password"
+   - Check email for new credentials
+
+2. **Use Contabo Web Console**:
+   - Access VPS via browser console
+   - No SSH required
+   - Direct terminal access
+
+### Issue 2: Connection Timeout
+**Cause**: Firewall or wrong port
+**Solutions**:
+```bash
+# Test connectivity
+telnet 161.97.112.146 18177
+
+# Check if port is open
+nmap -p 18177 161.97.112.146
+```
+
+## 🚀 Deployment Steps After Connection
+
+### Step 1: Verify System Status
+```bash
+# Check system info
+uname -a
+df -h
+free -m
+ps aux | grep python
+systemctl status trae-bot
+```
+
+### Step 2: Navigate to Bot Directory
+```bash
+# Check if bot exists
+ls -la /root/
+cd /root/AI-TRADING-BOT || cd /root/ai-trading-sentinel
+
+# If directory doesn't exist, clone it
+git clone https://github.com/YOUR_USERNAME/ai-trading-sentinel.git
+cd ai-trading-sentinel
+```
+
+### Step 3: Execute Playwright Fix Script
+```bash
+# Create the fix script
+cat > vps_playwright_fix.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "🔧 TRAE-BOT VPS Playwright Migration & Fix Script"
+echo "================================================"
+
+# Update system
+apt update && apt upgrade -y
+
+# Install Python and dependencies
+apt install -y python3 python3-pip python3-venv git curl wget
+
+# Install Node.js (for Playwright browsers)
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+apt install -y nodejs
+
+# Create virtual environment
+python3 -m venv /root/trae-venv
+source /root/trae-venv/bin/activate
+
+# Install Python packages
+pip install --upgrade pip
+pip install playwright pyyaml requests flask python-dotenv
+pip install pandas numpy aiohttp websockets
+
+# Install Playwright browsers
+playwright install
+playwright install-deps
+
+# Fix main.py - replace selenium with playwright
+if [ -f "main.py" ]; then
+    echo "📝 Fixing main.py imports..."
+    sed -i 's/from selenium/# from selenium (replaced with playwright)/g' main.py
+    sed -i 's/import selenium/# import selenium (replaced with playwright)/g' main.py
+    echo "✅ Selenium imports commented out"
+fi
+
+# Create logs directory
+mkdir -p /root/AI-TRADING-BOT/logs
+touch /root/AI-TRADING-BOT/logs/trae.log
+chmod 755 /root/AI-TRADING-BOT/logs
+chmod 644 /root/AI-TRADING-BOT/logs/trae.log
+
+# Fix systemd service
+cat > /etc/systemd/system/trae-bot.service << 'SERVICE_EOF'
+[Unit]
+Description=TRAE Trading Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/AI-TRADING-BOT
+Environment=PATH=/root/trae-venv/bin
+ExecStart=/root/trae-venv/bin/python main.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/root/AI-TRADING-BOT/logs/trae.log
+StandardError=append:/root/AI-TRADING-BOT/logs/trae.log
+
+[Install]
+WantedBy=multi-user.target
+SERVICE_EOF
+
+# Reload and start service
+systemctl daemon-reload
+systemctl enable trae-bot
+systemctl start trae-bot
+
+echo "✅ Deployment complete!"
+echo "📊 Service status:"
+systemctl status trae-bot --no-pager
+
+echo "📋 Recent logs:"
+tail -20 /root/AI-TRADING-BOT/logs/trae.log
+
+echo "🎯 Management commands:"
+echo "  systemctl status trae-bot    # Check status"
+echo "  systemctl restart trae-bot   # Restart service"
+echo "  tail -f /root/AI-TRADING-BOT/logs/trae.log  # Watch logs"
+EOF
+
+# Make executable and run
+chmod +x vps_playwright_fix.sh
+./vps_playwright_fix.sh
+```
+
+## 🔍 Verification Commands
+
+### Check Service Status
+```bash
+systemctl status trae-bot
+journalctl -u trae-bot -f
+tail -f /root/AI-TRADING-BOT/logs/trae.log
+```
+
+### Test Python Imports
+```bash
+source /root/trae-venv/bin/activate
+python3 -c "import playwright; print('Playwright OK')"
+python3 -c "import yaml; print('YAML OK')"
+python3 -c "import flask; print('Flask OK')"
+```
+
+### Monitor System Resources
+```bash
+htop
+df -h
+free -m
+ps aux | grep python
+```
+
+## 🛡️ Security Hardening (After Deployment)
+
+### Change SSH Port (Optional)
+```bash
+# Edit SSH config
+nano /etc/ssh/sshd_config
+# Change Port 18177 to a different port
+systemctl restart ssh
+```
+
+### Create Non-Root User
+```bash
+adduser traebot
+usermod -aG sudo traebot
+# Copy SSH keys if needed
+```
+
+### Setup Firewall
+```bash
+ufw allow 18177/tcp
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw enable
+```
+
+## 📞 Emergency Contacts
+
+**Contabo Support**:
+- Email: support@contabo.com
+- Phone: +49 89 3564717 70
+- Panel: https://my.contabo.com
+
+**Next Steps After Successful Connection**:
+1. ✅ Execute the Playwright fix script
+2. ✅ Verify trae-bot service is running
+3. ✅ Test trading bot functionality
+4. ✅ Setup monitoring and alerts
+5. ✅ Configure automated backups
+
+---
+**TRAE-SentinelOps Deployment Guide**
+*Ensuring 24/7 reliable trading bot operations*

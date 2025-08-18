@@ -1,0 +1,168 @@
+{
+  "timestamp": "2025-08-17T09:01:02.242684",
+  "tests": {
+    "Browser Initialization": {
+      "success": true,
+      "details": "Browser initialized with UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb..., Viewport: {'width': 1920, 'height': 1080}",
+      "data": {
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "timestamp": "2025-08-17T09:01:06.027314"
+    },
+    "Contract Size Validation": {
+      "success": true,
+      "details": "Validated 12 contract sizes",
+      "data": [
+        {
+          "input": 0.5,
+          "output": 1,
+          "valid": true
+        },
+        {
+          "input": 1,
+          "output": 1,
+          "valid": true
+        },
+        {
+          "input": 2,
+          "output": 2,
+          "valid": true
+        },
+        {
+          "input": 5,
+          "output": 5,
+          "valid": true
+        },
+        {
+          "input": 10,
+          "output": 10,
+          "valid": true
+        },
+        {
+          "input": 15,
+          "output": 10,
+          "valid": true
+        },
+        {
+          "input": 0,
+          "output": 1,
+          "valid": true
+        },
+        {
+          "input": -1,
+          "output": 1,
+          "valid": true
+        },
+        {
+          "input": 0.1,
+          "output": 1,
+          "valid": true
+        },
+        {
+          "input": null,
+          "output": 1,
+          "valid": true
+        },
+        {
+          "input": "invalid",
+          "output": 1,
+          "valid": true
+        },
+        {
+          "input": 100,
+          "output": 10,
+          "valid": true
+        }
+      ],
+      "timestamp": "2025-08-17T09:01:07.143517"
+    },
+    "Compatibility Functions": {
+      "success": true,
+      "details": "Functions available: {'login_bulenox_ai': True, 'place_bulenox_trade': True, 'BulenoxPlaywrightAutomation': True}",
+      "data": {
+        "login_bulenox_ai": true,
+        "place_bulenox_trade": true,
+        "BulenoxPlaywrightAutomation": true
+      },
+      "timestamp": "2025-08-17T09:01:08.153980"
+    },
+    "Trade Simulation": {
+      "success": true,
+      "details": "Simulated 3 trade scenarios",
+      "data": [
+        {
+          "original": {
+            "symbol": "EURUSD",
+            "side": "BUY",
+            "quantity": 1
+          },
+          "validated_quantity": 1,
+          "valid": true
+        },
+        {
+          "original": {
+            "symbol": "GBPUSD",
+            "side": "SELL",
+            "quantity": 2
+          },
+          "validated_quantity": 2,
+          "valid": true
+        },
+        {
+          "original": {
+            "symbol": "USDJPY",
+            "side": "BUY",
+            "quantity": 0.5
+          },
+          "validated_quantity": 1,
+          "valid": true
+        }
+      ],
+      "timestamp": "2025-08-17T09:01:09.160721"
+    },
+    "Network Interception": {
+      "success": false,
+      "details": "Captured 0 requests",
+      "data": {
+        "requests_count": 0,
+        "sample_requests": []
+      },
+      "timestamp": "2025-08-17T09:01:16.678277"
+    },
+    "Screenshot Functionality": {
+      "success": true,
+      "details": "Screenshot saved: C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\logs\\screenshots\\test_screenshot_20250817_090119.png",
+      "data": {
+        "screenshot_files": [
+          "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\logs\\screenshots\\test_screenshot_20250817_090119.png"
+        ]
+      },
+      "timestamp": "2025-08-17T09:01:19.974668"
+    },
+    "Login Functionality": {
+      "success": true,
+      "details": "Login page loaded: X, URL: https://bulenox.projectx.com/login",
+      "data": {
+        "title": "X",
+        "url": "https://bulenox.projectx.com/login",
+        "selectors_found": {
+          "username": false,
+          "password": true,
+          "submit": true
+        }
+      },
+      "timestamp": "2025-08-17T09:01:57.075322"
+    }
+  },
+  "summary": {
+    "total": 7,
+    "passed": 6,
+    "failed": 1,
+    "success_rate": 85.71428571428571,
+    "overall_success": true
+  }
+}

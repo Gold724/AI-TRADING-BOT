@@ -83,7 +83,7 @@ jobs:
           fields: repo,message,commit,author,action,eventName,ref,workflow
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        if: always() && secrets.SLACK_WEBHOOK_URL != '' && secrets.SLACK_WEBHOOK_URL != null
 
   deploy:
     runs-on: ubuntu-latest
@@ -118,7 +118,7 @@ jobs:
           text: 'Deployment to production completed :rocket:'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        if: always() && secrets.SLACK_WEBHOOK_URL != '' && secrets.SLACK_WEBHOOK_URL != null
         
       - name: Send Email Notification
         uses: dawidd6/action-send-mail@v3
@@ -138,4 +138,4 @@ jobs:
             See details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           to: ${{ secrets.EMAIL_RECIPIENT }}
           from: TraeAI CI/CD <${{ secrets.EMAIL_USERNAME }}>
-        if: always() && secrets.EMAIL_RECIPIENT != ''
+        if: always() && secrets.EMAIL_RECIPIENT != '' && secrets.EMAIL_RECIPIENT != null

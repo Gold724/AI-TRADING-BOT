@@ -1,0 +1,24 @@
+[Unit]
+Description=Bulenox Sentinel (Adaptive Selenium)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/bulenox
+ExecStart=/opt/bulenox/venv/bin/python /opt/bulenox/bulenox_ai_selenium_adaptive_uc.py
+Restart=always
+RestartSec=5
+User=root
+Environment=PYTHONUNBUFFERED=1
+# Add standard logging to journalctl
+StandardOutput=journal
+StandardError=journal
+# Add file logging
+StandardOutput=append:/opt/bulenox/bulenox_output.log
+StandardError=append:/opt/bulenox/bulenox_error.log
+# Restart on failure with progressive backoff
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,383 @@
+# AI Trading Sentinel - Complete VPS Deployment Guide
+# Contabo VPS: Ubuntu 24.04 - Full Setup & Deployment
+
+## VPS CONNECTION DETAILS
+```
+IP Address: 161.97.112.146
+IPv6: 2a02:c207:2273:6801::1
+Location: Hub Europe
+VNC: 5.189.145.177:63162
+Host System Port: 18177
+OS: Ubuntu 24.04
+```
+
+## IMMEDIATE ACCESS SOLUTIONS
+
+### Method 1: SSH with Correct Port (RECOMMENDED)
+```bash
+# Standard SSH (Linux/Mac/WSL)
+ssh -p 18177 root@161.97.112.146
+
+# Windows PowerShell (if OpenSSH installed)
+ssh -p 18177 root@161.97.112.146
+
+# PuTTY Configuration
+Host: 161.97.112.146
+Port: 18177
+Connection Type: SSH
+```
+
+### Method 2: Contabo Web Console (EMERGENCY ACCESS)
+1. Login to Contabo Customer Panel
+2. Navigate to "Your Services" → "VPS"
+3. Click "Console" or "VNC" button
+4. Direct browser-based terminal access
+
+### Method 3: VNC Access
+```
+VNC Server: 5.189.145.177:63162
+Use VNC client (RealVNC, TightVNC, etc.)
+```
+
+## DEPLOYMENT SCRIPT - Execute After Connection
+
+### Step 1: Create Deployment Script
+```bash
+# Create the deployment script
+cat > /root/deploy_trae_bot.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "=== AI Trading Sentinel - VPS Deployment ==="
+echo "Starting deployment on Ubuntu 24.04..."
+
+# Update system
+echo "[1/10] Updating system packages..."
+apt update && apt upgrade -y
+
+# Install essential packages
+echo "[2/10] Installing essential packages..."
+apt install -y python3 python3-pip python3-venv nodejs npm git curl wget unzip
+
+# Install Python packages
+echo "[3/10] Installing Python packages..."
+pip3 install --upgrade pip
+pip3 install playwright pyyaml requests flask python-dotenv pandas numpy aiohttp websockets gunicorn
+
+# Install Playwright browsers
+echo "[4/10] Installing Playwright browsers..."
+playwright install
+playwright install-deps
+
+# Navigate to bot directory
+echo "[5/10] Setting up bot directory..."
+cd /root
+if [ ! -d "ai-trading-sentinel" ]; then
+    echo "Cloning repository..."
+    git clone https://github.com/YOUR_USERNAME/ai-trading-sentinel.git
+fi
+cd ai-trading-sentinel
+
+# Create logs directory
+echo "[6/10] Creating logs directory..."
+mkdir -p logs
+touch logs/trae.log
+chmod 755 logs
+chmod 644 logs/trae.log
+
+# Fix main.py - Replace selenium with playwright
+echo "[7/10] Fixing main.py imports..."
+if [ -f "main.py" ]; then
+    # Comment out selenium imports
+    sed -i 's/^from selenium/#from selenium/g' main.py
+    sed -i 's/^import selenium/#import selenium/g' main.py
+    
+    # Add playwright imports if not present
+    if ! grep -q "from playwright" main.py; then
+        echo "# Playwright imports (replacing selenium)" >> main.py
+        echo "from playwright.async_api import async_playwright" >> main.py
+        echo "from playwright.sync_api import sync_playwright" >> main.py
+    fi
+fi
+
+# Create systemd service
+echo "[8/10] Creating systemd service..."
+cat > /etc/systemd/system/trae-bot.service << 'SERVICE_EOF'
+[Unit]
+Description=AI Trading Sentinel Bot
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/ai-trading-sentinel
+Environment=PYTHONPATH=/root/ai-trading-sentinel
+Environment=DISPLAY=:0
+ExecStartPre=/bin/bash -c 'echo "Starting TRAE Bot at $(date)" >> /root/ai-trading-sentinel/logs/trae.log'
+ExecStart=/usr/bin/python3 /root/ai-trading-sentinel/main.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/root/ai-trading-sentinel/logs/trae.log
+StandardError=append:/root/ai-trading-sentinel/logs/trae.log
+
+[Install]
+WantedBy=multi-user.target
+SERVICE_EOF
+
+# Reload systemd and enable service
+echo "[9/10] Configuring systemd service..."
+systemctl daemon-reload
+systemctl enable trae-bot.service
+
+# Test Python imports
+echo "[10/10] Testing Python imports..."
+python3 -c "import playwright; import yaml; import requests; import flask; print('✅ All imports successful!')"
+
+echo "\n=== DEPLOYMENT COMPLETE ==="
+echo "✅ System updated and packages installed"
+echo "✅ Playwright browsers installed"
+echo "✅ Logs directory created"
+echo "✅ main.py fixed (selenium → playwright)"
+echo "✅ Systemd service configured"
+echo "✅ Python imports verified"
+
+echo "\n=== NEXT STEPS ==="
+echo "1. Configure .env file with your credentials"
+echo "2. Start the service: systemctl start trae-bot"
+echo "3. Check status: systemctl status trae-bot"
+echo "4. View logs: tail -f logs/trae.log"
+
+EOF
+
+# Make script executable
+chmod +x /root/deploy_trae_bot.sh
+```
+
+### Step 2: Execute Deployment
+```bash
+# Run the deployment script
+/root/deploy_trae_bot.sh
+```
+
+### Step 3: Configure Environment
+```bash
+# Create .env file (replace with your actual credentials)
+cat > /root/ai-trading-sentinel/.env << 'EOF'
+# Broker Configuration
+BROKER_USERNAME=your_username
+BROKER_PASSWORD=your_password
+BROKER_URL=https://your-broker.com
+
+# GitHub Configuration
+GITHUB_TOKEN=your_github_token
+GITHUB_REPO=your_username/ai-trading-sentinel
+
+# Trading Configuration
+TRADING_MODE=live
+RISK_LEVEL=medium
+MAX_POSITION_SIZE=1000
+
+# Monitoring
+SLACK_WEBHOOK=your_slack_webhook_url
+EOF
+
+# Secure the .env file
+chmod 600 /root/ai-trading-sentinel/.env
+```
+
+### Step 4: Start and Verify Service
+```bash
+# Start the trading bot service
+systemctl start trae-bot
+
+# Check service status
+systemctl status trae-bot
+
+# View real-time logs
+tail -f /root/ai-trading-sentinel/logs/trae.log
+
+# Check if service is running
+ps aux | grep python3
+```
+
+## MANAGEMENT COMMANDS
+
+### Service Control
+```bash
+# Start service
+systemctl start trae-bot
+
+# Stop service
+systemctl stop trae-bot
+
+# Restart service
+systemctl restart trae-bot
+
+# Check status
+systemctl status trae-bot
+
+# View logs
+journalctl -u trae-bot -f
+tail -f /root/ai-trading-sentinel/logs/trae.log
+```
+
+### System Monitoring
+```bash
+# Check system resources
+htop
+df -h
+free -h
+
+# Check network connectivity
+ping google.com
+curl -I https://your-broker.com
+
+# Check Python environment
+python3 --version
+pip3 list | grep -E "playwright|yaml|requests|flask"
+```
+
+## TROUBLESHOOTING
+
+### If SSH Still Fails
+1. **Use Contabo Web Console** (most reliable)
+2. **Check VPS Status** in Contabo panel
+3. **Try VNC Access**: 5.189.145.177:63162
+4. **Contact Contabo Support**: support@contabo.com
+
+### If Service Fails
+```bash
+# Check detailed service logs
+journalctl -u trae-bot --no-pager -l
+
+# Check Python syntax
+python3 -m py_compile /root/ai-trading-sentinel/main.py
+
+# Test imports manually
+python3 -c "import sys; sys.path.append('/root/ai-trading-sentinel'); import main"
+
+# Restart with debug
+systemctl stop trae-bot
+cd /root/ai-trading-sentinel
+python3 main.py  # Run manually to see errors
+```
+
+### Common Fixes
+```bash
+# Fix permissions
+chown -R root:root /root/ai-trading-sentinel
+chmod +x /root/ai-trading-sentinel/main.py
+
+# Reinstall Playwright
+pip3 uninstall playwright -y
+pip3 install playwright
+playwright install
+
+# Update system
+apt update && apt upgrade -y
+systemctl daemon-reload
+systemctl restart trae-bot
+```
+
+## SECURITY HARDENING
+
+### Change Root Password
+```bash
+passwd root
+```
+
+### Create Non-Root User
+```bash
+useradd -m -s /bin/bash traeuser
+passwd traeuser
+usermod -aG sudo traeuser
+```
+
+### Setup SSH Keys (Recommended)
+```bash
+# On your local machine, generate SSH key
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/contabo_vps
+
+# Copy public key to VPS
+ssh-copy-id -i ~/.ssh/contabo_vps.pub -p 18177 root@161.97.112.146
+
+# Then connect with key
+ssh -i ~/.ssh/contabo_vps -p 18177 root@161.97.112.146
+```
+
+### Configure Firewall
+```bash
+# Install and configure UFW
+apt install ufw -y
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow 18177/tcp  # SSH
+ufw allow 80/tcp     # HTTP
+ufw allow 443/tcp    # HTTPS
+ufw enable
+```
+
+## 24/7 MONITORING SETUP
+
+### Health Check Script
+```bash
+cat > /root/health_check.sh << 'EOF'
+#!/bin/bash
+if ! systemctl is-active --quiet trae-bot; then
+    echo "$(date): TRAE Bot service is down, restarting..." >> /root/ai-trading-sentinel/logs/health.log
+    systemctl restart trae-bot
+    sleep 30
+    if systemctl is-active --quiet trae-bot; then
+        echo "$(date): TRAE Bot service restarted successfully" >> /root/ai-trading-sentinel/logs/health.log
+    else
+        echo "$(date): CRITICAL: TRAE Bot service failed to restart" >> /root/ai-trading-sentinel/logs/health.log
+    fi
+fi
+EOF
+
+chmod +x /root/health_check.sh
+
+# Add to crontab (check every 5 minutes)
+(crontab -l 2>/dev/null; echo "*/5 * * * * /root/health_check.sh") | crontab -
+```
+
+### Log Rotation
+```bash
+cat > /etc/logrotate.d/trae-bot << 'EOF'
+/root/ai-trading-sentinel/logs/*.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}
+EOF
+```
+
+## EMERGENCY CONTACTS
+
+**Contabo Support:**
+- Email: support@contabo.com
+- Phone: +49 89 3564717 70
+- Emergency: Use web console or VNC
+
+**Next Steps After Deployment:**
+1. ✅ Connect via SSH (port 18177) or web console
+2. ✅ Execute deployment script
+3. ✅ Configure .env with your credentials
+4. ✅ Start trae-bot service
+5. ✅ Verify 24/7 operation
+6. ✅ Setup monitoring and alerts
+
+**Success Indicators:**
+- `systemctl status trae-bot` shows "active (running)"
+- Logs show successful broker login
+- No error messages in `/root/ai-trading-sentinel/logs/trae.log`
+- Health check script reports service is stable
+
+---
+**TRAE-SentinelOps Deployment Complete** 🚀
+**Status: Ready for 24/7 Trading Operations**

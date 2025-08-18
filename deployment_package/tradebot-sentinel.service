@@ -1,0 +1,20 @@
+
+[Unit]
+Description=TradeBot Sentinel - AI Trading Automation
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/tradebot/ai-trading-sentinel
+Environment=PATH=/home/tradebot/ai-trading-sentinel/venv/bin
+Environment=DISPLAY=:99
+ExecStartPre=/usr/bin/Xvfb :99 -screen 0 1920x1080x24 -ac &
+ExecStart=/home/tradebot/ai-trading-sentinel/venv/bin/python main.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/tradebot/ai-trading-sentinel/logs/tradebot.log
+StandardError=append:/home/tradebot/ai-trading-sentinel/logs/tradebot_error.log
+
+[Install]
+WantedBy=multi-user.target

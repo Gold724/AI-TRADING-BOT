@@ -1,0 +1,271 @@
+{
+  "deployment": {
+    "name": "Bulenox Trading Bot - Playwright Edition",
+    "version": "2.0.0",
+    "description": "Contract-based trading bot with Playwright automation for 24/7 VPS operation",
+    "deployment_date": "2025-01-17",
+    "author": "TRAE-SentinelOps"
+  },
+  "vps_requirements": {
+    "provider": "Contabo",
+    "os": "Ubuntu 22.04 LTS or 24.04 LTS",
+    "min_ram": "4GB",
+    "min_storage": "50GB SSD",
+    "min_cpu": "2 vCPU",
+    "bandwidth": "Unlimited",
+    "recommended_plan": "VPS S (4GB RAM, 2 vCPU, 50GB SSD)"
+  },
+  "system_dependencies": {
+    "python": "3.11+",
+    "nodejs": "20.x LTS",
+    "nginx": "latest",
+    "docker": "latest (optional)",
+    "git": "latest",
+    "playwright": "1.54.0+",
+    "browsers": "Chromium, Firefox, WebKit"
+  },
+  "required_environment_variables": {
+    "BULENOX_USERNAME": {
+      "description": "Bulenox platform username",
+      "required": true,
+      "sensitive": true
+    },
+    "BULENOX_PASSWORD": {
+      "description": "Bulenox platform password",
+      "required": true,
+      "sensitive": true
+    },
+    "GITHUB_TOKEN": {
+      "description": "GitHub personal access token for private repo access",
+      "required": true,
+      "sensitive": true
+    },
+    "FLASK_SECRET_KEY": {
+      "description": "Flask application secret key",
+      "required": true,
+      "sensitive": true,
+      "example": "your-super-secret-key-here"
+    },
+    "WEBHOOK_SECRET": {
+      "description": "GitHub webhook secret for CI/CD",
+      "required": true,
+      "sensitive": true
+    },
+    "DEPLOYMENT_MODE": {
+      "description": "Deployment environment",
+      "required": false,
+      "default": "production",
+      "options": ["development", "staging", "production"]
+    },
+    "PLAYWRIGHT_HEADLESS": {
+      "description": "Run browsers in headless mode",
+      "required": false,
+      "default": "true",
+      "type": "boolean"
+    },
+    "BULENOX_CONTRACT_MODE": {
+      "description": "Enable contract-based trading (not lot sizes)",
+      "required": false,
+      "default": "true",
+      "type": "boolean"
+    },
+    "LOG_LEVEL": {
+      "description": "Application logging level",
+      "required": false,
+      "default": "INFO",
+      "options": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    }
+  },
+  "deployment_steps": [
+    {
+      "step": 1,
+      "name": "VPS Setup",
+      "description": "Initial VPS configuration and SSH access",
+      "commands": [
+        "ssh-keygen -t rsa -b 4096 -f ~/.ssh/contabo_key",
+        "ssh-copy-id -i ~/.ssh/contabo_key.pub root@YOUR_VPS_IP"
+      ]
+    },
+    {
+      "step": 2,
+      "name": "Environment Preparation",
+      "description": "Create environment variables file",
+      "commands": [
+        "cp .env.example .env.production",
+        "# Edit .env.production with your actual credentials"
+      ]
+    },
+    {
+      "step": 3,
+      "name": "Deployment Execution",
+      "description": "Run the deployment script",
+      "commands": [
+        "python deploy_contabo_playwright.py --vps-ip YOUR_VPS_IP --ssh-key ~/.ssh/contabo_key --github-repo https://github.com/YOUR_USERNAME/ai-trading-sentinel --env-file .env.production"
+      ]
+    },
+    {
+      "step": 4,
+      "name": "SSL Setup (Optional)",
+      "description": "Configure SSL certificate for custom domain",
+      "commands": [
+        "python deploy_contabo_playwright.py --vps-ip YOUR_VPS_IP --ssh-key ~/.ssh/contabo_key --github-repo https://github.com/YOUR_USERNAME/ai-trading-sentinel --env-file .env.production --domain your-domain.com"
+      ]
+    },
+    {
+      "step": 5,
+      "name": "Verification",
+      "description": "Verify deployment status",
+      "commands": [
+        "python deploy_contabo_playwright.py --vps-ip YOUR_VPS_IP --ssh-key ~/.ssh/contabo_key --status-only"
+      ]
+    }
+  ],
+  "monitoring_commands": {
+    "service_status": "systemctl status bulenox-trading-bot",
+    "service_logs": "journalctl -u bulenox-trading-bot -f",
+    "service_restart": "systemctl restart bulenox-trading-bot",
+    "nginx_status": "systemctl status nginx",
+    "nginx_reload": "systemctl reload nginx",
+    "system_resources": "htop",
+    "disk_usage": "df -h",
+    "memory_usage": "free -h",
+    "network_connections": "netstat -tulpn",
+    "application_logs": "tail -f /opt/ai-trading-sentinel/logs/*.log"
+  },
+  "termius_ssh_commands": {
+    "connect": "ssh -i ~/.ssh/contabo_key root@YOUR_VPS_IP",
+    "quick_health_check": "systemctl is-active bulenox-trading-bot nginx && free -h && df -h",
+    "restart_bot": "systemctl restart bulenox-trading-bot && sleep 5 && systemctl status bulenox-trading-bot",
+    "view_recent_logs": "journalctl -u bulenox-trading-bot --since '10 minutes ago'",
+    "check_trades": "tail -n 50 /opt/ai-trading-sentinel/logs/trades.log",
+    "monitor_real_time": "watch -n 5 'systemctl is-active bulenox-trading-bot && free -m | head -2 && df -h | head -2'"
+  },
+  "security_configuration": {
+    "firewall": {
+      "enabled_ports": [22, 80, 443],
+      "ssh_key_only": true,
+      "fail2ban": true
+    },
+    "ssl": {
+      "provider": "Let's Encrypt",
+      "auto_renewal": true,
+      "force_https": true
+    },
+    "application": {
+      "secure_headers": true,
+      "rate_limiting": true,
+      "environment_isolation": true
+    }
+  },
+  "backup_strategy": {
+    "configuration_files": [
+      "/opt/ai-trading-sentinel/.env",
+      "/etc/systemd/system/bulenox-trading-bot.service",
+      "/etc/nginx/sites-available/trading-bot"
+    ],
+    "log_files": [
+      "/opt/ai-trading-sentinel/logs/"
+    ],
+    "database_files": [
+      "/opt/ai-trading-sentinel/data/"
+    ],
+    "backup_frequency": "daily",
+    "retention_period": "30 days"
+  },
+  "scaling_options": {
+    "horizontal_scaling": {
+      "multiple_accounts": "Deploy separate instances per trading account",
+      "load_balancer": "Use Nginx for distributing web interface load"
+    },
+    "vertical_scaling": {
+      "memory_upgrade": "Increase RAM for more concurrent browser instances",
+      "cpu_upgrade": "More vCPUs for faster trade execution",
+      "storage_upgrade": "More SSD space for extensive logging"
+    },
+    "multi_broker_support": {
+      "architecture": "Modular design allows easy addition of new brokers",
+      "configuration": "Environment variables control broker selection"
+    }
+  },
+  "troubleshooting": {
+    "common_issues": {
+      "service_not_starting": {
+        "symptoms": "systemctl status shows failed state",
+        "solutions": [
+          "Check environment variables in .env file",
+          "Verify Python virtual environment is activated",
+          "Check application logs for specific errors",
+          "Ensure all dependencies are installed"
+        ]
+      },
+      "browser_automation_failing": {
+        "symptoms": "Playwright browser crashes or timeouts",
+        "solutions": [
+          "Verify browser dependencies are installed",
+          "Check available memory and CPU resources",
+          "Review Bulenox platform changes",
+          "Update Playwright and browser versions"
+        ]
+      },
+      "network_connectivity_issues": {
+        "symptoms": "Cannot connect to Bulenox platform",
+        "solutions": [
+          "Check VPS internet connectivity",
+          "Verify firewall rules",
+          "Test DNS resolution",
+          "Check for IP blocking by broker"
+        ]
+      },
+      "high_resource_usage": {
+        "symptoms": "High CPU or memory consumption",
+        "solutions": [
+          "Monitor browser instances",
+          "Adjust resource limits in systemd service",
+          "Optimize trading frequency",
+          "Consider VPS upgrade"
+        ]
+      }
+    },
+    "diagnostic_commands": {
+      "check_service_health": "systemctl status bulenox-trading-bot --no-pager -l",
+      "view_error_logs": "journalctl -u bulenox-trading-bot --since today --priority err",
+      "check_browser_processes": "ps aux | grep -E '(chromium|firefox|webkit)'",
+      "monitor_resources": "top -p $(pgrep -f bulenox)",
+      "test_network": "curl -I https://bulenox.projectx.com/login",
+      "check_disk_space": "du -sh /opt/ai-trading-sentinel/*"
+    }
+  },
+  "performance_optimization": {
+    "browser_settings": {
+      "headless_mode": true,
+      "disable_images": false,
+      "disable_javascript": false,
+      "user_agent_rotation": true,
+      "viewport_randomization": true
+    },
+    "system_tuning": {
+      "swap_configuration": "Optimize swap usage for memory management",
+      "file_descriptor_limits": "Increase limits for concurrent connections",
+      "network_buffer_tuning": "Optimize TCP buffers for trading latency"
+    },
+    "application_optimization": {
+      "connection_pooling": "Reuse browser connections when possible",
+      "caching_strategy": "Cache static resources and API responses",
+      "async_processing": "Use async/await for non-blocking operations"
+    }
+  },
+  "compliance_and_risk": {
+    "trading_compliance": {
+      "contract_validation": "Strict validation of contract sizes vs lot sizes",
+      "position_limits": "Configurable maximum position sizes",
+      "drawdown_protection": "Automatic trading halt on excessive losses",
+      "audit_logging": "Complete trade execution audit trail"
+    },
+    "technical_risk_management": {
+      "circuit_breakers": "Automatic system halt on technical failures",
+      "redundancy": "Multiple fallback mechanisms for critical operations",
+      "monitoring_alerts": "Real-time alerts for system anomalies",
+      "backup_procedures": "Regular backups of configuration and data"
+    }
+  }
+}

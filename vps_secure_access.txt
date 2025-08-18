@@ -1,0 +1,95 @@
+# VPS Secure Access Guide - Contabo Server
+# ==========================================
+
+## 🔐 SSH Connection Issues Resolution
+
+You're experiencing permission denied errors when connecting to your Contabo VPS at 161.97.112.146.
+
+### ✅ Immediate Solutions
+
+**Option 1: Use Correct Password**
+```bash
+ssh root@161.97.112.146
+# When prompted, enter the correct root password carefully
+# Note: Password characters won't be displayed for security
+```
+
+**Option 2: Reset Root Password via Contabo Panel**
+1. Log into your Contabo customer panel
+2. Navigate to your VPS management
+3. Use "Reset Root Password" option
+4. Check your email for the new password
+5. Try SSH connection again
+
+**Option 3: Use Contabo Web Console**
+1. Access Contabo customer panel
+2. Open VPS web console (browser-based terminal)
+3. Login directly without SSH
+4. Execute the vps_playwright_fix.txt script directly
+
+### 🚀 Once Connected - Execute Deployment
+
+After successful SSH connection, run the Playwright fix:
+
+```bash
+# Navigate to the bot directory
+cd /root/AI-TRADING-BOT
+
+# Copy and paste the entire vps_playwright_fix.txt script content
+# The script will:
+# 1. Install missing Python packages (playwright, pyyaml, etc.)
+# 2. Fix systemd service configuration
+# 3. Replace selenium imports with playwright
+# 4. Start the trae-bot service
+# 5. Verify deployment success
+```
+
+### 🔧 Security Best Practices
+
+**After Successful Login:**
+1. Change the default root password immediately
+2. Create a non-root user for daily operations
+3. Setup SSH key authentication
+4. Disable password authentication (optional)
+
+**Commands to secure your VPS:**
+```bash
+# Change root password
+passwd
+
+# Create new user
+adduser traeuser
+usermod -aG sudo traeuser
+
+# Generate SSH keys (on your local machine)
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+
+# Copy public key to VPS
+ssh-copy-id traeuser@161.97.112.146
+```
+
+### 📞 Contabo Support
+
+If SSH issues persist:
+- Email: support@contabo.com
+- Mention: "SSH access issues for VPS 161.97.112.146"
+- Request: Password reset or SSH troubleshooting
+
+### 🎯 Next Steps After Access
+
+1. **Execute vps_playwright_fix.txt** - Complete bot deployment
+2. **Verify service status** - `systemctl status trae-bot`
+3. **Monitor logs** - `journalctl -u trae-bot -f`
+4. **Test trading functionality** - Ensure bot connects to broker
+5. **Setup monitoring** - Configure alerts and health checks
+
+### 🚨 Emergency Access
+
+If completely locked out:
+1. Use Contabo customer panel web console
+2. Contact Contabo support for emergency access
+3. Consider VPS rebuild if necessary (backup data first)
+
+---
+
+**Remember**: Your AI Trading Sentinel deployment is almost complete. Once you gain SSH access and run the Playwright fix script, your bot will be operational 24/7 on the Contabo VPS.

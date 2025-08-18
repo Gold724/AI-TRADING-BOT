@@ -1,0 +1,275 @@
+# VPS Emergency Fix - AI Trading Sentinel Service Failure
+# Copy and paste this entire script into your VPS terminal
+
+#!/bin/bash
+echo "🚨 EMERGENCY FIX - AI Trading Sentinel Service"
+echo "============================================="
+echo "Timestamp: $(date)"
+echo ""
+
+# Navigate to the correct directory
+cd /root/AI-TRADING-BOT
+echo "📁 Current directory: $(pwd)"
+echo ""
+
+# Stop the failing service immediately
+echo "🛑 Stopping trae-bot service..."
+systemctl stop trae-bot
+systemctl disable trae-bot
+echo "✅ Service stopped and disabled"
+echo ""
+
+# Check what's actually failing
+echo "🔍 DIAGNOSING THE PROBLEM:"
+echo "==========================="
+
+# Check if main.py exists
+echo "📄 Checking main.py:"
+if [ -f "main.py" ]; then
+    echo "✅ main.py found"
+    ls -la main.py
+else
+    echo "❌ main.py NOT found in $(pwd)"
+    echo "Searching for main.py..."
+    find /root -name "main.py" -type f 2>/dev/null | head -5
+fi
+echo ""
+
+# Check virtual environment
+echo "🐍 Checking virtual environment:"
+if [ -d "venv" ]; then
+    echo "✅ venv directory found"
+    if [ -f "venv/bin/activate" ]; then
+        echo "✅ activate script found"
+        source venv/bin/activate
+        echo "Python version: $(python --version)"
+    else
+        echo "❌ activate script missing"
+        echo "🔧 Creating new virtual environment..."
+        python3 -m venv venv
+        source venv/bin/activate
+    fi
+else
+    echo "❌ venv directory missing"
+    echo "🔧 Creating new virtual environment..."
+    python3 -m venv venv
+    source venv/bin/activate
+fi
+echo ""
+
+# Test Python imports
+echo "📦 Testing critical imports:"
+echo "Testing dotenv..."
+python -c "from dotenv import load_dotenv; print('✅ dotenv OK')" 2>/dev/null || {
+    echo "❌ dotenv missing - installing..."
+    pip install python-dotenv
+}
+
+echo "Testing requests..."
+python -c "import requests; print('✅ requests OK')" 2>/dev/null || {
+    echo "❌ requests missing - installing..."
+    pip install requests
+}
+
+echo "Testing flask..."
+python -c "import flask; print('✅ flask OK')" 2>/dev/null || {
+    echo "❌ flask missing - installing..."
+    pip install flask
+}
+
+echo "Testing playwright..."
+python -c "from playwright.sync_api import sync_playwright; print('✅ playwright OK')" 2>/dev/null || {
+    echo "❌ playwright missing - installing..."
+    pip install playwright
+    playwright install
+}
+echo ""
+
+# Install all essential packages
+echo "📦 Installing essential packages..."
+pip install --upgrade pip
+pip install python-dotenv requests flask playwright beautifulsoup4 pandas numpy
+playwright install
+echo ""
+
+# Check .env file
+echo "⚙️ Checking .env file:"
+if [ -f ".env" ]; then
+    echo "✅ .env file found"
+    echo "File size: $(wc -c < .env) bytes"
+    echo "Lines: $(wc -l < .env)"
+    # Check for common issues
+    if grep -q "ENVEOF" .env; then
+        echo "❌ .env file contains bash syntax errors"
+        echo "🔧 Fixing .env file..."
+        # Backup and fix
+        cp .env .env.backup
+        # Remove problematic lines
+        sed -i '/ENVEOF/d' .env
+        sed -i '/^fi$/d' .env
+        echo "✅ .env file cleaned"
+    fi
+else
+    echo "❌ .env file missing"
+    echo "🔧 Creating basic .env file..."
+    cat > .env << 'EOF'
+# AI Trading Sentinel Configuration
+ENVIRONMENT=production
+HEADLESS=true
+TRADING_MODE=live
+AUTO_EXECUTE=false
+SIMULATION=true
+
+# Broker Configuration
+BROKER_URL=https://bulenox.com
+BROKER_USERNAME=your_username
+BROKER_PASSWORD=your_password
+
+# Logging
+LOG_LEVEL=INFO
+LOG_TO_FILE=true
+
+# Notifications (optional)
+SLACK_WEBHOOK_URL=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+EOF
+    echo "✅ Basic .env file created"
+fi
+echo ""
+
+# Test main.py execution
+echo "🧪 Testing main.py execution:"
+if [ -f "main.py" ]; then
+    echo "Running main.py with 5-second timeout..."
+    timeout 5s python main.py 2>&1 | head -20
+    exit_code=$?
+    if [ $exit_code -eq 124 ]; then
+        echo "✅ main.py started successfully (timed out as expected)"
+    elif [ $exit_code -eq 0 ]; then
+        echo "✅ main.py executed successfully"
+    else
+        echo "❌ main.py failed with exit code: $exit_code"
+        echo "🔍 Checking for specific errors..."
+        python main.py 2>&1 | head -10
+    fi
+else
+    echo "❌ Cannot test - main.py not found"
+fi
+echo ""
+
+# Create a minimal test script if main.py is missing
+if [ ! -f "main.py" ]; then
+    echo "🔧 Creating minimal test main.py..."
+    cat > main.py << 'EOF'
+#!/usr/bin/env python3
+"""AI Trading Sentinel - Minimal Test Version"""
+
+import os
+import sys
+import time
+from dotenv import load_dotenv
+
+def main():
+    print("🤖 AI Trading Sentinel - Test Mode")
+    print("===================================")
+    
+    # Load environment
+    load_dotenv()
+    
+    print(f"Python version: {sys.version}")
+    print(f"Working directory: {os.getcwd()}")
+    print(f"Environment: {os.getenv('ENVIRONMENT', 'development')}")
+    
+    # Test basic functionality
+    print("✅ Environment loaded successfully")
+    print("✅ Basic imports working")
+    
+    # Keep running for systemd
+    print("🔄 Service running... (Press Ctrl+C to stop)")
+    try:
+        while True:
+            time.sleep(60)
+            print(f"⏰ Heartbeat: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    except KeyboardInterrupt:
+        print("\n🛑 Service stopped by user")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+EOF
+    echo "✅ Test main.py created"
+fi
+echo ""
+
+# Update systemd service with better error handling
+echo "⚙️ Updating systemd service configuration..."
+cat > /etc/systemd/system/trae-bot.service << 'EOF'
+[Unit]
+Description=AI Trading Sentinel Bot
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/AI-TRADING-BOT
+Environment=PATH=/root/AI-TRADING-BOT/venv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStartPre=/bin/bash -c 'cd /root/AI-TRADING-BOT && source venv/bin/activate && python -c "print(\"Environment check OK\")"'
+ExecStart=/bin/bash -c 'cd /root/AI-TRADING-BOT && source venv/bin/activate && exec python main.py'
+Restart=always
+RestartSec=10
+StartLimitInterval=300
+StartLimitBurst=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=trae-bot
+
+[Install]
+WantedBy=multi-user.target
+EOF
+echo "✅ Systemd service updated"
+echo ""
+
+# Reload and test
+echo "🔄 Reloading systemd..."
+systemctl daemon-reload
+echo ""
+
+echo "🧪 Testing service configuration..."
+systemctl enable trae-bot
+echo ""
+
+echo "🚀 Starting service..."
+systemctl start trae-bot
+sleep 5
+echo ""
+
+echo "📊 Final Status Check:"
+systemctl status trae-bot --no-pager -l
+echo ""
+
+echo "📋 Recent Logs:"
+journalctl -u trae-bot --no-pager -n 20
+echo ""
+
+echo "✅ EMERGENCY FIX COMPLETED!"
+echo "==========================="
+echo "Service Status: $(systemctl is-active trae-bot)"
+echo "Service Enabled: $(systemctl is-enabled trae-bot)"
+echo ""
+echo "📋 Quick Commands:"
+echo "- Check status: systemctl status trae-bot"
+echo "- View live logs: journalctl -u trae-bot -f"
+echo "- Restart service: systemctl restart trae-bot"
+echo "- Stop service: systemctl stop trae-bot"
+echo "- Manual test: cd /root/AI-TRADING-BOT && source venv/bin/activate && python main.py"
+echo ""
+echo "🔧 Next Steps:"
+echo "1. Update .env file with your actual broker credentials"
+echo "2. Replace test main.py with your actual trading bot code"
+echo "3. Monitor logs: journalctl -u trae-bot -f"
+echo ""
+echo "🎯 If service is running, the emergency fix was successful!"

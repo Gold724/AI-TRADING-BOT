@@ -1,0 +1,315 @@
+# Alertmanager Configuration for TradeBot Sentinel
+# Handles routing and notifications for Prometheus alerts
+
+global:
+  # SMTP configuration for email alerts
+  smtp_smarthost: '${SMTP_HOST}:${SMTP_PORT}'
+  smtp_from: '${EMAIL_FROM}'
+  smtp_auth_username: '${SMTP_USERNAME}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+  
+  # Slack API URL (optional, can use webhook instead)
+  slack_api_url: 'https://slack.com/api/chat.postMessage'
+  
+  # Default notification settings
+  resolve_timeout: 5m
+  http_config:
+    follow_redirects: true
+
+# Templates for custom notification formatting
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route configuration - defines how alerts are routed to receivers
+route:
+  # Default receiver for all alerts
+  receiver: 'default-notifications'
+  
+  # Group alerts by these labels to reduce noise
+  group_by: ['alertname', 'cluster', 'service', 'instance']
+  
+  # Wait time before sending initial notification
+  group_wait: 30s
+  
+  # Wait time before sending additional notifications for same group
+  group_interval: 5m
+  
+  # Wait time before sending notification about resolved alerts
+  repeat_interval: 4h
+  
+  # Child routes for specific alert types
+  routes:
+    # Critical TradeBot alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 30m
+      routes:
+        # TradeBot specific critical alerts
+        - match:
+            service: tradebot
+          receiver: 'tradebot-critical'
+          group_wait: 5s
+          repeat_interval: 15m
+    
+    # Warning alerts - less frequent notifications
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 2m
+      group_interval: 10m
+      repeat_interval: 2h
+    
+    # Infrastructure alerts
+    - match:
+        category: infrastructure
+      receiver: 'infrastructure-alerts'
+      group_interval: 15m
+      repeat_interval: 6h
+    
+    # Trading performance alerts
+    - match:
+        category: trading
+      receiver: 'trading-alerts'
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 1h
+    
+    # External service alerts (Bulenox, etc.)
+    - match:
+        category: external
+      receiver: 'external-service-alerts'
+      group_interval: 30m
+      repeat_interval: 4h
+    
+    # Monitoring stack alerts
+    - match:
+        service: monitoring
+      receiver: 'monitoring-alerts'
+      group_interval: 20m
+      repeat_interval: 8h
+
+# Inhibition rules - suppress certain alerts when others are firing
+inhibit_rules:
+  # Suppress instance-level alerts when node is down
+  - source_match:
+      alertname: 'NodeDown'
+    target_match_re:
+      instance: '.*'
+    equal: ['instance']
+  
+  # Suppress service alerts when TradeBot is down
+  - source_match:
+      alertname: 'TradeBotDown'
+    target_match:
+      service: 'tradebot'
+    equal: ['instance']
+  
+  # Suppress disk space warnings when critical
+  - source_match:
+      alertname: 'DiskSpaceCritical'
+    target_match:
+      alertname: 'DiskSpaceWarning'
+    equal: ['instance', 'device']
+  
+  # Suppress memory warnings when critical
+  - source_match:
+      alertname: 'HighMemoryUsage'
+      severity: 'critical'
+    target_match:
+      alertname: 'HighMemoryUsage'
+      severity: 'warning'
+    equal: ['instance']
+
+# Receivers - define how and where to send notifications
+receivers:
+  # Default receiver - basic notifications
+  - name: 'default-notifications'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#tradebot-alerts'
+        title: 'TradeBot Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          *Instance:* {{ .Labels.instance }}
+          *Time:* {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ end }}
+        send_resolved: true
+        icon_emoji: ':warning:'
+        username: 'TradeBot Alertmanager'
+    
+    email_configs:
+      - to: '${EMAIL_TO}'
+        subject: 'TradeBot Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          Alert Details:
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Severity: {{ .Labels.severity }}
+          Instance: {{ .Labels.instance }}
+          Started: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ if .EndsAt }}Ended: {{ .EndsAt.Format "2006-01-02 15:04:05" }}{{ end }}
+          
+          Labels:
+          {{ range .Labels.SortedPairs }}- {{ .Name }}: {{ .Value }}
+          {{ end }}
+          
+          Annotations:
+          {{ range .Annotations.SortedPairs }}- {{ .Name }}: {{ .Value }}
+          {{ end }}
+          {{ end }}
+        headers:
+          Subject: 'TradeBot Alert: {{ .GroupLabels.alertname }}'
+
+  # Critical alerts - immediate attention required
+  - name: 'critical-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#tradebot-critical'
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: |
+          <!channel> CRITICAL ALERT REQUIRES IMMEDIATE ATTENTION!
+          
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Instance:* {{ .Labels.instance }}
+          *Started:* {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          {{ end }}
+        send_resolved: true
+        icon_emoji: ':rotating_light:'
+        username: 'TradeBot CRITICAL'
+        color: 'danger'
+    
+    email_configs:
+      - to: '${EMAIL_TO}'
+        subject: '🚨 CRITICAL TradeBot Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          CRITICAL ALERT - IMMEDIATE ACTION REQUIRED
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Instance: {{ .Labels.instance }}
+          Started: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          Runbook: {{ .Annotations.runbook_url }}
+          {{ end }}
+        headers:
+          Priority: 'high'
+          X-Priority: '1'
+
+  # TradeBot specific critical alerts
+  - name: 'tradebot-critical'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#tradebot-critical'
+        title: '🤖💥 TradeBot CRITICAL: {{ .GroupLabels.alertname }}'
+        text: |
+          <!channel> TRADEBOT CRITICAL FAILURE!
+          
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Instance:* {{ .Labels.instance }}
+          *Service:* {{ .Labels.service }}
+          *Started:* {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          
+          *Immediate Actions Required:*
+          1. Check TradeBot logs: `docker logs tradebot-app`
+          2. Verify Bulenox connectivity
+          3. Check system resources
+          4. Review recent trades
+          {{ end }}
+        send_resolved: true
+        icon_emoji: ':robot_face:'
+        username: 'TradeBot Guardian'
+        color: 'danger'
+
+  # Warning alerts
+  - name: 'warning-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#tradebot-warnings'
+        title: '⚠️ Warning: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Instance:* {{ .Labels.instance }}
+          *Started:* {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ end }}
+        send_resolved: true
+        icon_emoji: ':warning:'
+        color: 'warning'
+
+  # Infrastructure alerts
+  - name: 'infrastructure-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#infrastructure'
+        title: '🏗️ Infrastructure: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Instance:* {{ .Labels.instance }}
+          *Category:* Infrastructure
+          {{ end }}
+        send_resolved: true
+        icon_emoji: ':building_construction:'
+
+  # Trading performance alerts
+  - name: 'trading-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#trading-performance'
+        title: '📈 Trading Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Instance:* {{ .Labels.instance }}
+          *Category:* Trading Performance
+          {{ end }}
+        send_resolved: true
+        icon_emoji: ':chart_with_upwards_trend:'
+
+  # External service alerts
+  - name: 'external-service-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#external-services'
+        title: '🌐 External Service: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Service:* {{ .Labels.job }}
+          *Instance:* {{ .Labels.instance }}
+          {{ end }}
+        send_resolved: true
+        icon_emoji: ':globe_with_meridians:'
+
+  # Monitoring stack alerts
+  - name: 'monitoring-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#monitoring'
+        title: '📊 Monitoring: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Service:* {{ .Labels.service }}
+          *Instance:* {{ .Labels.instance }}
+          {{ end }}
+        send_resolved: true
+        icon_emoji: ':bar_chart:'

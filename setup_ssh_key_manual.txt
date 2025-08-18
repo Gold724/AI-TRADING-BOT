@@ -1,0 +1,30 @@
+Manual SSH Key Setup Instructions for VPS 161.97.112.146
+
+1. Connect to your VPS using VNC:
+   VNC: 5.189.145.177:63162
+
+2. Once connected via VNC, open a terminal and run these commands:
+
+   # Create .ssh directory if it doesn't exist
+   mkdir -p ~/.ssh
+   
+   # Set proper permissions
+   chmod 700 ~/.ssh
+   
+   # Create or edit authorized_keys file
+   nano ~/.ssh/authorized_keys
+   
+3. Copy and paste the following public key into the authorized_keys file:
+
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDztbPEsumipT53w90U9v6lEkydWoki6r+DlywORXBPB2JaeyZD7ingXbPV+Z4LJtTi8Wnt834/BXLF6Qcn+5HSYn3j9pYeZ9H5UZhnSV6Q4HHsXwM744SDobS8ZTyFnDqvNGK9GnuVA1SyFfFGbkfgWFTm4ODlxPTjEcgH+S2e2RzqSIyBxePaHAhtqD8BHBhFoNuu0jGqculgAlmUZaOCg8YOgGKNIiWulAL4pgafi/l6HiqQ/9Bz7xitoPUZfIP+y1V1i+rWYO5rQcDwr8ZgQ7xLrabhyskP65+ey/989H8k9JEgow5s48Um09Ak/auHh9osy6MY4wXzzzPCXxvI/E9snz9IWwSQAvWvPW6jYakLEKXBdc431BPgI4F81luwFyq3x00vSj6piVEMxHWuUVylC2IvTdEufA2xNkbjON/bdMSeKL4jAixLybvbmVnWNV4utvglTnvqHPn/7QeKVK7jL/grnDDL805MusLiFu3E23GoyzDpjrESbofD5fpVNCC/3AoGLC4p1JpbHo0mhsWgQ56VnCQmaMCW47CBhcEBXBRLqSKbLKa/RmGafukj0+P8lWG0ws2BWPDuXx6R2N7hBjKq69BffyINzivZ8W3ealtTycfKG5UhLwOaUn7URxPv2ZmGZI/AGEgPCs3TdS9YMOxdx/uAyeTryvur4w== trae-vps
+
+4. Save the file (Ctrl+X, then Y, then Enter in nano)
+
+5. Set proper permissions on authorized_keys:
+   chmod 600 ~/.ssh/authorized_keys
+
+6. Test the SSH connection from your local machine:
+   ssh -i ./d root@161.97.112.146
+
+Alternatively, you can use the following one-liner via VNC terminal:
+echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDztbPEsumipT53w90U9v6lEkydWoki6r+DlywORXBPB2JaeyZD7ingXbPV+Z4LJtTi8Wnt834/BXLF6Qcn+5HSYn3j9pYeZ9H5UZhnSV6Q4HHsXwM744SDobS8ZTyFnDqvNGK9GnuVA1SyFfFGbkfgWFTm4ODlxPTjEcgH+S2e2RzqSIyBxePaHAhtqD8BHBhFoNuu0jGqculgAlmUZaOCg8YOgGKNIiWulAL4pgafi/l6HiqQ/9Bz7xitoPUZfIP+y1V1i+rWYO5rQcDwr8ZgQ7xLrabhyskP65+ey/989H8k9JEgow5s48Um09Ak/auHh9osy6MY4wXzzzPCXxvI/E9snz9IWwSQAvWvPW6jYakLEKXBdc431BPgI4F81luwFyq3x00vSj6piVEMxHWuUVylC2IvTdEufA2xNkbjON/bdMSeKL4jAixLybvbmVnWNV4utvglTnvqHPn/7QeKVK7jL/grnDDL805MusLiFu3E23GoyzDpjrESbofD5fpVNCC/3AoGLC4p1JpbHo0mhsWgQ56VnCQmaMCW47CBhcEBXBRLqSKbLKa/RmGafukj0+P8lWG0ws2BWPDuXx6R2N7hBjKq69BffyINzivZ8W3ealtTycfKG5UhLwOaUn7URxPv2ZmGZI/AGEgPCs3TdS9YMOxdx/uAyeTryvur4w== trae-vps' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && chmod 700 ~/.ssh

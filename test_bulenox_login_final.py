@@ -54,7 +54,7 @@ def test_direct_login():
         driver.set_page_load_timeout(30)
 
         # Navigate to login page
-        login_url = "https://bulenox.com/member/login"
+        login_url = "https://bulenox.projectx.com/login"
         logger.info(f"[TEST] Navigating to login page: {login_url}")
         driver.get(login_url)
         time.sleep(2)  # Wait for page to load
@@ -386,7 +386,7 @@ def test_cookie_based_login():
         driver.set_page_load_timeout(30)
 
         # Navigate directly to a protected page
-        protected_url = "https://bulenox.com/member/home"
+        protected_url = "https://bulenox.projectx.com/home"
         logger.info(f"[TEST] Navigating to protected page: {protected_url}")
         driver.get(protected_url)
         time.sleep(3)  # Wait for page to load

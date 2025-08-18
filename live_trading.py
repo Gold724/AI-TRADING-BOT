@@ -715,7 +715,7 @@ class BulenoxBrokerAdapter(BrokerAdapter):
         })
         
         # Base URL
-        self.base_url = f"https://api.bulenox.com/v1"
+        self.base_url = f"https://api.bulenox.projectx.com/v1"
         
     def connect(self) -> bool:
         """Connect to Bulenox

@@ -58,7 +58,7 @@ def main():
         logger.info(f"Using username: {username}")
 
         # Navigate to login page
-        broker_url = os.getenv("BROKER_URL", "https://bulenox.com/member/login")
+        broker_url = os.getenv("BROKER_URL", "https://bulenox.projectx.com/login")
         logger.info(f"Navigating to: {broker_url}")
         driver.get(broker_url)
 

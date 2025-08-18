@@ -1,0 +1,48 @@
+{
+  "ddbd098a-829f-4a59-a88f-c5ead1d7572e": [
+    {
+      "trade_id": "3eddaec2-12cc-4efd-81d0-3c5f932242b5",
+      "session_id": "ddbd098a-829f-4a59-a88f-c5ead1d7572e",
+      "broker_id": "bulenox",
+      "timestamp": "2025-08-17T11:31:28.160097",
+      "account_id": "TEST_001",
+      "symbol": "EURUSD",
+      "action": "BUY",
+      "volume": 0.01,
+      "test_mode": true
+    },
+    {
+      "trade_id": "04f4f44e-9886-4a4c-9fea-908eb11b1cf8",
+      "session_id": "ddbd098a-829f-4a59-a88f-c5ead1d7572e",
+      "broker_id": "bulenox",
+      "timestamp": "2025-08-17T11:31:55.504095",
+      "account_id": "TEST_001",
+      "symbol": "EURUSD",
+      "action": "BUY",
+      "volume": 0.01,
+      "test_mode": true
+    },
+    {
+      "trade_id": "55de4ce2-8098-46a1-870f-22e6d623862b",
+      "session_id": "ddbd098a-829f-4a59-a88f-c5ead1d7572e",
+      "broker_id": "bulenox",
+      "timestamp": "2025-08-17T11:33:32.473451",
+      "account_id": "TEST_001",
+      "symbol": "EURUSD",
+      "action": "BUY",
+      "volume": 0.01,
+      "test_mode": true
+    },
+    {
+      "trade_id": "70cb01bb-a62b-4cf8-a91c-60cc194ac06b",
+      "session_id": "ddbd098a-829f-4a59-a88f-c5ead1d7572e",
+      "broker_id": "bulenox",
+      "timestamp": "2025-08-17T11:34:16.332729",
+      "account_id": "TEST_001",
+      "symbol": "EURUSD",
+      "action": "BUY",
+      "volume": 0.01,
+      "test_mode": true
+    }
+  ]
+}

@@ -1,0 +1,372 @@
+# Docker Compose for TradeBot Sentinel Monitoring Stack
+# Includes: Prometheus, Grafana, Loki, Promtail, Alertmanager, Node Exporter, cAdvisor
+
+version: '3.8'
+
+networks:
+  monitoring:
+    driver: bridge
+  tradebot:
+    external: true
+    name: tradebot-network
+
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  loki_data:
+    driver: local
+  alertmanager_data:
+    driver: local
+
+services:
+  # Prometheus - Metrics Collection and Storage
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: tradebot-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=10GB'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--web.external-url=http://localhost:9090'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+      - tradebot
+    depends_on:
+      - alertmanager
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=prometheus"
+
+  # Grafana - Visualization and Dashboards
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: tradebot-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_ALLOW_ORG_CREATE=false
+      - GF_USERS_AUTO_ASSIGN_ORG=true
+      - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Viewer
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,grafana-worldmap-panel
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_LOG_LEVEL=info
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana-dashboard.json:/etc/grafana/provisioning/dashboards/tradebot-dashboard.json:ro
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+    networks:
+      - monitoring
+      - tradebot
+    depends_on:
+      - prometheus
+      - loki
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=grafana"
+
+  # Loki - Log Aggregation
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: tradebot-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - monitoring
+      - tradebot
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=loki"
+
+  # Promtail - Log Collection Agent
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: tradebot-promtail
+    restart: unless-stopped
+    ports:
+      - "9080:9080"
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/log:/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../logs:/app/logs:ro
+      - /tmp/positions.yaml:/tmp/positions.yaml
+    networks:
+      - monitoring
+      - tradebot
+    depends_on:
+      - loki
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=promtail"
+
+  # Alertmanager - Alert Management
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    container_name: tradebot-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+      - '--cluster.advertise-address=0.0.0.0:9093'
+    volumes:
+      - ./alertmanager-config.yml:/etc/alertmanager/config.yml:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - monitoring
+      - tradebot
+    environment:
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - EMAIL_TO=${EMAIL_TO}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=alertmanager"
+
+  # Node Exporter - System Metrics
+  node-exporter:
+    image: prom/node-exporter:v1.6.0
+    container_name: tradebot-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.systemd'
+      - '--collector.processes'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - monitoring
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=node-exporter"
+
+  # cAdvisor - Container Metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
+    container_name: tradebot-cadvisor
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    networks:
+      - monitoring
+    privileged: true
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=cadvisor"
+
+  # Blackbox Exporter - External Service Monitoring
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.24.0
+    container_name: tradebot-blackbox-exporter
+    restart: unless-stopped
+    ports:
+      - "9115:9115"
+    command:
+      - '--config.file=/etc/blackbox_exporter/config.yml'
+    volumes:
+      - ./blackbox-config.yml:/etc/blackbox_exporter/config.yml:ro
+    networks:
+      - monitoring
+      - tradebot
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=blackbox-exporter"
+
+  # Nginx Exporter - Web Server Metrics
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:0.11.0
+    container_name: tradebot-nginx-exporter
+    restart: unless-stopped
+    ports:
+      - "9113:9113"
+    command:
+      - '-nginx.scrape-uri=http://nginx:8080/nginx_status'
+    networks:
+      - monitoring
+      - tradebot
+    depends_on:
+      - nginx
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=nginx-exporter"
+
+  # Redis Exporter - Cache Metrics (if using Redis)
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.52.0
+    container_name: tradebot-redis-exporter
+    restart: unless-stopped
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - monitoring
+      - tradebot
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=redis-exporter"
+
+  # PostgreSQL Exporter - Database Metrics (if using PostgreSQL)
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.13.2
+    container_name: tradebot-postgres-exporter
+    restart: unless-stopped
+    ports:
+      - "9187:9187"
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+    networks:
+      - monitoring
+      - tradebot
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=postgres-exporter"
+
+  # Nginx for reverse proxy and load balancing
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: tradebot-monitoring-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-monitoring.conf:/etc/nginx/conf.d/monitoring.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks:
+      - monitoring
+      - tradebot
+    depends_on:
+      - prometheus
+      - grafana
+      - loki
+      - alertmanager
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=nginx"
+
+  # Jaeger - Distributed Tracing (optional)
+  jaeger:
+    image: jaegertracing/all-in-one:1.47
+    container_name: tradebot-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "6831:6831/udp"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=info
+    networks:
+      - monitoring
+      - tradebot
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=jaeger"
+
+  # Watchtower - Automatic Container Updates
+  watchtower:
+    image: containrrr/watchtower:1.5.3
+    container_name: tradebot-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=3600
+      - WATCHTOWER_INCLUDE_STOPPED=true
+      - WATCHTOWER_REVIVE_STOPPED=true
+      - WATCHTOWER_NOTIFICATIONS=slack
+      - WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL=${SLACK_WEBHOOK_URL}
+      - WATCHTOWER_NOTIFICATION_SLACK_IDENTIFIER=TradeBot-Watchtower
+    networks:
+      - monitoring
+    labels:
+      - "logging=promtail"
+      - "logging.jobname=watchtower"
+
+# Health checks for all services
+healthcheck:
+  prometheus:
+    test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+
+  grafana:
+    test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+
+  loki:
+    test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+
+  alertmanager:
+    test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s

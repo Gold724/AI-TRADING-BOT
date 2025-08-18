@@ -1,11 +1,22 @@
 import os
 
-from executor_binance import BinanceExecutor
-from executor_exness import ExecutorExness
+try:
+    from executor_binance import BinanceExecutor
+except ImportError:
+    BinanceExecutor = None
+
+try:
+    from executor_exness import ExecutorExness
+except ImportError:
+    ExecutorExness = None
+
 from flask import Flask, jsonify, request, session
 from flask_cors import CORS
 
-from executor_bulenox import ExecutorBulenox
+try:
+    from executor_bulenox import ExecutorBulenox
+except ImportError:
+    ExecutorBulenox = None
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -16,9 +27,9 @@ app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HT
 from auth import login, login_required, logout
 
 # Initialize executors
-binance_executor = BinanceExecutor()
-exness_executor = ExecutorExness()
-bulenox_executor = ExecutorBulenox()
+binance_executor = BinanceExecutor() if BinanceExecutor else None
+exness_executor = ExecutorExness() if ExecutorExness else None
+bulenox_executor = ExecutorBulenox() if ExecutorBulenox else None
 
 import datetime
 
@@ -174,9 +185,11 @@ def get_signal():
 @app.route("/api/signal/stats")
 def get_signal_stats():
     total_signals = len(signals)
+    # Safely calculate average confidence, handling missing confidence fields
+    signals_with_confidence = [s.get("confidence", 0) for s in signals if "confidence" in s]
     avg_confidence = (
-        sum(s["confidence"] for s in signals) / total_signals
-        if total_signals > 0
+        sum(signals_with_confidence) / len(signals_with_confidence)
+        if signals_with_confidence
         else 0
     )
     return jsonify(

@@ -1,0 +1,69 @@
+{
+  "notifications": {
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "",
+      "password": "",
+      "from_email": "",
+      "to_emails": [],
+      "alert_types": ["success", "failure", "critical"],
+      "rate_limit": {"max_per_hour": 10, "max_per_day": 50}
+    },
+    "telegram": {
+      "enabled": false,
+      "bot_token": "",
+      "chat_ids": [],
+      "alert_types": ["success", "failure", "warning", "critical"],
+      "rate_limit": {"max_per_hour": 20, "max_per_day": 100}
+    },
+    "webhook": {
+      "enabled": false,
+      "url": "",
+      "headers": {},
+      "alert_types": ["success", "failure", "critical"],
+      "rate_limit": {"max_per_hour": 30, "max_per_day": 200}
+    },
+    "discord": {
+      "enabled": false,
+      "webhook_url": "",
+      "alert_types": ["success", "failure", "warning", "critical"],
+      "rate_limit": {"max_per_hour": 15, "max_per_day": 75}
+    }
+  },
+  "reports": {
+    "daily_summary": {
+      "enabled": true,
+      "frequency": "daily",
+      "time": "09:00",
+      "channels": ["email"],
+      "template": "daily_summary",
+      "include_charts": false
+    },
+    "weekly_performance": {
+      "enabled": true,
+      "frequency": "weekly",
+      "time": "monday:09:00",
+      "channels": ["email"],
+      "template": "weekly_performance",
+      "include_charts": true
+    },
+    "trade_execution_report": {
+      "enabled": true,
+      "frequency": "hourly",
+      "time": "00",
+      "channels": ["telegram"],
+      "template": "trade_execution",
+      "include_charts": false,
+      "filters": {"min_trades": 1}
+    }
+  },
+  "alert_settings": {
+    "max_queue_size": 1000,
+    "retry_attempts": 3,
+    "retry_delay_seconds": 60,
+    "batch_size": 10,
+    "processing_interval_seconds": 30
+  }
+}

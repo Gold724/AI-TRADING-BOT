@@ -1,0 +1,92 @@
+{
+  "algorithm": "Tesla369Gold",
+  "description": "Gold futures trading strategy with 3-6-9 trade limits and session-based entries",
+  "backtest_settings": {
+    "start_date": "2024-01-01",
+    "end_date": "2024-12-31",
+    "initial_cash": 100000,
+    "benchmark": "SPY",
+    "resolution": "Minute"
+  },
+  "parameters": {
+    "trades_per_day": {
+      "default": 3,
+      "optimize": [3, 6, 9],
+      "description": "Maximum trades per day (3, 6, or 9 only)"
+    },
+    "daily_profit_target": {
+      "default": 535.71,
+      "optimize": [400, 535.71, 700, 1000],
+      "description": "Daily profit target in USD"
+    },
+    "daily_max_drawdown": {
+      "default": 267.0,
+      "optimize": [200, 267.0, 350, 500],
+      "description": "Maximum daily drawdown limit in USD"
+    },
+    "max_contracts": {
+      "default": 3,
+      "optimize": [1, 2, 3],
+      "description": "Maximum contracts per trade"
+    },
+    "default_contracts": {
+      "default": 1,
+      "optimize": [1],
+      "description": "Default contract size for valid signals"
+    },
+    "tp_pct": {
+      "default": 0.0015,
+      "optimize": [0.001, 0.0015, 0.002, 0.0025],
+      "description": "Take profit percentage (0.15% default)"
+    },
+    "sl_pct": {
+      "default": 0.0002,
+      "optimize": [0.0001, 0.0002, 0.0003, 0.0005],
+      "description": "Stop loss percentage (0.02% default)"
+    }
+  },
+  "session_windows": {
+    "asian": "03:00-06:00 NY",
+    "london": "08:20-11:30 NY",
+    "new_york": "13:00-15:30 NY"
+  },
+  "risk_management": {
+    "auto_flatten_time": "15:30 NY",
+    "max_daily_trades": "trades_per_day parameter",
+    "position_sizing": "Signal strength based (1-3 contracts)",
+    "no_hedging": "Cannot hold long and short simultaneously"
+  },
+  "deployment_targets": {
+    "backtest_criteria": {
+      "min_win_rate": 0.60,
+      "max_drawdown_pct": 0.15,
+      "min_profit_factor": 1.5,
+      "min_sharpe_ratio": 1.0
+    },
+    "live_deployment": {
+      "broker": "Bulenox-connected futures broker",
+      "mode": "Live trading via Lean API",
+      "fallback": "Paper trading for testing"
+    }
+  },
+  "monitoring": {
+    "alerts": {
+      "daily_target_hit": true,
+      "daily_drawdown_breached": true,
+      "strategy_halted_early": true,
+      "broker_connection_lost": true
+    },
+    "logging": {
+      "trade_details": true,
+      "session_tracking": true,
+      "pnl_tracking": true,
+      "signal_strength_analysis": true
+    }
+  },
+  "optimization_schedule": {
+    "frequency": "Weekly",
+    "parameters_to_optimize": ["tp_pct", "sl_pct", "daily_profit_target"],
+    "lookback_period": "3 months",
+    "forward_test_period": "1 month"
+  }
+}

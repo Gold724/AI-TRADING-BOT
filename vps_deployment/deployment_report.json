@@ -1,0 +1,82 @@
+{
+  "timestamp": "2025-08-14T06:18:02.477208",
+  "validation_results": {
+    "trading_scripts": {
+      "tradebot_sentinel_playwright.py": {
+        "exists": true,
+        "size": 54089,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\tradebot_sentinel_playwright.py"
+      },
+      "tradebot_sentinel_advanced_pro.py": {
+        "exists": true,
+        "size": 30245,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\tradebot_sentinel_advanced_pro.py"
+      },
+      "login_bulenox_playwright.py": {
+        "exists": true,
+        "size": 27069,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\login_bulenox_playwright.py"
+      },
+      "endpoint_validator.py": {
+        "exists": true,
+        "size": 10133,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\endpoint_validator.py"
+      }
+    },
+    "launchers": {
+      "live_trading_launcher.sh": {
+        "exists": true,
+        "size": 2265,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\live_trading_launcher.sh"
+      },
+      "live_trading_launcher.ps1": {
+        "exists": true,
+        "size": 8280,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\live_trading_launcher.ps1"
+      },
+      "live_trading_launcher.bat": {
+        "exists": true,
+        "size": 6292,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\live_trading_launcher.bat"
+      }
+    },
+    "utilities": {
+      "curl_to_python.py": {
+        "exists": true,
+        "size": 4706,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\curl_to_python.py"
+      },
+      "requirements.txt": {
+        "exists": true,
+        "size": 3866,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\requirements.txt"
+      },
+      "verify_setup.py": {
+        "exists": true,
+        "size": 2358,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\verify_setup.py"
+      }
+    },
+    "config_files": {
+      ".env.example": {
+        "exists": true,
+        "size": 4081,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\.env.example"
+      },
+      "secrets.json": {
+        "exists": true,
+        "size": 74,
+        "path": "C:\\Users\\Admin\\Downloads\\ai-trading-sentinel\\secrets.json"
+      }
+    }
+  },
+  "missing_files": [],
+  "deployment_status": "READY",
+  "manual_steps": [
+    "1. Update VPS_HOST and VPS_USER in deploy_to_vps.sh",
+    "2. Ensure SSH key authentication is set up",
+    "3. Set environment variables (BULENOX_USERNAME, BULENOX_PASSWORD)",
+    "4. Run: ./deploy_to_vps.sh from deployment directory",
+    "5. Verify with: python3 vps_environment_check.py on VPS"
+  ]
+}

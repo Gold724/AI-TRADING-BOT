@@ -24,7 +24,7 @@ try:
 
     # Navigate to login page
     print("Navigating to Bulenox login page...")
-    driver.get("https://bulenox.com/member/login")
+    driver.get("https://bulenox.projectx.com/login")
     time.sleep(5)
 
     # Print current state

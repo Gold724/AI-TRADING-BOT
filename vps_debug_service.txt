@@ -1,0 +1,148 @@
+#!/bin/bash
+# VPS Service Debug Script - AI Trading Sentinel
+# This script diagnoses and fixes the trae-bot service failure
+
+echo "🔍 AI Trading Sentinel - Service Debug & Fix"
+echo "============================================"
+echo "Timestamp: $(date)"
+echo ""
+
+# Step 1: Check current service status
+echo "📊 Current Service Status:"
+systemctl status trae-bot --no-pager -l
+echo ""
+
+# Step 2: Get detailed logs
+echo "📋 Recent Service Logs (Last 50 lines):"
+journalctl -u trae-bot --no-pager -n 50
+echo ""
+
+# Step 3: Check if main.py exists and is accessible
+echo "📁 Checking main.py file:"
+if [ -f "/root/AI-TRADING-BOT/main.py" ]; then
+    echo "✅ main.py found"
+    ls -la /root/AI-TRADING-BOT/main.py
+else
+    echo "❌ main.py NOT found at /root/AI-TRADING-BOT/main.py"
+    echo "Searching for main.py..."
+    find /root -name "main.py" -type f 2>/dev/null
+fi
+echo ""
+
+# Step 4: Check virtual environment
+echo "🐍 Checking Virtual Environment:"
+if [ -d "/root/AI-TRADING-BOT/venv" ]; then
+    echo "✅ Virtual environment found"
+    ls -la /root/AI-TRADING-BOT/venv/bin/activate
+else
+    echo "❌ Virtual environment NOT found"
+fi
+echo ""
+
+# Step 5: Check .env file
+echo "⚙️ Checking .env file:"
+if [ -f "/root/AI-TRADING-BOT/.env" ]; then
+    echo "✅ .env file found"
+    echo "File size: $(wc -c < /root/AI-TRADING-BOT/.env) bytes"
+    echo "First few lines (without sensitive data):"
+    head -5 /root/AI-TRADING-BOT/.env | sed 's/=.*/=***HIDDEN***/' 
+else
+    echo "❌ .env file NOT found"
+fi
+echo ""
+
+# Step 6: Test Python environment manually
+echo "🧪 Testing Python Environment:"
+cd /root/AI-TRADING-BOT
+source venv/bin/activate
+echo "Python version: $(python --version)"
+echo "Pip version: $(pip --version)"
+echo ""
+
+# Step 7: Test importing required modules
+echo "📦 Testing Required Modules:"
+python -c "import sys; print('Python path:', sys.path[0])"
+echo "Testing dotenv import:"
+python -c "from dotenv import load_dotenv; print('✅ dotenv OK')" 2>/dev/null || echo "❌ dotenv FAILED"
+echo "Testing requests import:"
+python -c "import requests; print('✅ requests OK')" 2>/dev/null || echo "❌ requests FAILED"
+echo "Testing flask import:"
+python -c "import flask; print('✅ flask OK')" 2>/dev/null || echo "❌ flask FAILED"
+echo "Testing playwright import:"
+python -c "from playwright.sync_api import sync_playwright; print('✅ playwright OK')" 2>/dev/null || echo "❌ playwright FAILED"
+echo ""
+
+# Step 8: Try running main.py with error capture
+echo "🚀 Testing main.py execution:"
+echo "Running: python main.py (with 10 second timeout)"
+timeout 10s python main.py 2>&1 || echo "❌ main.py execution failed or timed out"
+echo ""
+
+# Step 9: Check systemd service file
+echo "⚙️ Checking systemd service configuration:"
+cat /etc/systemd/system/trae-bot.service
+echo ""
+
+# Step 10: Provide fix recommendations
+echo "🔧 DIAGNOSTIC SUMMARY & FIXES:"
+echo "================================"
+
+# Check for common issues and provide fixes
+if ! python -c "from dotenv import load_dotenv" 2>/dev/null; then
+    echo "❌ ISSUE: Missing python-dotenv package"
+    echo "🔧 FIX: pip install python-dotenv"
+    pip install python-dotenv
+fi
+
+if ! python -c "import requests" 2>/dev/null; then
+    echo "❌ ISSUE: Missing requests package"
+    echo "🔧 FIX: pip install requests"
+    pip install requests
+fi
+
+if ! python -c "import flask" 2>/dev/null; then
+    echo "❌ ISSUE: Missing flask package"
+    echo "🔧 FIX: pip install flask"
+    pip install flask
+fi
+
+if ! python -c "from playwright.sync_api import sync_playwright" 2>/dev/null; then
+    echo "❌ ISSUE: Missing playwright package"
+    echo "🔧 FIX: pip install playwright && playwright install"
+    pip install playwright
+    playwright install
+fi
+
+# Step 11: Install all requirements if requirements.txt exists
+if [ -f "/root/AI-TRADING-BOT/requirements.txt" ]; then
+    echo "📦 Installing all requirements from requirements.txt:"
+    pip install -r requirements.txt
+else
+    echo "⚠️ No requirements.txt found, installing essential packages:"
+    pip install python-dotenv requests flask playwright beautifulsoup4 pandas numpy
+    playwright install
+fi
+
+echo ""
+echo "🔄 Reloading systemd and restarting service:"
+systemctl daemon-reload
+systemctl restart trae-bot
+sleep 3
+
+echo "📊 Final Service Status:"
+systemctl status trae-bot --no-pager -l
+
+echo ""
+echo "📋 Recent Logs After Fix:"
+journalctl -u trae-bot --no-pager -n 20
+
+echo ""
+echo "✅ Debug script completed!"
+echo "If service is still failing, check the logs above for specific error messages."
+echo ""
+echo "Quick Commands:"
+echo "- Check status: systemctl status trae-bot"
+echo "- View logs: journalctl -u trae-bot -f"
+echo "- Restart: systemctl restart trae-bot"
+echo "- Stop: systemctl stop trae-bot"
+echo "- Manual test: cd /root/AI-TRADING-BOT && source venv/bin/activate && python main.py"

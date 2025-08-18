@@ -1,0 +1,229 @@
+# Multi-stage build for optimized production deployment
+FROM node:18-alpine AS node-builder
+
+# Install Node.js dependencies if needed
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production 2>/dev/null || echo "No package.json found, skipping npm install"
+
+# Python base image with optimizations
+FROM python:3.11-slim AS python-base
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    gnupg \
+    ca-certificates \
+    curl \
+    unzip \
+    xvfb \
+    x11vnc \
+    fluxbox \
+    wmctrl \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libatspi2.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libxss1 \
+    libxtst6 \
+    lsb-release \
+    xdg-utils \
+    libu2f-udev \
+    libvulkan1 \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Google Chrome
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install ChromeDriver
+RUN CHROME_VERSION=$(google-chrome --version | cut -d " " -f3 | cut -d "." -f1) \
+    && CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}") \
+    && wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" \
+    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
+    && rm /tmp/chromedriver.zip \
+    && chmod +x /usr/local/bin/chromedriver
+
+# Production stage
+FROM python-base AS production
+
+# Create non-root user
+RUN groupadd --gid 1000 tradebot \
+    && useradd --uid 1000 --gid tradebot --shell /bin/bash --create-home tradebot
+
+# Set working directory
+WORKDIR /app
+
+# Copy Python requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install additional production dependencies
+RUN pip install --no-cache-dir \
+    gunicorn \
+    gevent \
+    prometheus-client \
+    psutil \
+    redis \
+    psycopg2-binary \
+    celery \
+    flower
+
+# Copy application code
+COPY . .
+
+# Copy Node.js artifacts if they exist
+COPY --from=node-builder /app/node_modules ./node_modules 2>/dev/null || true
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/data /app/screenshots /app/trades /app/temp \
+    && chown -R tradebot:tradebot /app
+
+# Create startup script
+RUN cat > /app/start.sh << 'EOF'
+#!/bin/bash
+set -e
+
+# Start Xvfb for headless display
+Xvfb :99 -screen 0 1920x1080x24 -ac +extension GLX +render -noreset &
+export DISPLAY=:99
+
+# Wait for Xvfb to start
+sleep 2
+
+# Start window manager
+fluxbox &
+
+# Function to cleanup on exit
+cleanup() {
+    echo "Shutting down services..."
+    pkill -f "Xvfb" || true
+    pkill -f "fluxbox" || true
+    exit 0
+}
+
+# Set trap for cleanup
+trap cleanup SIGTERM SIGINT
+
+# Health check endpoint
+cat > /app/health_check.py << 'HEALTH_EOF'
+from flask import Flask, jsonify
+import psutil
+import os
+import threading
+import time
+
+health_app = Flask(__name__)
+
+@health_app.route('/health')
+def health_check():
+    try:
+        # Check system resources
+        cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        # Check if main process is running
+        main_process_running = any('tradebot_sentinel' in p.name() for p in psutil.process_iter(['name']))
+        
+        status = {
+            'status': 'healthy' if main_process_running else 'unhealthy',
+            'timestamp': time.time(),
+            'system': {
+                'cpu_percent': cpu_percent,
+                'memory_percent': memory.percent,
+                'disk_percent': disk.percent,
+                'uptime': time.time() - psutil.boot_time()
+            },
+            'processes': {
+                'main_process_running': main_process_running,
+                'display_available': os.environ.get('DISPLAY') is not None
+            }
+        }
+        
+        return jsonify(status), 200 if main_process_running else 503
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+if __name__ == '__main__':
+    health_app.run(host='0.0.0.0', port=8080, debug=False)
+HEALTH_EOF
+
+# Start health check server in background
+python3 /app/health_check.py &
+
+# Start the main application
+echo "Starting TradeBot Sentinel..."
+if [ "$PRODUCTION" = "true" ]; then
+    # Production mode with Gunicorn
+    exec gunicorn --bind 0.0.0.0:5000 --workers 2 --worker-class gevent --timeout 300 --keep-alive 2 --max-requests 1000 --max-requests-jitter 100 cloud_main:app
+else
+    # Development mode
+    exec python3 tradebot_sentinel_final.py
+fi
+EOF
+
+# Make startup script executable
+RUN chmod +x /app/start.sh
+
+# Create environment file template
+RUN cat > /app/.env.production << 'EOF'
+# Production Environment Configuration
+PRODUCTION=true
+HEADLESS=true
+LOG_LEVEL=INFO
+MAX_RETRIES=5
+RETRY_DELAY=3
+PAGE_TIMEOUT=60000
+
+# Chrome Options
+CHROME_OPTIONS=--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--disable-extensions,--disable-plugins,--disable-images,--disable-javascript,--disable-default-apps,--disable-background-timer-throttling,--disable-backgrounding-occluded-windows,--disable-renderer-backgrounding,--disable-features=TranslateUI,--disable-ipc-flooding-protection,--no-first-run,--no-default-browser-check,--no-pings,--password-store=basic,--use-mock-keychain
+
+# Resource Limits
+MAX_MEMORY_MB=1500
+MAX_CPU_PERCENT=80
+
+# Monitoring
+METRICS_ENABLED=true
+METRICS_PORT=8080
+HEALTH_CHECK_INTERVAL=30
+
+# Auto-restart
+AUTO_RESTART=true
+RESTART_INTERVAL=3600
+EOF
+
+# Switch to non-root user
+USER tradebot
+
+# Expose ports
+EXPOSE 5000 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Set entrypoint
+ENTRYPOINT ["/app/start.sh"]

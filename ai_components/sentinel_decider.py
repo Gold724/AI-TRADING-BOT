@@ -94,7 +94,7 @@ class SentinelDecider:
             "accounts": {
                 "main_funded_01": {
                     "name": "Main Funded Account",
-                    "login_url": "https://bulenox.com/login",
+                    "login_url": "https://bulenox.projectx.com/login",
                     "username": "${BROKER_USERNAME}",
                     "password": "${BROKER_PASSWORD}",
                     "min_confidence": 80,
@@ -103,7 +103,7 @@ class SentinelDecider:
                 },
                 "backup_funded_02": {
                     "name": "Backup Funded Account",
-                    "login_url": "https://bulenox.com/login",
+                    "login_url": "https://bulenox.projectx.com/login",
                     "username": "${BROKER_USERNAME_BACKUP}",
                     "password": "${BROKER_PASSWORD_BACKUP}",
                     "min_confidence": 60,
@@ -112,7 +112,7 @@ class SentinelDecider:
                 },
                 "demo_account": {
                     "name": "Demo Account",
-                    "login_url": "https://bulenox.com/login",
+                    "login_url": "https://bulenox.projectx.com/login",
                     "username": "${BROKER_USERNAME_DEMO}",
                     "password": "${BROKER_PASSWORD_DEMO}",
                     "min_confidence": 40,

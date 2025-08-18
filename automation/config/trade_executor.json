@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "trade_execution": {
+    "enabled": true,
+    "max_concurrent_trades": 3,
+    "retry_attempts": 3,
+    "retry_delay": 2.0,
+    "timeout": 30.0,
+    "dry_run": false
+  },
+  "risk_management": {
+    "max_position_size": 1000.0,
+    "max_daily_loss": 500.0,
+    "max_drawdown": 0.15,
+    "position_sizing": "fixed",
+    "stop_loss_percentage": 0.02,
+    "take_profit_percentage": 0.04
+  },
+  "strategies": {
+    "FVG Midpoint": {
+      "enabled": true,
+      "symbols": ["EURUSD", "GBPUSD", "USDJPY"],
+      "timeframes": ["1m", "5m", "15m"],
+      "min_gap_size": 10,
+      "max_gap_age": 300,
+      "confidence_threshold": 0.7,
+      "position_size": 100.0,
+      "stop_loss": 20,
+      "take_profit": 40
+    },
+    "Breakout Momentum": {
+      "enabled": true,
+      "symbols": ["EURUSD", "GBPUSD"],
+      "timeframes": ["5m", "15m"],
+      "breakout_threshold": 0.0005,
+      "volume_multiplier": 1.5,
+      "momentum_period": 14,
+      "position_size": 150.0,
+      "stop_loss": 25,
+      "take_profit": 50
+    }
+  },
+  "monitoring": {
+    "trade_file_path": "trade.sh",
+    "check_interval": 1.0,
+    "log_level": "INFO",
+    "enable_alerts": true
+  },
+  "database": {
+    "path": "logs/trades.db",
+    "backup_interval": 3600,
+    "retention_days": 30
+  },
+  "curl_conversion": {
+    "python_template_path": "automation/templates/trade_request_template.py",
+    "output_path": "trade_request_full.py",
+    "timeout": 30,
+    "verify_ssl": true
+  }
+}

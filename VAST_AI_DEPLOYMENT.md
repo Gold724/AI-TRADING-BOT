@@ -203,7 +203,7 @@ This makes Vast.ai significantly more cost-effective than traditional cloud prov
    - Check if Chrome is running in headless mode correctly
 
 3. **Network connectivity issues**:
-   - Test network connectivity: `curl -I https://bulenox.com`
+   - Test network connectivity: `curl -I https://bulenox.projectx.com`
    - Check if the instance has outbound internet access
 
 ### Restarting After Instance Reboot

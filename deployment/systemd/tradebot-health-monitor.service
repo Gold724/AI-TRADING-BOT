@@ -1,0 +1,54 @@
+[Unit]
+Description=TradeBot Sentinel Health Monitor
+Documentation=https://github.com/your-org/ai-trading-sentinel
+After=network.target tradebot-sentinel.service
+Wants=tradebot-sentinel.service
+Requires=network.target
+
+[Service]
+Type=simple
+User=tradebot
+Group=tradebot
+WorkingDirectory=/opt/tradebot-sentinel
+Environment=PYTHONPATH=/opt/tradebot-sentinel
+EnvironmentFile=-/opt/tradebot-sentinel/.env
+ExecStart=/opt/tradebot-sentinel/deployment/health-monitor.sh start
+ExecStop=/opt/tradebot-sentinel/deployment/health-monitor.sh stop
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log /tmp /opt/tradebot-sentinel
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+RestrictNamespaces=true
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=256M
+CPUQuota=50%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tradebot-health-monitor
+
+[Install]
+WantedBy=multi-user.target
+Also=tradebot-sentinel.service

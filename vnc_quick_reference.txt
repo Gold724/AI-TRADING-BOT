@@ -1,0 +1,259 @@
+# VNC Quick Reference - AI Trading Sentinel
+
+## 🚀 QUICK START COMMANDS
+
+### 1. Access VNC Console
+→ https://my.contabo.com → Your Services → VPS → VNC Console
+
+### 2. Open Terminal in VNC
+→ Right-click desktop → Open Terminal
+→ OR: Ctrl + Alt + T
+
+### 3. Execute Deployment
+```bash
+cd /home/ubuntu
+wget https://raw.githubusercontent.com/your-username/ai-trading-sentinel/main/vnc_deployment_implementation.sh
+chmod +x vnc_deployment_implementation.sh
+./vnc_deployment_implementation.sh
+```
+
+### 4. Configure .env (when gedit opens)
+- Replace: your_username_here → actual username
+- Replace: your_password_here → actual password
+- Save: Ctrl + S
+- Close: Alt + F4
+
+### 5. Verify Service
+```bash
+sudo systemctl status trae-bot
+sudo journalctl -u trae-bot -f
+```
+
+## 🔧 ESSENTIAL COMMANDS
+
+### Service Management
+```bash
+# Check status
+sudo systemctl status trae-bot
+
+# Start service
+sudo systemctl start trae-bot
+
+# Stop service
+sudo systemctl stop trae-bot
+
+# Restart service
+sudo systemctl restart trae-bot
+
+# Enable auto-start
+sudo systemctl enable trae-bot
+
+# View logs
+sudo journalctl -u trae-bot -f
+tail -f /var/log/trae/trae.log
+```
+
+### Browser Testing
+```bash
+cd /home/ubuntu/ai-trading-sentinel
+python3 browser_test.py
+```
+
+### Environment Check
+```bash
+# Check .env file
+cat /home/ubuntu/ai-trading-sentinel/.env
+
+# Test environment loading
+python3 -c "from dotenv import load_dotenv; load_dotenv(); import os; print('Username:', os.getenv('BROKER_USERNAME'))"
+```
+
+## 🆘 TROUBLESHOOTING
+
+### VNC Issues
+- Try different browser
+- Disable browser extensions
+- Use incognito/private mode
+- Contact Contabo support
+
+### Service Won't Start
+```bash
+# Check detailed logs
+sudo journalctl -u trae-bot -n 50
+
+# Check service file
+sudo systemctl cat trae-bot
+
+# Reset and restart
+sudo systemctl daemon-reload
+sudo systemctl restart trae-bot
+```
+
+### Browser Fails
+```bash
+# Reinstall Playwright
+python3 -m playwright install
+python3 -m playwright install-deps
+
+# Set display
+export DISPLAY=:1
+
+# Test manually
+python3 browser_test.py
+```
+
+### Permission Issues
+```bash
+# Fix log permissions
+sudo chown ubuntu:ubuntu /var/log/trae/trae.log
+sudo chmod 644 /var/log/trae/trae.log
+
+# Fix directory permissions
+sudo chown -R ubuntu:ubuntu /home/ubuntu/ai-trading-sentinel
+```
+
+## 📊 MONITORING
+
+### Real-time Monitoring
+```bash
+# Service logs
+sudo journalctl -u trae-bot -f
+
+# Bot logs
+tail -f /var/log/trae/trae.log
+
+# System resources
+htop
+
+# Disk usage
+df -h
+
+# Memory usage
+free -h
+```
+
+### Health Checks
+```bash
+# Service status
+sudo systemctl is-active trae-bot
+
+# Process check
+ps aux | grep python3
+
+# Port check (if applicable)
+netstat -tlnp | grep :5000
+```
+
+## 🔐 SECURITY
+
+### Change Default Passwords
+```bash
+# Change ubuntu user password
+sudo passwd ubuntu
+
+# Change root password
+sudo passwd root
+```
+
+### Firewall Setup
+```bash
+# Enable firewall
+sudo ufw enable
+
+# Allow SSH (if needed later)
+sudo ufw allow 18177
+
+# Allow HTTP/HTTPS (if web interface)
+sudo ufw allow 80
+sudo ufw allow 443
+
+# Check status
+sudo ufw status
+```
+
+## 📱 MOBILE ACCESS
+
+### Contabo Mobile App
+- Download from App Store/Google Play
+- Login with Contabo credentials
+- Access VNC console on mobile
+
+### VNC Mobile Apps
+- VNC Viewer (RealVNC)
+- Jump Desktop
+- TeamViewer
+
+## 🔄 UPDATES
+
+### Update Bot Code
+```bash
+cd /home/ubuntu/ai-trading-sentinel
+git pull origin main
+sudo systemctl restart trae-bot
+```
+
+### Update System
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo systemctl restart trae-bot
+```
+
+### Update Python Packages
+```bash
+pip3 install --upgrade playwright pyyaml requests flask python-dotenv
+python3 -m playwright install
+sudo systemctl restart trae-bot
+```
+
+## 📞 EMERGENCY CONTACTS
+
+### Contabo Support
+- Website: https://contabo.com/support
+- Email: support@contabo.com
+- Customer Portal: https://my.contabo.com
+
+### VPS Details
+- IP: 185.215.180.149
+- SSH Port: 18177 (if fixed)
+- OS: Ubuntu 24.04
+- User: ubuntu
+
+## ✅ SUCCESS INDICATORS
+
+### Service Running
+```
+● trae-bot.service - AI Trading Sentinel Bot
+   Loaded: loaded
+   Active: active (running)
+```
+
+### Logs Healthy
+```
+INFO - Starting AI Trading Sentinel...
+INFO - Browser started successfully
+INFO - Successfully logged in to broker
+INFO - Bot is running...
+```
+
+### Browser Test Pass
+```
+✓ Browser test completed successfully!
+```
+
+## 🎯 DEPLOYMENT CHECKLIST
+
+- [ ] Access VNC Console
+- [ ] Open Terminal
+- [ ] Download deployment script
+- [ ] Execute deployment script
+- [ ] Configure .env file in gedit
+- [ ] Verify service status
+- [ ] Check logs
+- [ ] Test browser functionality
+- [ ] Monitor for 10 minutes
+- [ ] Set up monitoring alerts
+
+## 🚀 READY FOR 24/7 TRADING!
+
+Your AI Trading Sentinel is now deployed and running!
+Monitor regularly and happy trading! 📈

@@ -1,0 +1,133 @@
+{
+  "summary": {
+    "total": 20,
+    "passed": 19,
+    "failed": 1,
+    "success_rate": 95.0,
+    "duration_seconds": 3.614677,
+    "start_time": "2025-08-14T20:42:04.559222",
+    "end_time": "2025-08-14T20:42:08.173899"
+  },
+  "results": [
+    {
+      "test": "Environment Variable BULENOX_USERNAME",
+      "status": "PASS",
+      "message": "Set to: BX6***",
+      "timestamp": "2025-08-14T20:42:04.560140"
+    },
+    {
+      "test": "Environment Variable BULENOX_PASSWORD",
+      "status": "PASS",
+      "message": "Set to: Xuj***",
+      "timestamp": "2025-08-14T20:42:04.560304"
+    },
+    {
+      "test": "File live_trading_unified.ps1",
+      "status": "PASS",
+      "message": "Exists (10965 bytes)",
+      "timestamp": "2025-08-14T20:42:04.560808"
+    },
+    {
+      "test": "File live_trading_unified.sh",
+      "status": "PASS",
+      "message": "Exists (7430 bytes)",
+      "timestamp": "2025-08-14T20:42:04.561181"
+    },
+    {
+      "test": "File tradebot_sentinel_advanced_pro.py",
+      "status": "PASS",
+      "message": "Exists (29977 bytes)",
+      "timestamp": "2025-08-14T20:42:04.561528"
+    },
+    {
+      "test": "File tradebot_sentinel.py",
+      "status": "PASS",
+      "message": "Exists (84809 bytes)",
+      "timestamp": "2025-08-14T20:42:04.561870"
+    },
+    {
+      "test": "File README_UNIFIED_LAUNCHER.md",
+      "status": "PASS",
+      "message": "Exists (9504 bytes)",
+      "timestamp": "2025-08-14T20:42:04.562228"
+    },
+    {
+      "test": "Python Package playwright",
+      "status": "PASS",
+      "message": "Installed",
+      "timestamp": "2025-08-14T20:42:04.564071"
+    },
+    {
+      "test": "Python Package requests",
+      "status": "PASS",
+      "message": "Installed",
+      "timestamp": "2025-08-14T20:42:05.896838"
+    },
+    {
+      "test": "Playwright Browsers",
+      "status": "PASS",
+      "message": "Available",
+      "timestamp": "2025-08-14T20:42:06.959243"
+    },
+    {
+      "test": "Network Connectivity",
+      "status": "PASS",
+      "message": "Can reach trading platform",
+      "timestamp": "2025-08-14T20:42:08.021019"
+    },
+    {
+      "test": "Log Directory logs",
+      "status": "PASS",
+      "message": "Created/Exists",
+      "timestamp": "2025-08-14T20:42:08.022351"
+    },
+    {
+      "test": "Log Directory logs/errors",
+      "status": "PASS",
+      "message": "Created/Exists",
+      "timestamp": "2025-08-14T20:42:08.022756"
+    },
+    {
+      "test": "Log Directory logs/updates",
+      "status": "PASS",
+      "message": "Created/Exists",
+      "timestamp": "2025-08-14T20:42:08.023530"
+    },
+    {
+      "test": "Log Directory logs/session",
+      "status": "PASS",
+      "message": "Created/Exists",
+      "timestamp": "2025-08-14T20:42:08.024033"
+    },
+    {
+      "test": "Log Directory logs/trades",
+      "status": "PASS",
+      "message": "Created/Exists",
+      "timestamp": "2025-08-14T20:42:08.024445"
+    },
+    {
+      "test": "Script Permissions",
+      "status": "PASS",
+      "message": "Windows - N/A",
+      "timestamp": "2025-08-14T20:42:08.024547"
+    },
+    {
+      "test": "Git Repository",
+      "status": "PASS",
+      "message": "Is a git repository",
+      "timestamp": "2025-08-14T20:42:08.024755"
+    },
+    {
+      "test": "Git Status",
+      "status": "PASS",
+      "message": "Git working",
+      "timestamp": "2025-08-14T20:42:08.108272"
+    },
+    {
+      "test": "Monitor Mode Dry Run",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-08-14T20:42:08.172734"
+    }
+  ]
+}

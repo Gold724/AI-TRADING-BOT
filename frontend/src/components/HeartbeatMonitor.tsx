@@ -11,7 +11,7 @@ interface HeartbeatMonitorProps {
 
 const HeartbeatMonitor: React.FC<HeartbeatMonitorProps> = ({
   className = '',
-  apiBaseUrl = 'http://localhost:5000',
+  apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000',
   pollingInterval = 10000,
   showTitle = true
 }) => {

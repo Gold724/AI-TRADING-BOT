@@ -1,0 +1,255 @@
+# Grafana Datasources Configuration for TradeBot Sentinel
+# Auto-provisions datasources on Grafana startup
+
+apiVersion: 1
+
+# List of datasources to insert/update depending on what's available in the database
+datasources:
+  # Prometheus - Primary metrics datasource
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.45.0
+      cacheLevel: 'High'
+      disableMetricsLookup: false
+      incrementalQuerying: true
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: jaeger
+    secureJsonData: {}
+    version: 1
+    uid: prometheus
+
+  # Loki - Log aggregation datasource
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: false
+    editable: true
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - datasourceUid: jaeger
+          matcherRegex: "trace_id=(\\w+)"
+          name: TraceID
+          url: '$${__value.raw}'
+    version: 1
+    uid: loki
+
+  # Jaeger - Distributed tracing datasource
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    isDefault: false
+    editable: true
+    jsonData:
+      tracesToLogs:
+        datasourceUid: loki
+        tags: ['job', 'instance', 'pod', 'namespace']
+        mappedTags: [{ key: 'service.name', value: 'service' }]
+        mapTagNamesEnabled: false
+        spanStartTimeShift: '1h'
+        spanEndTimeShift: '1h'
+        filterByTraceID: false
+        filterBySpanID: false
+      tracesToMetrics:
+        datasourceUid: prometheus
+        tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
+        queries:
+          - name: 'Sample query'
+            query: 'sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m]))'
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+      spanBar:
+        type: 'Tag'
+        tag: 'http.path'
+    version: 1
+    uid: jaeger
+
+  # AlertManager - Alert management datasource
+  - name: AlertManager
+    type: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    isDefault: false
+    editable: true
+    jsonData:
+      implementation: prometheus
+    version: 1
+    uid: alertmanager
+
+  # TestData - For testing and development
+  - name: TestData
+    type: testdata
+    access: proxy
+    isDefault: false
+    editable: true
+    version: 1
+    uid: testdata
+
+  # CloudWatch (if using AWS)
+  - name: CloudWatch
+    type: cloudwatch
+    access: proxy
+    isDefault: false
+    editable: true
+    jsonData:
+      authType: default
+      defaultRegion: us-east-1
+    version: 1
+    uid: cloudwatch
+
+  # Azure Monitor (if using Azure)
+  - name: Azure Monitor
+    type: grafana-azure-monitor-datasource
+    access: proxy
+    isDefault: false
+    editable: true
+    jsonData:
+      azureAuthType: msi
+      subscriptionId: '${AZURE_SUBSCRIPTION_ID}'
+    version: 1
+    uid: azure-monitor
+
+  # Google Cloud Monitoring (if using GCP)
+  - name: Google Cloud Monitoring
+    type: stackdriver
+    access: proxy
+    isDefault: false
+    editable: true
+    jsonData:
+      authenticationType: gce
+      defaultProject: '${GCP_PROJECT_ID}'
+    version: 1
+    uid: gcp-monitoring
+
+  # PostgreSQL - Database metrics (if using PostgreSQL)
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: '${POSTGRES_DB}'
+    user: '${POSTGRES_USER}'
+    isDefault: false
+    editable: true
+    jsonData:
+      sslmode: disable
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+      postgresVersion: 1300
+      timescaledb: false
+    secureJsonData:
+      password: '${POSTGRES_PASSWORD}'
+    version: 1
+    uid: postgresql
+
+  # Redis - Cache metrics (if using Redis)
+  - name: Redis
+    type: redis-datasource
+    access: proxy
+    url: redis://redis:6379
+    isDefault: false
+    editable: true
+    jsonData:
+      client: standalone
+      poolSize: 5
+      timeout: 10
+      pingInterval: 0
+      pipelineWindow: 0
+    secureJsonData:
+      password: '${REDIS_PASSWORD}'
+    version: 1
+    uid: redis
+
+  # InfluxDB - Time series database (alternative to Prometheus)
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    database: tradebot
+    user: '${INFLUXDB_USER}'
+    isDefault: false
+    editable: true
+    jsonData:
+      version: 'InfluxQL'
+      maxSeries: 1000
+      httpMode: GET
+    secureJsonData:
+      password: '${INFLUXDB_PASSWORD}'
+    version: 1
+    uid: influxdb
+
+  # Elasticsearch - Log search and analytics
+  - name: Elasticsearch
+    type: elasticsearch
+    access: proxy
+    url: http://elasticsearch:9200
+    database: '[tradebot-logs-]YYYY.MM.DD'
+    isDefault: false
+    editable: true
+    jsonData:
+      interval: Daily
+      timeField: '@timestamp'
+      esVersion: '7.10.0'
+      maxConcurrentShardRequests: 5
+      logMessageField: message
+      logLevelField: level
+    version: 1
+    uid: elasticsearch
+
+  # Tempo - Distributed tracing (alternative to Jaeger)
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    isDefault: false
+    editable: true
+    jsonData:
+      tracesToLogs:
+        datasourceUid: loki
+        tags: ['job', 'instance']
+        mappedTags: [{ key: 'service.name', value: 'service' }]
+        mapTagNamesEnabled: false
+        spanStartTimeShift: '1h'
+        spanEndTimeShift: '1h'
+      tracesToMetrics:
+        datasourceUid: prometheus
+        tags: [{ key: 'service.name', value: 'service' }]
+        queries:
+          - name: 'Sample query'
+            query: 'sum(rate(tempo_spanmetrics_latency_bucket{$$__tags}[5m]))'
+      search:
+        hide: false
+      nodeGraph:
+        enabled: true
+    version: 1
+    uid: tempo
+
+  # Mixed - For combining multiple datasources
+  - name: Mixed
+    type: mixed
+    access: proxy
+    isDefault: false
+    editable: false
+    version: 1
+    uid: mixed
+
+# Delete datasources that are not in the list above
+deleteDatasources:
+  - name: 'Old Prometheus'
+    orgId: 1
+  - name: 'Old Loki'
+    orgId: 1

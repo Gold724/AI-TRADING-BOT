@@ -1,0 +1,109 @@
+# 🚨 DIRECT VPS DEPLOYMENT - Copy this ENTIRE block and paste into VPS terminal
+
+# Create the deploy_cloud.sh script directly on VPS
+cat > deploy_cloud.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "🚀 AI Trading Sentinel - VPS Deployment Starting..."
+echo "📍 Working directory: $(pwd)"
+
+# Update system packages
+echo "📦 Updating system packages..."
+apt update && apt upgrade -y
+
+# Install Python 3.10+ and essential tools
+echo "🐍 Installing Python and dependencies..."
+apt install -y python3 python3-pip python3-venv git curl wget htop nano ufw
+
+# Install Node.js 18.x
+echo "📦 Installing Node.js..."
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+apt install -y nodejs
+
+# Install Playwright system dependencies
+echo "🎭 Installing Playwright dependencies..."
+apt install -y libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxss1 libasound2 libgtk-3-0 libgdk-pixbuf2.0-0
+
+# Create Python virtual environment
+echo "🔧 Setting up Python virtual environment..."
+python3 -m venv venv
+source venv/bin/activate
+
+# Upgrade pip and install Python packages
+echo "📚 Installing Python packages..."
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Install Playwright browsers
+echo "🌐 Installing Playwright browsers..."
+playwright install chromium
+playwright install-deps
+
+# Setup environment configuration
+echo "⚙️ Setting up environment configuration..."
+cp .env.example .env
+
+# Create systemd service file with correct paths
+echo "🔧 Creating systemd service..."
+cat > /etc/systemd/system/trae-bot.service << 'SERVICEEOF'
+[Unit]
+Description=AI Trading Sentinel Bot
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/AI-TRADING-BOT
+Environment=PATH=/root/AI-TRADING-BOT/venv/bin
+Environment=DISPLAY=:99
+ExecStart=/root/AI-TRADING-BOT/venv/bin/python /root/AI-TRADING-BOT/main.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+KillMode=mixed
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
+SERVICEEOF
+
+# Reload systemd daemon
+systemctl daemon-reload
+
+# Setup firewall
+echo "🔥 Configuring firewall..."
+ufw --force enable
+ufw allow ssh
+ufw allow 8000
+ufw allow 3000
+
+echo "✅ Deployment completed!"
+echo "🌐 Web Dashboard will be available at: http://161.97.112.146:8000"
+EOF
+
+# Make script executable and run it
+chmod +x deploy_cloud.sh
+./deploy_cloud.sh
+
+# After deployment completes, configure credentials
+echo ""
+echo "🎯 Deployment completed! Now configure your credentials:"
+echo "nano .env"
+echo ""
+echo "Update these lines:"
+echo "BULENOX_USERNAME=your_actual_username"
+echo "BULENOX_PASSWORD=your_actual_password"
+echo "SIMULATION_MODE=true"
+echo "AUTO_EXECUTE=false"
+echo ""
+echo "Then test manually:"
+echo "source venv/bin/activate"
+echo "python main.py"
+echo ""
+echo "Finally start the service:"
+echo "systemctl start trae-bot"
+echo "systemctl enable trae-bot"
+echo "systemctl status trae-bot"

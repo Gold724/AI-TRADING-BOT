@@ -1,0 +1,121 @@
+{
+  "version": "1.0.0",
+  "alerts": {
+    "enabled": true,
+    "rate_limit": {
+      "max_alerts_per_minute": 10,
+      "max_alerts_per_hour": 100,
+      "cooldown_period": 300
+    },
+    "priority_levels": {
+      "critical": 1,
+      "warning": 2,
+      "info": 3,
+      "success": 4,
+      "failure": 1
+    }
+  },
+  "channels": {
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "",
+      "password": "",
+      "from_email": "",
+      "to_emails": [],
+      "use_tls": true,
+      "template_path": "automation/templates/email_alert.html"
+    },
+    "telegram": {
+      "enabled": false,
+      "bot_token": "",
+      "chat_ids": [],
+      "parse_mode": "HTML",
+      "disable_notification": false
+    },
+    "webhook": {
+      "enabled": false,
+      "url": "",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "timeout": 10,
+      "retry_attempts": 3
+    },
+    "discord": {
+      "enabled": false,
+      "webhook_url": "",
+      "username": "TradeBot Sentinel",
+      "avatar_url": "",
+      "embed_color": 3447003
+    },
+    "file": {
+      "enabled": true,
+      "log_file": "logs/alerts.log",
+      "max_size_mb": 10,
+      "backup_count": 5,
+      "format": "%(asctime)s - %(levelname)s - %(message)s"
+    }
+  },
+  "reports": {
+    "enabled": true,
+    "daily_report": {
+      "enabled": true,
+      "time": "23:59",
+      "include_charts": true,
+      "include_performance": true
+    },
+    "weekly_report": {
+      "enabled": true,
+      "day": "sunday",
+      "time": "23:59",
+      "include_summary": true,
+      "include_analysis": true
+    },
+    "trade_execution_report": {
+      "enabled": true,
+      "trigger_on_completion": true,
+      "include_details": true
+    },
+    "template_path": "automation/templates/report_template.html",
+    "output_directory": "reports"
+  },
+  "database": {
+    "path": "logs/alerts.db",
+    "retention_days": 30,
+    "cleanup_interval": 86400
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/alert_system.log",
+    "max_size_mb": 10,
+    "backup_count": 3
+  },
+  "templates": {
+    "trade_success": {
+      "title": "✅ Trade Executed Successfully",
+      "message": "Trade {symbol} executed at {price} with amount {amount}"
+    },
+    "trade_failure": {
+      "title": "❌ Trade Execution Failed",
+      "message": "Failed to execute trade {symbol}: {error}"
+    },
+    "system_alert": {
+      "title": "🔔 System Alert",
+      "message": "System status: {status} - {details}"
+    },
+    "performance_alert": {
+      "title": "📊 Performance Alert",
+      "message": "Performance metric {metric} is {value} (threshold: {threshold})"
+    }
+  },
+  "filters": {
+    "enabled": true,
+    "duplicate_suppression": true,
+    "duplicate_window": 300,
+    "keyword_filters": [],
+    "severity_threshold": "info"
+  }
+}

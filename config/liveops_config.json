@@ -87,7 +87,7 @@
       "account_id": "${BULENOX_ACCOUNT_ID}",
       "execution_mode": "stealth",
       "login_method": "visual",
-      "base_url": "https://api.bulenox.com"
+      "base_url": "https://api.bulenox.projectx.com"
     }
   },
   "notifications": {

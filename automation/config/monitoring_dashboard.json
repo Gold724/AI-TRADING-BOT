@@ -1,0 +1,72 @@
+{
+  "version": "1.0.0",
+  "dashboard": {
+    "enabled": true,
+    "mode": "web",
+    "host": "127.0.0.1",
+    "port": 5000,
+    "debug": false,
+    "auto_refresh": true,
+    "refresh_interval": 5
+  },
+  "cli_dashboard": {
+    "enabled": true,
+    "refresh_interval": 2,
+    "max_rows": 20,
+    "show_charts": true,
+    "color_enabled": true
+  },
+  "web_dashboard": {
+    "template_path": "automation/templates/dashboard.html",
+    "static_path": "automation/static",
+    "socketio_enabled": true,
+    "cors_enabled": true,
+    "auth_required": false
+  },
+  "metrics": {
+    "update_interval": 5,
+    "history_retention": 1440,
+    "calculate_pnl": true,
+    "track_performance": true
+  },
+  "alerts": {
+    "enabled": true,
+    "error_rate_threshold": 0.1,
+    "system_status_check": true,
+    "new_trade_notifications": true,
+    "performance_alerts": true
+  },
+  "database": {
+    "path": "logs/trades.db",
+    "query_timeout": 10,
+    "connection_pool_size": 5
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/monitoring_dashboard.log",
+    "max_size_mb": 10,
+    "backup_count": 5
+  },
+  "charts": {
+    "equity_curve": {
+      "enabled": true,
+      "timeframe": "1h",
+      "max_points": 100
+    },
+    "trade_distribution": {
+      "enabled": true,
+      "group_by": "symbol"
+    },
+    "performance_metrics": {
+      "enabled": true,
+      "show_drawdown": true,
+      "show_sharpe": true
+    }
+  },
+  "export": {
+    "enabled": true,
+    "formats": ["json", "csv"],
+    "auto_export": false,
+    "export_interval": 3600
+  }
+}

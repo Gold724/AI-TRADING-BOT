@@ -1,0 +1,16 @@
+{
+  "strategy": "Tesla_369",
+  "mode": "safe",
+  "safe": {
+    "max_contracts": 1,
+    "daily_profit_target": 535.71,
+    "tesla_mode": true
+  },
+  "fast": {
+    "max_contracts": 2,
+    "default_contracts": 1,
+    "high_conf_contracts": 2,
+    "daily_profit_target": 1500,
+    "tesla_mode": true
+  }
+}

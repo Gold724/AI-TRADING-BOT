@@ -1,0 +1,50 @@
+{
+  "ddbd098a-829f-4a59-a88f-c5ead1d7572e": {
+    "session_id": "ddbd098a-829f-4a59-a88f-c5ead1d7572e",
+    "broker_id": "bulenox",
+    "account_id": "TEST_001",
+    "status": "initializing",
+    "created_at": "2025-08-17T11:31:28.152557",
+    "last_activity": 1755419488.1525679,
+    "trade_count": 3,
+    "metadata": {
+      "test": true
+    }
+  },
+  "0832097f-ce82-4853-9cad-40a027d7a184": {
+    "session_id": "0832097f-ce82-4853-9cad-40a027d7a184",
+    "broker_id": "bulenox",
+    "account_id": "TEST_001",
+    "status": "initializing",
+    "created_at": "2025-08-17T11:31:55.498579",
+    "last_activity": 1755419515.4985878,
+    "trade_count": 0,
+    "metadata": {
+      "test": true
+    }
+  },
+  "20335b16-a1b4-4ce8-8c24-a0448d68a00e": {
+    "session_id": "20335b16-a1b4-4ce8-8c24-a0448d68a00e",
+    "broker_id": "bulenox",
+    "account_id": "TEST_001",
+    "status": "initializing",
+    "created_at": "2025-08-17T11:33:32.467765",
+    "last_activity": 1755419612.467773,
+    "trade_count": 0,
+    "metadata": {
+      "test": true
+    }
+  },
+  "ead2cb62-70b5-4a17-ac1d-d2533f017b51": {
+    "session_id": "ead2cb62-70b5-4a17-ac1d-d2533f017b51",
+    "broker_id": "bulenox",
+    "account_id": "TEST_001",
+    "status": "initializing",
+    "created_at": "2025-08-17T11:34:16.327134",
+    "last_activity": 1755419656.3271434,
+    "trade_count": 0,
+    "metadata": {
+      "test": true
+    }
+  }
+}

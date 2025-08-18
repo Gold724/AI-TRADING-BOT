@@ -1,0 +1,141 @@
+{
+  "total_tests": 5,
+  "passed_tests": 5,
+  "failed_tests": 0,
+  "success_rate": 100.0,
+  "duration_seconds": 0.018656,
+  "test_results": [
+    {
+      "test": "Contract Validation: 1 contract \u2192 1 contract",
+      "success": true,
+      "message": "Input: 1 \u2192 Expected: 1, Got: 1",
+      "timestamp": "2025-08-17T08:47:08.217797"
+    },
+    {
+      "test": "Contract Validation: 2 contracts \u2192 2 contracts",
+      "success": true,
+      "message": "Input: 2 \u2192 Expected: 2, Got: 2",
+      "timestamp": "2025-08-17T08:47:08.218180"
+    },
+    {
+      "test": "Contract Validation: 0.5 contract \u2192 1 contract (rounded up)",
+      "success": true,
+      "message": "Input: 0.5 \u2192 Expected: 1, Got: 1",
+      "timestamp": "2025-08-17T08:47:08.218557"
+    },
+    {
+      "test": "Contract Validation: 0 contracts \u2192 1 contract (minimum)",
+      "success": true,
+      "message": "Input: 0 \u2192 Expected: 1, Got: 1",
+      "timestamp": "2025-08-17T08:47:08.218940"
+    },
+    {
+      "test": "Contract Validation: Negative \u2192 1 contract (minimum)",
+      "success": true,
+      "message": "Input: -1 \u2192 Expected: 1, Got: 1",
+      "timestamp": "2025-08-17T08:47:08.219318"
+    },
+    {
+      "test": "Contract Validation: 10 contracts \u2192 10 contracts",
+      "success": true,
+      "message": "Input: 10 \u2192 Expected: 10, Got: 10",
+      "timestamp": "2025-08-17T08:47:08.219719"
+    },
+    {
+      "test": "Contract Validation: 3.7 contracts \u2192 3 contracts (rounded down)",
+      "success": true,
+      "message": "Input: 3.7 \u2192 Expected: 3, Got: 3",
+      "timestamp": "2025-08-17T08:47:08.220028"
+    },
+    {
+      "test": "Lot Conversion: 0.01 lot \u2192 1 contract",
+      "success": true,
+      "message": "Lot: 0.01 \u2192 Expected: 1, Got: 1",
+      "timestamp": "2025-08-17T08:47:08.221118"
+    },
+    {
+      "test": "Lot Conversion: 0.1 lot \u2192 10 contracts",
+      "success": true,
+      "message": "Lot: 0.1 \u2192 Expected: 10, Got: 10",
+      "timestamp": "2025-08-17T08:47:08.221533"
+    },
+    {
+      "test": "Lot Conversion: 1.0 lot \u2192 100 contracts",
+      "success": true,
+      "message": "Lot: 1.0 \u2192 Expected: 100, Got: 100",
+      "timestamp": "2025-08-17T08:47:08.221924"
+    },
+    {
+      "test": "Lot Conversion: 0.05 lot \u2192 5 contracts",
+      "success": true,
+      "message": "Lot: 0.05 \u2192 Expected: 5, Got: 5",
+      "timestamp": "2025-08-17T08:47:08.222845"
+    },
+    {
+      "test": "Lot Conversion: 0.001 lot \u2192 1 contract (minimum)",
+      "success": true,
+      "message": "Lot: 0.001 \u2192 Expected: 1, Got: 1",
+      "timestamp": "2025-08-17T08:47:08.223704"
+    },
+    {
+      "test": "Risk Check: 1 contracts per trade (max: 3)",
+      "success": true,
+      "message": "Risk Check: True, Expected: True",
+      "timestamp": "2025-08-17T08:47:08.225573"
+    },
+    {
+      "test": "Risk Check: 3 contracts per trade (max: 3)",
+      "success": true,
+      "message": "Risk Check: True, Expected: True",
+      "timestamp": "2025-08-17T08:47:08.228085"
+    },
+    {
+      "test": "Risk Check: 5 contracts per trade (max: 3)",
+      "success": true,
+      "message": "Risk Check: False, Expected: False",
+      "timestamp": "2025-08-17T08:47:08.229533"
+    },
+    {
+      "test": "Risk Check: 2 contracts (daily total: 10/10)",
+      "success": true,
+      "message": "Risk Check: True, Expected: True",
+      "timestamp": "2025-08-17T08:47:08.230206"
+    },
+    {
+      "test": "Risk Check: 3 contracts (daily total: 12/10)",
+      "success": true,
+      "message": "Risk Check: False, Expected: False",
+      "timestamp": "2025-08-17T08:47:08.230798"
+    },
+    {
+      "test": "Signal Processing: Direct contract quantity",
+      "success": true,
+      "message": "Signal: EURUSD \u2192 Expected: 2, Got: 2",
+      "timestamp": "2025-08-17T08:47:08.232333"
+    },
+    {
+      "test": "Signal Processing: Lot size conversion",
+      "success": true,
+      "message": "Signal: GBPUSD \u2192 Expected: 5, Got: 5",
+      "timestamp": "2025-08-17T08:47:08.232753"
+    },
+    {
+      "test": "Signal Processing: Default quantity",
+      "success": true,
+      "message": "Signal: USDJPY \u2192 Expected: 1, Got: 1",
+      "timestamp": "2025-08-17T08:47:08.233169"
+    },
+    {
+      "test": "Platform Differences: Bulenox uses contracts",
+      "success": true,
+      "message": "Bulenox: contracts, min: 1",
+      "timestamp": "2025-08-17T08:47:08.234723"
+    },
+    {
+      "test": "Platform Differences: Exness uses lots",
+      "success": true,
+      "message": "Exness: lots, min: 0.01",
+      "timestamp": "2025-08-17T08:47:08.235305"
+    }
+  ]
+}

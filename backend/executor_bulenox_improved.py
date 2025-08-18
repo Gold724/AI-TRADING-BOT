@@ -60,7 +60,7 @@ class BulenoxExecutor:
         self.driver = None
 
         # Login URL
-        self.login_url = "https://bulenox.com/member/login"
+        self.login_url = "https://bulenox.projectx.com/login"
 
         # Success URL patterns (used to verify successful login)
         self.success_url_patterns = [
@@ -324,10 +324,9 @@ class BulenoxExecutor:
             # Find username field using multiple selectors
             username_field = None
             username_selectors = [
-                (By.ID, "amember-login"),
-                (By.NAME, "amember_login"),
+                (By.NAME, "userName"),  # Correct selector for ProjectX
+                (By.CSS_SELECTOR, "input[name='userName']"),
                 (By.ID, "email"),
-                (By.NAME, "userName"),
                 (By.NAME, "username"),
                 (By.NAME, "user"),
                 (By.CSS_SELECTOR, "input[type='text']"),
@@ -371,10 +370,9 @@ class BulenoxExecutor:
             # Find password field using multiple selectors
             password_field = None
             password_selectors = [
-                (By.ID, "amember-pass"),
-                (By.NAME, "amember_pass"),
+                (By.NAME, "password"),  # Correct selector for ProjectX
+                (By.CSS_SELECTOR, "input[name='password']"),
                 (By.ID, "password"),
-                (By.NAME, "password"),
                 (By.NAME, "pass"),
                 (By.NAME, "pwd"),
                 (By.CSS_SELECTOR, "input[type='password']"),
@@ -650,7 +648,7 @@ class BulenoxExecutor:
 
         try:
             # Navigate to trading page
-            trading_url = "https://bulenox.com/member/trading"
+            trading_url = "https://bulenox.projectx.com/trading"
             self.logger.info(f"Navigating to trading page: {trading_url}")
             self.driver.get(trading_url)
 

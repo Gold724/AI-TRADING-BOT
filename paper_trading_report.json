@@ -1,0 +1,65 @@
+{
+  "test_summary": {
+    "total_tests": 4,
+    "passed_tests": 4,
+    "failed_tests": 0,
+    "trade_executions": 3,
+    "risk_violations": 0,
+    "performance_metrics": {
+      "total_trades": 3,
+      "total_pnl": 8.23818757429744,
+      "win_rate": 66.66666666666666,
+      "profit_factor": 1.2114286997847201,
+      "avg_win": 7.014038697576965,
+      "avg_loss": -5.789889820856491,
+      "final_balance": 10008.238187574298,
+      "return_percentage": 0.08238187574297626
+    }
+  },
+  "trading_performance": {
+    "total_trades": 3,
+    "total_pnl": 8.23818757429744,
+    "win_rate": 66.66666666666666,
+    "profit_factor": 1.2114286997847201,
+    "avg_win": 7.014038697576965,
+    "avg_loss": -5.789889820856491,
+    "final_balance": 10008.238187574298,
+    "return_percentage": 0.08238187574297626
+  },
+  "trades": [
+    {
+      "id": 1,
+      "symbol": "EURUSD",
+      "direction": "SELL",
+      "entry_price": 1.085,
+      "position_size": 500.0,
+      "timestamp": "2025-08-17T11:06:41.080581",
+      "status": "closed",
+      "pnl": 8.11774061492026,
+      "exit_timestamp": "2025-08-17T11:06:49.835007"
+    },
+    {
+      "id": 2,
+      "symbol": "USDJPY",
+      "direction": "BUY",
+      "entry_price": 1.265,
+      "position_size": 500.0,
+      "timestamp": "2025-08-17T11:06:59.841104",
+      "status": "closed",
+      "pnl": 5.910336780233671,
+      "exit_timestamp": "2025-08-17T11:07:14.804788"
+    },
+    {
+      "id": 3,
+      "symbol": "GBPUSD",
+      "direction": "SELL",
+      "entry_price": 1.265,
+      "position_size": 500.0,
+      "timestamp": "2025-08-17T11:07:24.805753",
+      "status": "closed",
+      "pnl": -5.789889820856491,
+      "exit_timestamp": "2025-08-17T11:07:36.249698"
+    }
+  ],
+  "timestamp": "2025-08-17T11:07:46.260348"
+}

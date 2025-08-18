@@ -189,6 +189,7 @@ def login_with_cookies(driver, cookie_path="bulenox_cookies.pkl"):
             dashboard_urls = [
                 "dashboard",
                 "trading",
+                "trade",  # ProjectX redirects to /trade after login
                 "member/home",
                 "account",
                 "platform",
@@ -219,7 +220,7 @@ def login_with_form(driver):
     """Login using the login form"""
     try:
         # Get the broker URL from environment variables or use default
-        broker_url = os.getenv("BROKER_URL", "https://bulenox.com/member/login")
+        broker_url = os.getenv("BROKER_URL", "https://bulenox.projectx.com/login")
         logger.info(f"[{session_id}] Navigating to Bulenox login page: {broker_url}")
         driver.get(broker_url)
 
@@ -248,10 +249,9 @@ def login_with_form(driver):
         # Wait for login form with selectors from our diagnostic script
         username_field = None
         username_selectors = [
-            (By.ID, "amember-login"),  # From diagnostic script
-            (By.NAME, "amember_login"),  # From diagnostic script
+            (By.NAME, "userName"),  # Correct selector for ProjectX
+            (By.CSS_SELECTOR, "input[name='userName']"),  # Alternative CSS selector
             (By.ID, "email"),
-            (By.NAME, "userName"),
             (By.NAME, "username"),
             (By.NAME, "user"),
             (By.CSS_SELECTOR, "input[type='text']"),
@@ -301,10 +301,9 @@ def login_with_form(driver):
             # Find password field with expanded selectors
             password_field = None
             password_selectors = [
-                (By.ID, "amember-pass"),  # From diagnostic script
-                (By.NAME, "amember_pass"),  # From diagnostic script
+                (By.NAME, "password"),  # Correct selector for ProjectX
+                (By.CSS_SELECTOR, "input[name='password']"),  # Alternative CSS selector
                 (By.ID, "password"),
-                (By.NAME, "password"),
                 (By.NAME, "pass"),
                 (By.NAME, "pwd"),
                 (By.CSS_SELECTOR, "input[type='password']"),
@@ -408,6 +407,7 @@ def login_with_form(driver):
             dashboard_urls = [
                 "dashboard",
                 "trading",
+                "trade",  # ProjectX redirects to /trade after login
                 "member/home",
                 "account",
                 "platform",
@@ -468,8 +468,8 @@ def login_with_form(driver):
 
                 # Check if username and password fields still have our values
                 try:
-                    username_field = driver.find_element(By.ID, "amember-login")
-                    password_field = driver.find_element(By.ID, "amember-pass")
+                    username_field = driver.find_element(By.NAME, "userName")
+                    password_field = driver.find_element(By.NAME, "password")
 
                     logger.info(
                         f"[{session_id}] Username field value after submit: {username_field.get_attribute('value')}"

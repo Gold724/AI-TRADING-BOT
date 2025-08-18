@@ -1,0 +1,113 @@
+{
+  "jobs": [
+    {
+      "name": "main_trading_bot",
+      "command": "python tradebot_sentinel_advanced_pro.py --headless",
+      "schedule": "0 9 * * 1-5",
+      "description": "Run main trading bot every weekday at 9 AM",
+      "enabled": true,
+      "max_retries": 3,
+      "timeout": 3600,
+      "environment": {
+        "TRADING_MODE": "live",
+        "LOG_LEVEL": "INFO"
+      }
+    },
+    {
+      "name": "monitor_mode",
+      "command": "python tradebot_sentinel_advanced_pro.py --monitor",
+      "schedule": "*/15 * * * *",
+      "description": "Monitor trades every 15 minutes",
+      "enabled": true,
+      "max_retries": 2,
+      "timeout": 900,
+      "environment": {
+        "MONITOR_ONLY": "true"
+      }
+    },
+    {
+      "name": "risk_monitoring",
+      "command": "python -c \"from risk_management import RiskManager; rm = RiskManager(); rm.generate_daily_report()\"",
+      "schedule": "0 */4 * * *",
+      "description": "Check risk limits every 4 hours",
+      "enabled": true,
+      "max_retries": 1,
+      "timeout": 300
+    },
+    {
+      "name": "daily_report",
+      "command": "python -c \"from notifications import NotificationManager; nm = NotificationManager(); import asyncio; asyncio.run(nm.send_daily_summary())\"",
+      "schedule": "0 18 * * *",
+      "description": "Send daily trading summary at 6 PM",
+      "enabled": true,
+      "max_retries": 2,
+      "timeout": 600
+    },
+    {
+      "name": "system_health_check",
+      "command": "python -c \"import os, json; from datetime import datetime; status = {'timestamp': datetime.now().isoformat(), 'status': 'healthy', 'uptime': os.path.getsize('logs/trade_detections.log') if os.path.exists('logs/trade_detections.log') else 0}; open('system_health.json', 'w').write(json.dumps(status, indent=2))\"",
+      "schedule": "*/30 * * * *",
+      "description": "System health check every 30 minutes",
+      "enabled": true,
+      "max_retries": 1,
+      "timeout": 120
+    },
+    {
+      "name": "log_cleanup",
+      "command": "python -c \"import os, glob, time; [os.remove(f) for f in glob.glob('logs/**/*.log', recursive=True) if os.path.getmtime(f) < time.time() - 7*24*3600]\"",
+      "schedule": "0 2 * * 0",
+      "description": "Clean up old log files weekly at 2 AM Sunday",
+      "enabled": true,
+      "max_retries": 1,
+      "timeout": 300
+    },
+    {
+      "name": "backup_trades",
+      "command": "python -c \"import shutil, datetime; shutil.copy2('logs/trades.csv', f'backups/trades_{datetime.date.today().strftime(\\\"%Y%m%d\\\")}.csv') if os.path.exists('logs/trades.csv') else None\"",
+      "schedule": "0 1 * * *",
+      "description": "Backup trade data daily at 1 AM",
+      "enabled": true,
+      "max_retries": 1,
+      "timeout": 180
+    },
+    {
+      "name": "market_hours_monitor",
+      "command": "python tradebot_sentinel_advanced_pro.py --monitor",
+      "schedule": "0 9-17 * * 1-5",
+      "description": "Enhanced monitoring during market hours",
+      "enabled": false,
+      "max_retries": 3,
+      "timeout": 1800,
+      "environment": {
+        "MARKET_HOURS": "true",
+        "ENHANCED_MONITORING": "true"
+      }
+    }
+  ],
+  "global_settings": {
+    "log_file": "logs/scheduler.log",
+    "max_concurrent_jobs": 3,
+    "job_timeout_default": 1800,
+    "retry_delay": 60,
+    "notification_on_failure": true,
+    "notification_on_success": false,
+    "working_directory": "c:\\Users\\Admin\\Downloads\\ai-trading-sentinel",
+    "environment_file": ".env"
+  },
+  "notifications": {
+    "telegram": {
+      "enabled": true,
+      "chat_id": "${TELEGRAM_CHAT_ID}",
+      "bot_token": "${TELEGRAM_BOT_TOKEN}"
+    },
+    "email": {
+      "enabled": true,
+      "smtp_server": "${EMAIL_SMTP_SERVER}",
+      "smtp_port": "${EMAIL_SMTP_PORT}",
+      "username": "${EMAIL_USERNAME}",
+      "password": "${EMAIL_PASSWORD}",
+      "from_email": "${EMAIL_FROM}",
+      "to_email": "${EMAIL_TO}"
+    }
+  }
+}

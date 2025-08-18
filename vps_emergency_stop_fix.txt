@@ -1,0 +1,158 @@
+# EMERGENCY VPS FIX - Service in Restart Loop (92,000+ failures)
+# Copy and paste this ENTIRE block to stop the runaway service and fix it
+
+# STEP 1: EMERGENCY STOP - Stop the runaway service immediately
+echo "🚨 EMERGENCY: Stopping runaway service (92,000+ restart attempts)"
+systemctl stop trae-bot
+systemctl disable trae-bot
+
+# Kill any remaining processes
+pkill -f "trae-bot" || true
+pkill -f "main.py" || true
+pkill -f "python.*main.py" || true
+
+# STEP 2: Navigate to correct directory
+cd /root/AI-TRADING-BOT
+echo "📂 Current directory: $(pwd)"
+ls -la
+
+# STEP 3: Check what's actually in the directory
+echo "📋 Directory contents:"
+ls -la
+echo "🐍 Python executable check:"
+which python3
+python3 --version
+
+# STEP 4: Check if virtual environment exists
+if [ -d "venv" ]; then
+    echo "✅ Virtual environment found"
+    ls -la venv/bin/
+else
+    echo "❌ Virtual environment missing - creating new one"
+    python3 -m venv venv
+fi
+
+# STEP 5: Check if main.py exists
+if [ -f "main.py" ]; then
+    echo "✅ main.py found"
+    head -10 main.py
+else
+    echo "❌ main.py missing - creating basic version"
+    cat > main.py << 'MAINEOF'
+#!/usr/bin/env python3
+"""
+AI Trading Sentinel - Emergency Basic Version
+"""
+
+import os
+import sys
+import time
+import logging
+from datetime import datetime
+
+# Setup basic logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger(__name__)
+
+def main():
+    """Basic trading bot for testing"""
+    logger.info("🚀 AI Trading Sentinel - Emergency Version Starting")
+    logger.info(f"Working Directory: {os.getcwd()}")
+    logger.info(f"Python Version: {sys.version}")
+    
+    # Simple loop to prove it works
+    counter = 0
+    try:
+        while counter < 10:  # Run for 10 cycles then exit
+            counter += 1
+            logger.info(f"💹 Cycle {counter}/10 - Bot is running")
+            time.sleep(30)  # 30 second cycles
+            
+        logger.info("✅ Test completed successfully - bot is working")
+        
+    except KeyboardInterrupt:
+        logger.info("🛑 Bot stopped by user")
+    except Exception as e:
+        logger.error(f"❌ Error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+MAINEOF
+    chmod +x main.py
+fi
+
+# STEP 6: Test Python environment manually
+echo "🧪 Testing Python environment..."
+source venv/bin/activate
+python --version
+python -c "print('✅ Python works')"
+python -c "import sys; print('Python path OK')"
+
+# STEP 7: Test main.py manually
+echo "🧪 Testing main.py..."
+python -c "import ast; ast.parse(open('main.py').read()); print('✅ main.py syntax OK')"
+
+# STEP 8: Run a quick test (5 seconds)
+echo "🧪 Running 5-second test..."
+timeout 5s python main.py || echo "Test completed or timed out (this is expected)"
+
+# STEP 9: Create a WORKING systemd service
+echo "⚙️ Creating new systemd service..."
+cat > /etc/systemd/system/trae-bot.service << 'EOF'
+[Unit]
+Description=AI Trading Sentinel Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/AI-TRADING-BOT
+Environment=PATH=/root/AI-TRADING-BOT/venv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/bash -c 'source /root/AI-TRADING-BOT/venv/bin/activate && exec python /root/AI-TRADING-BOT/main.py'
+Restart=on-failure
+RestartSec=30
+StartLimitBurst=3
+StartLimitIntervalSec=300
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# STEP 10: Reload systemd
+systemctl daemon-reload
+
+# STEP 11: Test the service configuration
+echo "🔍 Testing service configuration..."
+systemctl status trae-bot --no-pager
+
+# STEP 12: Manual test before starting service
+echo "🧪 Final manual test..."
+cd /root/AI-TRADING-BOT
+source venv/bin/activate
+echo "Testing command that systemd will run..."
+timeout 10s python main.py || echo "Manual test completed"
+
+echo ""
+echo "🎯 EMERGENCY FIX COMPLETE!"
+echo "📊 Service is now stopped and fixed"
+echo ""
+echo "🚀 To start the service (ONLY after confirming manual test works):"
+echo "   systemctl start trae-bot"
+echo "   systemctl status trae-bot"
+echo ""
+echo "📱 Monitor commands:"
+echo "   journalctl -u trae-bot -f"
+echo "   systemctl status trae-bot"
+echo "   systemctl stop trae-bot  # if you need to stop it"
+echo ""
+echo "⚠️  The service now has restart limits to prevent runaway loops"
+echo "⚠️  It will only restart 3 times in 5 minutes, then stop"
+echo ""
+echo "✅ Ready for controlled testing!"

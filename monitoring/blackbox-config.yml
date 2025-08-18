@@ -1,0 +1,258 @@
+# Blackbox Exporter Configuration for TradeBot Sentinel
+# Monitors external services and endpoints
+
+modules:
+  # HTTP GET probe for web services
+  http_2xx:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 202, 204]
+      method: GET
+      headers:
+        User-Agent: "TradeBot-Sentinel-Monitor/1.0"
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4"
+      ip_protocol_fallback: true
+
+  # HTTPS probe with SSL verification
+  http_2xx_ssl:
+    prober: http
+    timeout: 15s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 202, 204]
+      method: GET
+      headers:
+        User-Agent: "TradeBot-Sentinel-Monitor/1.0"
+      no_follow_redirects: false
+      fail_if_not_ssl: true
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4"
+
+  # HTTP POST probe for API endpoints
+  http_post_2xx:
+    prober: http
+    timeout: 15s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 202, 204]
+      method: POST
+      headers:
+        Content-Type: "application/json"
+        User-Agent: "TradeBot-Sentinel-Monitor/1.0"
+      body: '{}'
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+
+  # Bulenox specific probe
+  bulenox_probe:
+    prober: http
+    timeout: 20s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 302, 401, 403]  # 401/403 might be expected for login pages
+      method: GET
+      headers:
+        User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+        Accept-Language: "en-US,en;q=0.5"
+        Accept-Encoding: "gzip, deflate, br"
+        Connection: "keep-alive"
+        Upgrade-Insecure-Requests: "1"
+      no_follow_redirects: true
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4"
+      ip_protocol_fallback: true
+
+  # API endpoint probe with authentication
+  api_probe:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 401, 403]  # Include auth-related codes
+      method: GET
+      headers:
+        User-Agent: "TradeBot-Sentinel-API-Monitor/1.0"
+        Accept: "application/json"
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+
+  # TCP probe for database connections
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: "ip4"
+      ip_protocol_fallback: true
+
+  # ICMP probe for basic connectivity
+  icmp:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      preferred_ip_protocol: "ip4"
+      source_ip_address: ""
+
+  # DNS probe for domain resolution
+  dns:
+    prober: dns
+    timeout: 5s
+    dns:
+      query_name: "google.com"
+      query_type: "A"
+      valid_rcodes:
+        - NOERROR
+      validate_answer_rrs:
+        fail_if_matches_regexp:
+          - ".*127.0.0.1"
+        fail_if_not_matches_regexp:
+          - ".*"
+      preferred_ip_protocol: "ip4"
+
+  # SSL certificate expiry check
+  ssl_expiry:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      no_follow_redirects: true
+      fail_if_not_ssl: true
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4"
+
+  # GitHub API probe
+  github_api:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 401, 403]  # GitHub API might return 401 without token
+      method: GET
+      headers:
+        User-Agent: "TradeBot-Sentinel-Monitor/1.0"
+        Accept: "application/vnd.github.v3+json"
+      no_follow_redirects: false
+      fail_if_not_ssl: true
+      tls_config:
+        insecure_skip_verify: false
+
+  # WebSocket probe (for real-time data feeds)
+  websocket:
+    prober: http
+    timeout: 15s
+    http:
+      valid_http_versions: ["HTTP/1.1"]
+      valid_status_codes: [101, 200, 400, 426]  # WebSocket upgrade codes
+      method: GET
+      headers:
+        Connection: "Upgrade"
+        Upgrade: "websocket"
+        Sec-WebSocket-Version: "13"
+        Sec-WebSocket-Key: "dGhlIHNhbXBsZSBub25jZQ=="
+        User-Agent: "TradeBot-Sentinel-WS-Monitor/1.0"
+      no_follow_redirects: false
+
+  # Custom probe for trading platform health
+  trading_platform_health:
+    prober: http
+    timeout: 30s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 302, 401, 403, 503]  # Various expected responses
+      method: GET
+      headers:
+        User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        Accept-Language: "en-US,en;q=0.9"
+        Cache-Control: "no-cache"
+        Pragma: "no-cache"
+      no_follow_redirects: true
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4"
+      ip_protocol_fallback: true
+
+  # Fast probe for high-frequency checks
+  http_fast:
+    prober: http
+    timeout: 3s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: HEAD  # Faster than GET
+      headers:
+        User-Agent: "TradeBot-Fast-Check/1.0"
+      no_follow_redirects: true
+      preferred_ip_protocol: "ip4"
+
+  # Comprehensive probe with detailed checks
+  http_comprehensive:
+    prober: http
+    timeout: 30s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 202, 204]
+      method: GET
+      headers:
+        User-Agent: "TradeBot-Sentinel-Comprehensive/1.0"
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      body_size_limit: 1048576  # 1MB limit
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      fail_if_body_matches_regexp:
+        - "(?i)error"
+        - "(?i)exception"
+        - "(?i)internal server error"
+      fail_if_body_not_matches_regexp:
+        - ".*"  # Ensure body is not empty
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4"
+      ip_protocol_fallback: true
+
+  # Probe for checking if service returns JSON
+  json_api:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201]
+      method: GET
+      headers:
+        Accept: "application/json"
+        User-Agent: "TradeBot-JSON-Monitor/1.0"
+      fail_if_header_not_matches:
+        - header: "Content-Type"
+          regexp: "application/json.*"
+      no_follow_redirects: false
+
+  # Probe for monitoring response time specifically
+  response_time:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 202, 204, 301, 302, 304]
+      method: HEAD
+      headers:
+        User-Agent: "TradeBot-ResponseTime-Monitor/1.0"
+      no_follow_redirects: true
+      preferred_ip_protocol: "ip4"

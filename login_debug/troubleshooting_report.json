@@ -1,0 +1,144 @@
+{
+  "timestamp": "2025-08-18T12:17:57.793829",
+  "browser_info": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "stealth_available": false
+  },
+  "domains_tested": [
+    {
+      "name": "Primary Domain",
+      "login_url": "https://bulenox.projectx.com/login",
+      "dashboard_urls": [
+        "https://bulenox.projectx.com/dashboard",
+        "https://bulenox.projectx.com/trade"
+      ],
+      "priority": 1
+    },
+    {
+      "name": "Alt Domain 1",
+      "login_url": "https://app.bulenox.com/login",
+      "dashboard_urls": [
+        "https://app.bulenox.com/dashboard",
+        "https://app.bulenox.com/trade"
+      ],
+      "priority": 2
+    },
+    {
+      "name": "Alt Domain 2",
+      "login_url": "https://trade.bulenox.com/login",
+      "dashboard_urls": [
+        "https://trade.bulenox.com/dashboard",
+        "https://trade.bulenox.com/trade"
+      ],
+      "priority": 3
+    }
+  ],
+  "selectors_used": {
+    "username": [
+      "input[name=\"username\"]",
+      "input[name=\"email\"]",
+      "input[name=\"user\"]",
+      "input[type=\"email\"]",
+      "input[placeholder*=\"email\" i]",
+      "input[placeholder*=\"username\" i]",
+      "input[placeholder*=\"user\" i]",
+      "#username",
+      "#email",
+      "#user",
+      ".username input",
+      ".email input",
+      ".user input",
+      "input[type=\"text\"]:first-of-type",
+      "form input[type=\"text\"]:first-child",
+      "input:not([type=\"password\"]):not([type=\"hidden\"]):not([type=\"submit\"]):first-of-type"
+    ],
+    "password": [
+      "input[name=\"password\"]",
+      "input[type=\"password\"]",
+      "#password",
+      ".password input",
+      "input[placeholder*=\"password\" i]",
+      "input[type=\"password\"]:first-of-type",
+      "form input[type=\"password\"]"
+    ],
+    "login_button": [
+      "button[type=\"submit\"]",
+      "input[type=\"submit\"]",
+      "button:has-text(\"Login\")",
+      "button:has-text(\"Sign In\")",
+      "button:has-text(\"Log In\")",
+      "button:has-text(\"Submit\")",
+      "[data-testid=\"login-button\"]",
+      "[data-cy=\"login-button\"]",
+      ".login-btn",
+      ".btn-login",
+      "#login-btn",
+      "#loginButton",
+      "form button",
+      "button[class*=\"login\" i]",
+      "button[class*=\"submit\" i]",
+      "input[value*=\"login\" i]",
+      "input[value*=\"sign\" i]"
+    ],
+    "dashboard": [
+      "[data-testid=\"dashboard\"]",
+      ".dashboard",
+      "#dashboard",
+      ".main-content",
+      ".user-dashboard",
+      "[class*=\"dashboard\" i]",
+      ".trading-interface",
+      "[data-testid=\"trading\"]",
+      ".trade-panel",
+      ".portfolio",
+      ".navbar",
+      ".sidebar",
+      ".main-nav",
+      ".user-profile",
+      ".account-info",
+      "[data-testid=\"user-menu\"]"
+    ],
+    "error_messages": [
+      ".error",
+      ".alert-danger",
+      ".message-error",
+      ".login-error",
+      "[class*=\"error\" i]",
+      "[role=\"alert\"]",
+      ".notification-error",
+      ".toast-error",
+      ":has-text(\"Invalid\")",
+      ":has-text(\"incorrect\")",
+      ":has-text(\"failed\")",
+      ":has-text(\"error\")",
+      ":has-text(\"wrong\")"
+    ]
+  },
+  "debug_files": [
+    {
+      "filename": "screenshot_01_20250812_171517_primary_domain_initial.png",
+      "size": 98079,
+      "modified": "2025-08-12T17:15:18.193731"
+    },
+    {
+      "filename": "screenshot_02_20250812_171519_primary_domain_no_username_field.png",
+      "size": 98079,
+      "modified": "2025-08-12T17:15:19.543494"
+    },
+    {
+      "filename": "screenshot_03_20250812_171522_alt_domain_1_exception.png",
+      "size": 21269,
+      "modified": "2025-08-12T17:15:22.656598"
+    },
+    {
+      "filename": "screenshot_04_20250812_171525_alt_domain_2_exception.png",
+      "size": 21332,
+      "modified": "2025-08-12T17:15:25.421188"
+    },
+    {
+      "filename": "troubleshooter.log",
+      "size": 0,
+      "modified": "2025-08-18T12:17:57.789066"
+    }
+  ]
+}

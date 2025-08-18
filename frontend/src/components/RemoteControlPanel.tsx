@@ -22,7 +22,7 @@ interface LogData {
 
 const RemoteControlPanel: React.FC<RemoteControlPanelProps> = ({ 
   className = '',
-  apiBaseUrl = 'http://localhost:5000'
+  apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 }) => {
   const [health, setHealth] = useState<any>(null);
   const [strategy, setStrategy] = useState<Strategy | null>(null);
@@ -275,6 +275,8 @@ const RemoteControlPanel: React.FC<RemoteControlPanelProps> = ({
             value={logLines}
             onChange={(e) => setLogLines(parseInt(e.target.value))}
           >
+            <option value="3">3 logs</option>
+            <option value="9">9 logs</option>
             <option value="10">10 lines</option>
             <option value="50">50 lines</option>
             <option value="100">100 lines</option>

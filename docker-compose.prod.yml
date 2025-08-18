@@ -1,0 +1,129 @@
+
+version: '3.8'
+
+services:
+  # React Frontend (built and served by Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: ai-trading-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/ssl/certs
+    depends_on:
+      - backend
+      - sentinel
+    networks:
+      - trading-network
+
+  # Flask Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-trading-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONPATH=/app
+    env_file:
+      - .env.production
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - trading-network
+
+  # Bulenox Sentinel Control Panel
+  sentinel:
+    build:
+      context: .
+      dockerfile: Dockerfile.sentinel
+    container_name: ai-trading-sentinel
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - DISPLAY=:99
+      - PYTHONPATH=/app
+    env_file:
+      - .env.production
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    networks:
+      - trading-network
+    depends_on:
+      - xvfb
+
+  # Virtual display for headless browser
+  xvfb:
+    image: selenium/standalone-chrome:latest
+    container_name: ai-trading-xvfb
+    restart: unless-stopped
+    ports:
+      - "4444:4444"
+    environment:
+      - DISPLAY=:99
+    networks:
+      - trading-network
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: ai-trading-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - trading-network
+
+  # PostgreSQL for trade data storage
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai-trading-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=trading_db
+      - POSTGRES_USER=trading_user
+      - POSTGRES_PASSWORD=secure_password_change_this
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - trading-network
+
+  # Monitoring with Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ai-trading-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - trading-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  grafana_data:
+
+networks:
+  trading-network:
+    driver: bridge

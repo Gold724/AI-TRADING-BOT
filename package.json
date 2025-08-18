@@ -1,0 +1,21 @@
+{
+  "name": "bulenox-trade-capture",
+  "version": "1.0.0",
+  "description": "Capture Bulenox trade requests as cURL commands",
+  "main": "bulenox_trade.js",
+  "scripts": {
+    "start": "node bulenox_trade.js"
+  },
+  "keywords": [
+    "bulenox",
+    "trading",
+    "curl",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "playwright": "^1.54.0"
+  }
+}

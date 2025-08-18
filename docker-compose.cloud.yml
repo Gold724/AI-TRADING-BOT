@@ -1,0 +1,199 @@
+version: '3.8'
+
+services:
+  tradebot-sentinel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tradebot-sentinel
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+      - "8080:8080"  # Additional port for monitoring
+    environment:
+      - NODE_ENV=production
+      - PYTHONUNBUFFERED=1
+      - DISPLAY=:99
+      - BULENOX_USERNAME=${BULENOX_USERNAME}
+      - BULENOX_PASSWORD=${BULENOX_PASSWORD}
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - EMAIL_SMTP_SERVER=${EMAIL_SMTP_SERVER}
+      - EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT}
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_TO=${EMAIL_TO}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - RETRY_DELAY=${RETRY_DELAY:-2}
+      - PAGE_TIMEOUT=${PAGE_TIMEOUT:-30000}
+      - HEADLESS=${HEADLESS:-true}
+      - AUTO_EXECUTE=${AUTO_EXECUTE:-false}
+      - SIMULATION=${SIMULATION:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TRADE_AMOUNT=${TRADE_AMOUNT:-100}
+      - STOP_LOSS=${STOP_LOSS:-0.02}
+      - TAKE_PROFIT=${TAKE_PROFIT:-0.05}
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./screenshots:/app/screenshots
+      - ./trades:/app/trades
+      - /dev/shm:/dev/shm  # Shared memory for Chrome
+    networks:
+      - tradebot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  redis:
+    image: redis:7-alpine
+    container_name: tradebot-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - tradebot-network
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-tradebotredis123}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: tradebot-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-tradebot}
+      - POSTGRES_USER=${POSTGRES_USER:-tradebot}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tradebotpass123}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - tradebot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tradebot}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    container_name: tradebot-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+      - ./logs/nginx:/var/log/nginx
+    networks:
+      - tradebot-network
+    depends_on:
+      - tradebot-sentinel
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tradebot-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - tradebot-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tradebot-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-tradebotgrafana123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - tradebot-network
+    depends_on:
+      - prometheus
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: tradebot-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=3600
+      - WATCHTOWER_INCLUDE_STOPPED=true
+      - WATCHTOWER_REVIVE_STOPPED=true
+    networks:
+      - tradebot-network
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: tradebot-portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+    networks:
+      - tradebot-network
+
+volumes:
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  portainer-data:
+    driver: local
+
+networks:
+  tradebot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

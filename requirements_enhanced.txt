@@ -1,0 +1,32 @@
+# Enhanced TradeBot Sentinel Requirements
+# Core dependencies for the upgraded Playwright trade interception script
+
+# Playwright for browser automation
+playwright>=1.40.0
+
+# cURL to Python conversion
+curlconverter>=4.0.0
+
+# Standard libraries (usually included with Python)
+# asyncio - built-in
+# json - built-in
+# os - built-in
+# subprocess - built-in
+# sys - built-in
+# random - built-in
+# math - built-in
+# datetime - built-in
+# pathlib - built-in
+# logging - built-in
+# typing - built-in
+
+# Additional useful packages for trading automation
+requests>=2.31.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# For enhanced error handling and debugging
+psutil>=5.9.0
+
+# For configuration management
+python-dotenv>=1.0.0

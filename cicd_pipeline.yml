@@ -1,0 +1,438 @@
+# AI Trading Sentinel - CI/CD Pipeline
+# GitHub Actions workflow for automated testing, building, and deployment
+
+name: AI Trading Sentinel CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+env:
+  PYTHON_VERSION: '3.10'
+  NODE_VERSION: '18'
+  DOCKER_IMAGE: 'ai-trading-sentinel'
+  REGISTRY: 'ghcr.io'
+
+jobs:
+  # Code Quality and Security Checks
+  quality-checks:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort bandit safety
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Code formatting check
+      run: |
+        black --check --diff .
+        isort --check-only --diff .
+
+    - name: Lint with flake8
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Security scan with bandit
+      run: |
+        bandit -r . -x tests/ -f json -o bandit-report.json
+
+    - name: Dependency vulnerability check
+      run: |
+        safety check --json --output safety-report.json
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+
+  # Unit and Integration Tests
+  test:
+    runs-on: ubuntu-latest
+    needs: quality-checks
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libnss3 \
+          libnspr4 \
+          libatk-bridge2.0-0 \
+          libdrm2 \
+          libxkbcommon0 \
+          libgtk-3-0 \
+          libatspi2.0-0
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov pytest-mock pytest-asyncio
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+
+    - name: Install Playwright
+      run: |
+        playwright install chromium
+        playwright install-deps chromium
+
+    - name: Create test environment
+      run: |
+        cp .env.example .env.test
+        echo "ENVIRONMENT=test" >> .env.test
+        echo "HEADLESS=true" >> .env.test
+        echo "SIMULATION=true" >> .env.test
+
+    - name: Run unit tests
+      run: |
+        pytest tests/unit/ -v --cov=. --cov-report=xml --cov-report=html
+
+    - name: Run integration tests
+      run: |
+        pytest tests/integration/ -v --maxfail=3
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.python-version }}
+        path: |
+          htmlcov/
+          pytest-report.html
+          screenshots/
+
+  # Frontend Build and Test
+  frontend-test:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'frontend/') || github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Run frontend linting
+      working-directory: ./frontend
+      run: npm run lint
+
+    - name: Run frontend tests
+      working-directory: ./frontend
+      run: npm run test:ci
+
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build
+
+    - name: Upload frontend build
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-build
+        path: frontend/dist/
+
+  # Docker Build and Security Scan
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [test, frontend-test]
+    if: always() && (needs.test.result == 'success')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.DOCKER_IMAGE }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Staging Deployment
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to staging
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USER }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        port: ${{ secrets.STAGING_PORT || 22 }}
+        script: |
+          cd /opt/ai-trading-sentinel
+          
+          # Pull latest changes
+          git pull origin develop
+          
+          # Update Docker image
+          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.DOCKER_IMAGE }}:develop
+          
+          # Stop existing containers
+          docker-compose -f docker-compose.staging.yml down
+          
+          # Start with new image
+          docker-compose -f docker-compose.staging.yml up -d
+          
+          # Wait for health check
+          sleep 30
+          
+          # Verify deployment
+          curl -f http://localhost/health || exit 1
+          
+          echo "✅ Staging deployment successful"
+
+    - name: Run smoke tests
+      run: |
+        # Add smoke tests for staging environment
+        python -m pytest tests/smoke/ --staging-url=${{ secrets.STAGING_URL }}
+
+  # Production Deployment
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to production
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.PRODUCTION_HOST }}
+        username: ${{ secrets.PRODUCTION_USER }}
+        key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        port: ${{ secrets.PRODUCTION_PORT || 22 }}
+        script: |
+          cd /opt/ai-trading-sentinel
+          
+          # Create backup
+          docker-compose exec -T app python backup_manager.py --create
+          
+          # Pull latest changes
+          git pull origin main
+          
+          # Update Docker image
+          docker pull ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.DOCKER_IMAGE }}:main
+          
+          # Rolling update with zero downtime
+          docker-compose -f docker-compose.prod.yml up -d --no-deps app
+          
+          # Wait for health check
+          sleep 60
+          
+          # Verify deployment
+          curl -f http://localhost/health || {
+            echo "❌ Health check failed, rolling back..."
+            docker-compose -f docker-compose.prod.yml rollback
+            exit 1
+          }
+          
+          # Clean up old images
+          docker image prune -f
+          
+          echo "✅ Production deployment successful"
+
+    - name: Run production smoke tests
+      run: |
+        python -m pytest tests/smoke/ --production-url=${{ secrets.PRODUCTION_URL }}
+
+    - name: Notify deployment success
+      uses: 8398a7/action-slack@v3
+      if: success()
+      with:
+        status: success
+        text: '🚀 AI Trading Sentinel deployed to production successfully!'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Notify deployment failure
+      uses: 8398a7/action-slack@v3
+      if: failure()
+      with:
+        status: failure
+        text: '❌ AI Trading Sentinel production deployment failed!'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Multi-Cloud Deployment
+  deploy-multi-cloud:
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.event_name == 'release'
+    strategy:
+      matrix:
+        cloud: [contabo, digitalocean, aws]
+    
+    steps:
+    - name: Deploy to ${{ matrix.cloud }}
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets[format('{0}_HOST', upper(matrix.cloud))] }}
+        username: ${{ secrets[format('{0}_USER', upper(matrix.cloud))] }}
+        key: ${{ secrets[format('{0}_SSH_KEY', upper(matrix.cloud))] }}
+        script: |
+          cd /opt/ai-trading-sentinel
+          
+          # Update deployment
+          bash deploy_cloud.sh --update
+          
+          # Verify health
+          python health_check.py --cloud=${{ matrix.cloud }}
+          
+          echo "✅ ${{ matrix.cloud }} deployment successful"
+
+  # Performance and Load Testing
+  performance-test:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run load tests
+      run: |
+        pip install locust
+        locust -f tests/performance/locustfile.py \
+          --host=${{ secrets.STAGING_URL }} \
+          --users=50 \
+          --spawn-rate=5 \
+          --run-time=5m \
+          --html=performance-report.html
+
+    - name: Upload performance report
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-report
+        path: performance-report.html
+
+  # Security Monitoring
+  security-monitoring:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run security audit
+      run: |
+        pip install safety bandit semgrep
+        
+        # Dependency vulnerabilities
+        safety check --json --output safety-audit.json
+        
+        # Code security issues
+        bandit -r . -f json -o bandit-audit.json
+        
+        # Advanced security patterns
+        semgrep --config=auto --json --output=semgrep-audit.json .
+
+    - name: Upload security audit
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-audit
+        path: |
+          safety-audit.json
+          bandit-audit.json
+          semgrep-audit.json
+
+# Scheduled workflows
+# Add to .github/workflows/ directory with schedule triggers:
+# schedule:
+#   - cron: '0 2 * * *'  # Daily security scans
+#   - cron: '0 6 * * 1'  # Weekly performance tests

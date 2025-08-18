@@ -1,0 +1,54 @@
+{
+  "simulation_id": "sim_1755477470",
+  "start_time": "2025-08-18T03:37:50.295688",
+  "last_updated": "2025-08-18T03:37:50.297684",
+  "balances": {
+    "SCALPING_DEMO": 10000.0
+  },
+  "trades": [
+    {
+      "trade_id": "T17554774706894",
+      "account_id": "SCALPING_DEMO",
+      "broker": "bulenox_simulation",
+      "symbol": "XAUUSD",
+      "action": "BUY",
+      "lot_size": 0.01,
+      "position_size": 1000.0,
+      "open_price": 1.965321288770811,
+      "take_profit": 2.205421586770811,
+      "stop_loss": 1.7252709907708108,
+      "open_time": "2025-08-18T03:37:50.297650",
+      "status": "OPEN",
+      "pip_value": 0.1,
+      "simulated": true
+    }
+  ],
+  "positions": {
+    "SCALPING_DEMO": [
+      {
+        "trade_id": "T17554774706894",
+        "account_id": "SCALPING_DEMO",
+        "broker": "bulenox_simulation",
+        "symbol": "XAUUSD",
+        "action": "BUY",
+        "lot_size": 0.01,
+        "position_size": 1000.0,
+        "open_price": 1.965321288770811,
+        "take_profit": 2.205421586770811,
+        "stop_loss": 1.7252709907708108,
+        "open_time": "2025-08-18T03:37:50.297650",
+        "status": "OPEN",
+        "pip_value": 0.1,
+        "simulated": true
+      }
+    ]
+  },
+  "market_data": {
+    "prices": {
+      "XAUUSD": 1.965321288770811,
+      "EURUSD": 1.30106,
+      "GBPUSD": 1.74942,
+      "USDJPY": 1.10777
+    }
+  }
+}

@@ -80,13 +80,31 @@ class SignalProcessor:
             pending_signals = []
             
             # Read all pending signals
-            with open(signals_file, "r") as f:
-                for line in f:
-                    try:
-                        signal = json.loads(line.strip())
-                        pending_signals.append(signal)
-                    except json.JSONDecodeError:
-                        self.logger.warning(f"Invalid JSON in signals file: {line}")
+            try:
+                with open(signals_file, "r") as f:
+                    content = f.read().strip()
+                    if content:
+                        try:
+                            # Try to parse as structured JSON first
+                            data = json.loads(content)
+                            if isinstance(data, dict) and "signals" in data:
+                                pending_signals = data["signals"]
+                            elif isinstance(data, list):
+                                pending_signals = data
+                            else:
+                                pending_signals = [data]
+                        except json.JSONDecodeError:
+                            # Fallback to line-by-line parsing
+                            for line in content.split('\n'):
+                                line = line.strip()
+                                if line:
+                                    try:
+                                        signal = json.loads(line)
+                                        pending_signals.append(signal)
+                                    except json.JSONDecodeError:
+                                        self.logger.warning(f"Invalid JSON in signals file: {line}")
+            except Exception as e:
+                self.logger.error(f"Error reading signals file: {e}")
             
             # Clear the signals file
             with open(signals_file, "w") as f:

@@ -1,0 +1,230 @@
+# EMERGENCY VPS ACCESS - Connection Refused on Port 18177
+
+## IMMEDIATE SITUATION
+- SSH to 161.97.112.146:18177 = Connection Refused
+- VPS appears to be down or SSH service not running
+- Need immediate access via Contabo Web Console
+
+## EMERGENCY ACCESS STEPS
+
+### 1. Contabo Web Console (FASTEST SOLUTION)
+```
+1. Login to Contabo Customer Panel: https://my.contabo.com
+2. Navigate to: Your Services > VPS > vmi2736801.contaboserver.net
+3. Click "Console" or "VNC Console" button
+4. This opens direct terminal access (bypasses SSH entirely)
+```
+
+### 2. VPS Status Check
+Once in web console, run:
+```bash
+# Check system status
+sudo systemctl status ssh
+sudo systemctl status sshd
+netstat -tlnp | grep :18177
+netstat -tlnp | grep :22
+
+# Check if SSH is running on default port
+ss -tlnp | grep ssh
+
+# Check firewall
+sudo ufw status
+sudo iptables -L
+```
+
+### 3. Fix SSH Service (if needed)
+```bash
+# Restart SSH service
+sudo systemctl restart ssh
+sudo systemctl restart sshd
+
+# Enable SSH service
+sudo systemctl enable ssh
+sudo systemctl enable sshd
+
+# Check SSH config
+sudo nano /etc/ssh/sshd_config
+# Look for: Port 18177 or Port 22
+
+# If port is wrong, fix it:
+echo "Port 18177" | sudo tee -a /etc/ssh/sshd_config
+sudo systemctl restart sshd
+```
+
+### 4. IMMEDIATE DEPLOYMENT VIA WEB CONSOLE
+Once connected via web console, execute:
+
+```bash
+# Navigate to project directory
+cd /root
+
+# Create deployment script
+cat > deploy_trae_bot.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "=== AI Trading Sentinel VPS Deployment ==="
+echo "Starting deployment at $(date)"
+
+# Update system
+echo "Updating system packages..."
+apt update && apt upgrade -y
+
+# Install essential packages
+echo "Installing essential packages..."
+apt install -y python3 python3-pip python3-venv nodejs npm git curl wget htop nano
+
+# Install Python packages
+echo "Installing Python packages..."
+pip3 install --upgrade pip
+pip3 install playwright pyyaml requests flask python-dotenv pandas numpy aiohttp websockets gunicorn
+
+# Install Playwright browsers
+echo "Installing Playwright browsers..."
+playwright install
+playwright install-deps
+
+# Clone or update repository
+echo "Setting up AI Trading Sentinel..."
+if [ -d "ai-trading-sentinel" ]; then
+    cd ai-trading-sentinel
+    git pull
+else
+    git clone https://github.com/YOUR_USERNAME/ai-trading-sentinel.git
+    cd ai-trading-sentinel
+fi
+
+# Create logs directory
+mkdir -p logs
+touch logs/trae.log
+chmod 666 logs/trae.log
+
+# Fix main.py imports (replace selenium with playwright)
+echo "Fixing main.py imports..."
+cp main.py main.py.backup
+sed -i 's/from selenium/#from selenium/g' main.py
+sed -i 's/import selenium/#import selenium/g' main.py
+
+# Add playwright imports if not present
+if ! grep -q "from playwright" main.py; then
+    sed -i '1i from playwright.sync_api import sync_playwright' main.py
+fi
+
+# Create systemd service
+echo "Creating systemd service..."
+cat > /etc/systemd/system/trae-bot.service << 'SERVICE_EOF'
+[Unit]
+Description=AI Trading Sentinel Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/ai-trading-sentinel
+Environment=PATH=/usr/bin:/usr/local/bin
+ExecStart=/usr/bin/python3 /root/ai-trading-sentinel/main.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/root/ai-trading-sentinel/logs/trae.log
+StandardError=append:/root/ai-trading-sentinel/logs/trae.log
+
+[Install]
+WantedBy=multi-user.target
+SERVICE_EOF
+
+# Reload systemd and enable service
+systemctl daemon-reload
+systemctl enable trae-bot
+
+echo "=== Deployment Complete ==="
+echo "Next steps:"
+echo "1. Configure .env file with broker credentials"
+echo "2. Start service: systemctl start trae-bot"
+echo "3. Check status: systemctl status trae-bot"
+echo "4. View logs: tail -f logs/trae.log"
+
+EOF
+
+# Make script executable
+chmod +x deploy_trae_bot.sh
+
+# Execute deployment
+./deploy_trae_bot.sh
+```
+
+### 5. Configure .env File
+```bash
+# Create .env file
+cat > .env << 'ENV_EOF'
+# Broker Configuration
+BROKER_USERNAME=your_broker_username
+BROKER_PASSWORD=your_broker_password
+BROKER_URL=https://your-broker-url.com
+
+# Trading Configuration
+TRADE_AMOUNT=100
+MAX_DAILY_TRADES=10
+RISK_PERCENTAGE=2
+
+# Monitoring
+SLACK_WEBHOOK_URL=your_slack_webhook
+EMAIL_ALERTS=your_email@domain.com
+
+# Environment
+ENVIRONMENT=production
+DEBUG=false
+ENV_EOF
+
+echo "Please edit .env file with your actual credentials:"
+echo "nano .env"
+```
+
+### 6. Start and Verify Service
+```bash
+# Start the service
+systemctl start trae-bot
+
+# Check status
+systemctl status trae-bot
+
+# View logs
+tail -f logs/trae.log
+
+# Enable auto-start on boot
+systemctl enable trae-bot
+
+# Test Python imports
+python3 -c "import playwright, yaml, requests, flask; print('All imports successful')"
+```
+
+### 7. Fix SSH for Future Access
+```bash
+# Ensure SSH is configured for port 18177
+echo "Port 18177" | sudo tee -a /etc/ssh/sshd_config
+echo "PermitRootLogin yes" | sudo tee -a /etc/ssh/sshd_config
+sudo systemctl restart sshd
+
+# Test SSH locally
+ss -tlnp | grep :18177
+```
+
+## SUCCESS INDICATORS
+- ✅ Web console access working
+- ✅ Deployment script executed successfully
+- ✅ Python imports working (playwright, yaml, requests, flask)
+- ✅ systemd service created and enabled
+- ✅ Logs directory created with proper permissions
+- ✅ SSH service restored on port 18177
+
+## EMERGENCY CONTACTS
+- Contabo Support: https://my.contabo.com/support
+- Emergency Phone: Check your Contabo account
+
+## NEXT STEPS AFTER WEB CONSOLE ACCESS
+1. Execute deployment script
+2. Configure .env with broker credentials
+3. Start trae-bot service
+4. Verify 24/7 operation
+5. Fix SSH for remote access
+
+Time to execute: ~15-20 minutes via web console

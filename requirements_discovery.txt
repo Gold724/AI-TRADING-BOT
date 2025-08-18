@@ -1,0 +1,28 @@
+# TradeBot Sentinel - Trade Endpoint Discovery Requirements
+# Install with: pip install -r requirements_discovery.txt
+
+# Core Playwright automation
+playwright>=1.40.0
+
+# HTTP requests and JSON handling
+requests>=2.31.0
+
+# cURL to Python conversion
+curlconverter>=0.0.1
+
+# Additional utilities
+pathlib2>=2.3.7
+psutil>=5.9.0
+
+# Development and debugging
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Optional: For enhanced logging
+coloredlogs>=15.0.1
+
+# Optional: For better JSON handling
+orjson>=3.9.0
+
+# Optional: For environment variable management
+python-dotenv>=1.0.0

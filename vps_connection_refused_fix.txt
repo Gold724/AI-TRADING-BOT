@@ -1,0 +1,213 @@
+# VPS Connection Refused - Emergency Troubleshooting
+# =================================================
+
+## 🚨 Current Issue: Connection Refused on Port 18177
+
+**Error**: `ssh: connect to host 161.97.112.146 port 18177: Connection refused`
+
+**Possible Causes**:
+1. VPS is powered off or crashed
+2. SSH service is not running
+3. Firewall blocking port 18177
+4. Network connectivity issues
+5. Port configuration changed
+
+## 🔧 Immediate Diagnostic Steps
+
+### Step 1: Check VPS Status in Contabo Panel
+1. Login to https://my.contabo.com
+2. Navigate to VPS management
+3. Check server status:
+   - ✅ **Running** - Server is on
+   - ❌ **Stopped** - Server is off
+   - ⚠️ **Starting** - Server is booting
+
+### Step 2: Test Network Connectivity
+```bash
+# Test if host is reachable
+ping 161.97.112.146
+
+# Test specific port
+telnet 161.97.112.146 18177
+# OR using PowerShell
+Test-NetConnection -ComputerName 161.97.112.146 -Port 18177
+
+# Check if any SSH ports are open
+nmap -p 22,2222,18177,2200-2300 161.97.112.146
+```
+
+### Step 3: Try Default SSH Port
+```bash
+# Sometimes port reverts to default
+ssh root@161.97.112.146
+# OR
+ssh -p 22 root@161.97.112.146
+```
+
+## 🆘 Emergency Access Methods
+
+### Method 1: Contabo Web Console (RECOMMENDED)
+1. **Access**: https://my.contabo.com
+2. **Navigate**: VPS Management → Your Server
+3. **Click**: "Console" or "VNC Console"
+4. **Login**: Direct browser-based terminal access
+5. **No SSH required** - bypasses network issues
+
+### Method 2: Contabo Rescue System
+1. **Boot into rescue mode** via Contabo panel
+2. **Mount your VPS disk**
+3. **Fix SSH configuration**
+4. **Reboot to normal mode**
+
+### Method 3: VPS Power Cycle
+1. **Stop VPS** via Contabo panel
+2. **Wait 30 seconds**
+3. **Start VPS** again
+4. **Wait 2-3 minutes** for full boot
+5. **Try SSH connection** again
+
+## 🔍 Troubleshooting Commands (Once Connected)
+
+### Check SSH Service Status
+```bash
+# Check if SSH is running
+systemctl status ssh
+systemctl status sshd
+
+# Check SSH configuration
+cat /etc/ssh/sshd_config | grep Port
+
+# Check listening ports
+netstat -tlnp | grep :18177
+ss -tlnp | grep :18177
+```
+
+### Check Firewall Status
+```bash
+# Check UFW firewall
+ufw status
+
+# Check iptables
+iptables -L -n
+
+# Check if port 18177 is allowed
+ufw status numbered
+```
+
+### Fix SSH Configuration
+```bash
+# Edit SSH config
+nano /etc/ssh/sshd_config
+
+# Ensure these lines exist:
+# Port 18177
+# PermitRootLogin yes
+# PasswordAuthentication yes
+
+# Restart SSH service
+systemctl restart ssh
+systemctl enable ssh
+```
+
+### Check System Logs
+```bash
+# Check system logs for errors
+journalctl -xe
+journalctl -u ssh -f
+
+# Check authentication logs
+tail -f /var/log/auth.log
+```
+
+## 🚀 Recovery Script (Run via Web Console)
+
+```bash
+#!/bin/bash
+echo "🔧 VPS SSH Recovery Script"
+echo "========================="
+
+# Check current SSH status
+echo "📊 Current SSH Status:"
+systemctl status ssh --no-pager
+
+# Check SSH configuration
+echo "📋 SSH Port Configuration:"
+grep "^Port" /etc/ssh/sshd_config || echo "No custom port found"
+
+# Check listening ports
+echo "🔍 Listening Ports:"
+ss -tlnp | grep ssh
+
+# Fix SSH configuration for port 18177
+echo "🔧 Configuring SSH for port 18177..."
+cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
+
+# Ensure port 18177 is configured
+if ! grep -q "^Port 18177" /etc/ssh/sshd_config; then
+    echo "Port 18177" >> /etc/ssh/sshd_config
+fi
+
+# Ensure root login is enabled
+if ! grep -q "^PermitRootLogin yes" /etc/ssh/sshd_config; then
+    sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+fi
+
+# Enable password authentication
+if ! grep -q "^PasswordAuthentication yes" /etc/ssh/sshd_config; then
+    sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+fi
+
+# Configure firewall
+echo "🛡️ Configuring firewall..."
+ufw allow 18177/tcp
+ufw allow 22/tcp
+
+# Restart SSH service
+echo "🔄 Restarting SSH service..."
+systemctl restart ssh
+systemctl enable ssh
+
+# Verify SSH is running
+echo "✅ Final SSH Status:"
+systemctl status ssh --no-pager
+ss -tlnp | grep :18177
+
+echo "🎯 SSH Recovery Complete!"
+echo "Try connecting: ssh -p 18177 root@161.97.112.146"
+```
+
+## 📞 Contabo Support Escalation
+
+**If all methods fail, contact Contabo support**:
+- **Email**: support@contabo.com
+- **Phone**: +49 89 3564717 70
+- **Ticket**: Via customer panel
+- **Live Chat**: Available in customer portal
+
+**Information to provide**:
+- VPS IP: 161.97.112.146
+- Issue: SSH connection refused on port 18177
+- Error message: Connection refused
+- Troubleshooting steps attempted
+
+## 🔄 Alternative Deployment Strategy
+
+**If VPS access remains problematic**:
+1. **Request VPS reinstall** with fresh Ubuntu
+2. **Use standard SSH port 22** initially
+3. **Deploy via Contabo's cloud-init** scripts
+4. **Setup automated deployment** pipeline
+
+## ⚡ Quick Recovery Checklist
+
+- [ ] Check VPS status in Contabo panel
+- [ ] Try web console access
+- [ ] Test network connectivity
+- [ ] Try default SSH port (22)
+- [ ] Power cycle VPS if needed
+- [ ] Run recovery script via web console
+- [ ] Contact Contabo support if all fails
+
+---
+**TRAE-SentinelOps Emergency Response**
+*Ensuring continuous trading bot operations under all conditions*

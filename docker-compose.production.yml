@@ -1,0 +1,282 @@
+# AI Trading Sentinel - Production Docker Compose
+# Optimized for Contabo VPS deployment with monitoring and persistence
+
+version: '3.8'
+
+services:
+  # Main Trading Bot Application
+  trading-sentinel:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      args:
+        - BUILD_DATE=${BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        - VCS_REF=${VCS_REF:-$(git rev-parse --short HEAD)}
+    container_name: ai-trading-sentinel
+    restart: unless-stopped
+    ports:
+      - "80:80"      # Nginx frontend
+      - "8000:8000"  # API backend (internal)
+    environment:
+      # Trading Configuration
+      - BULENOX_USERNAME=${BULENOX_USERNAME}
+      - BULENOX_PASSWORD=${BULENOX_PASSWORD}
+      - BROKER_URL=${BROKER_URL:-https://bulenox.projectx.com/login}
+      - AUTO_EXECUTE=${AUTO_EXECUTE:-false}
+      - SIMULATION=${SIMULATION:-true}
+      
+      # Risk Management
+      - MAX_DAILY_LOSS=${MAX_DAILY_LOSS:-100}
+      - MAX_POSITION_SIZE=${MAX_POSITION_SIZE:-0.1}
+      - STOP_LOSS_PERCENT=${STOP_LOSS_PERCENT:-2.0}
+      - TAKE_PROFIT_PERCENT=${TAKE_PROFIT_PERCENT:-1.5}
+      
+      # Notifications
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - EMAIL_SMTP_SERVER=${EMAIL_SMTP_SERVER}
+      - EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT:-587}
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - EMAIL_TO=${EMAIL_TO}
+      
+      # System Configuration
+      - RETRY_ATTEMPTS=${RETRY_ATTEMPTS:-3}
+      - RETRY_DELAY=${RETRY_DELAY:-5}
+      - TIMEOUT_SECONDS=${TIMEOUT_SECONDS:-30}
+      - BROWSER_HEADLESS=${BROWSER_HEADLESS:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      
+      # Docker specific
+      - DISPLAY=:99
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+    volumes:
+      # Persistent data
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./screenshots:/app/screenshots
+      
+      # Configuration files
+      - ./.env:/app/.env:ro
+      
+      # Timezone
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - sentinel-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+    read_only: false  # Set to true for enhanced security, but may need adjustments
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+      - /var/tmp:noexec,nosuid,size=50m
+
+  # Redis for caching and session management (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: sentinel-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./docker/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - sentinel-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=50m
+
+  # PostgreSQL for trade history and analytics (optional)
+  postgres:
+    image: postgres:15-alpine
+    container_name: sentinel-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-sentinel_db}
+      - POSTGRES_USER=${POSTGRES_USER:-sentinel}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - sentinel-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentinel} -d ${POSTGRES_DB:-sentinel_db}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+    read_only: false
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+      - /var/run/postgresql:noexec,nosuid,size=50m
+
+  # Prometheus for metrics collection (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sentinel-prometheus
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - sentinel-network
+    profiles:
+      - monitoring
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Grafana for visualization (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sentinel-grafana
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./docker/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./docker/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - sentinel-network
+    profiles:
+      - monitoring
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Watchtower for automatic updates (optional)
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: sentinel-watchtower
+    restart: unless-stopped
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=3600  # Check every hour
+      - WATCHTOWER_INCLUDE_STOPPED=true
+      - WATCHTOWER_NOTIFICATIONS=slack
+      - WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL=${SLACK_WEBHOOK_URL}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    profiles:
+      - auto-update
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+networks:
+  sentinel-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+# Health check and deployment verification
+x-healthcheck-config: &healthcheck
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 60s
+
+# Common logging configuration
+x-logging-config: &logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "5"
+
+# Security configuration template
+x-security-config: &security
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  read_only: false

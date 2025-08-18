@@ -1,0 +1,282 @@
+{
+  "deployment_info": {
+    "name": "Bulenox Trading Bot - Playwright Edition",
+    "version": "2.0.0",
+    "description": "Contract-based trading automation with Playwright",
+    "deployment_date": "2025-01-17",
+    "author": "TRAE-SentinelOps"
+  },
+  
+  "vps": {
+    "host": "YOUR_CONTABO_VPS_IP",
+    "username": "root",
+    "password": null,
+    "ssh_key_path": "~/.ssh/id_rsa",
+    "port": 22
+  },
+  
+  "deployment": {
+    "project_name": "bulenox-trading-bot",
+    "deploy_path": "/opt/trading-bot",
+    "service_name": "bulenox-trader",
+    "domain": "your-domain.com",
+    "ssl_email": "your-email@domain.com",
+    "github_repo": "https://github.com/your-username/ai-trading-sentinel.git",
+    "branch": "main"
+  },
+  
+  "environment": {
+    "BULENOX_USERNAME": "your_bulenox_username",
+    "BULENOX_PASSWORD": "your_bulenox_password",
+    "BULENOX_LOGIN_URL": "https://bulenox.projectx.com/login",
+    "GITHUB_TOKEN": "your_github_token_optional",
+    "FLASK_SECRET_KEY": "generate_random_secret_key",
+    "ENVIRONMENT": "production",
+    "LOG_LEVEL": "INFO",
+    "MAX_CONTRACT_SIZE": "10",
+    "MAX_DAILY_TRADES": "50",
+    "MAX_DRAWDOWN_PERCENT": "5.0",
+    "RISK_MANAGEMENT_ENABLED": "true",
+    "EMERGENCY_STOP_ENABLED": "true",
+    "HEADLESS_MODE": "true",
+    "SCREENSHOT_ON_ERROR": "true",
+    "NETWORK_INTERCEPTION": "true",
+    "SESSION_TIMEOUT": "3600",
+    "RETRY_ATTEMPTS": "3",
+    "RETRY_DELAY": "5",
+    "HEALTH_CHECK_INTERVAL": "300",
+    "BACKUP_ENABLED": "true",
+    "BACKUP_INTERVAL": "86400",
+    "MONITORING_ENABLED": "true",
+    "ALERT_EMAIL": "alerts@your-domain.com",
+    "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+    "TIMEZONE": "UTC",
+    "API_PORT": "5000",
+    "WEBSOCKET_PORT": "5001",
+    "FRONTEND_PORT": "3000"
+  },
+  
+  "system_requirements": {
+    "os": "Ubuntu 22.04 LTS or 24.04 LTS",
+    "ram": "4GB minimum, 8GB recommended",
+    "storage": "20GB minimum, 50GB recommended",
+    "cpu": "2 cores minimum, 4 cores recommended",
+    "network": "Stable internet connection with low latency",
+    "python_version": "3.10+",
+    "node_version": "18+"
+  },
+  
+  "security": {
+    "firewall_enabled": true,
+    "ssh_key_only": true,
+    "fail2ban_enabled": true,
+    "ssl_certificate": true,
+    "security_headers": true,
+    "rate_limiting": true,
+    "ip_whitelist": [],
+    "allowed_ports": [22, 80, 443],
+    "auto_updates": true
+  },
+  
+  "monitoring": {
+    "health_checks": {
+      "enabled": true,
+      "interval": 300,
+      "timeout": 30,
+      "retries": 3
+    },
+    "log_rotation": {
+      "enabled": true,
+      "max_size": "100MB",
+      "max_files": 30,
+      "compress": true
+    },
+    "alerts": {
+      "email_enabled": true,
+      "slack_enabled": true,
+      "webhook_enabled": false,
+      "alert_conditions": [
+        "service_down",
+        "high_memory_usage",
+        "disk_space_low",
+        "trading_errors",
+        "login_failures",
+        "network_issues"
+      ]
+    },
+    "metrics": {
+      "system_metrics": true,
+      "trading_metrics": true,
+      "performance_metrics": true,
+      "error_tracking": true
+    }
+  },
+  
+  "backup": {
+    "enabled": true,
+    "schedule": "0 2 * * *",
+    "retention_days": 30,
+    "backup_locations": [
+      "/opt/trading-bot/backups",
+      "s3://your-backup-bucket/trading-bot"
+    ],
+    "backup_items": [
+      "configuration_files",
+      "trading_logs",
+      "database_files",
+      "environment_variables",
+      "ssl_certificates"
+    ]
+  },
+  
+  "scaling": {
+    "auto_scaling": false,
+    "load_balancing": false,
+    "multi_instance": false,
+    "resource_limits": {
+      "memory_limit": "2GB",
+      "cpu_limit": "200%",
+      "file_descriptors": 65536
+    },
+    "performance_tuning": {
+      "browser_pool_size": 3,
+      "concurrent_trades": 1,
+      "request_timeout": 30,
+      "page_timeout": 60
+    }
+  },
+  
+  "trading_configuration": {
+    "contract_based_trading": true,
+    "minimum_contract_size": 1,
+    "maximum_contract_size": 10,
+    "default_contract_size": 1,
+    "risk_management": {
+      "max_position_size": 10,
+      "max_daily_trades": 50,
+      "max_drawdown_percent": 5.0,
+      "stop_loss_enabled": true,
+      "take_profit_enabled": true,
+      "emergency_stop_enabled": true
+    },
+    "supported_symbols": [
+      "EURUSD",
+      "GBPUSD",
+      "USDJPY",
+      "AUDUSD",
+      "USDCAD",
+      "NZDUSD",
+      "EURGBP",
+      "EURJPY"
+    ],
+    "trading_hours": {
+      "start": "00:00",
+      "end": "23:59",
+      "timezone": "UTC",
+      "weekend_trading": false
+    }
+  },
+  
+  "ci_cd": {
+    "github_actions": {
+      "enabled": true,
+      "auto_deploy": true,
+      "test_before_deploy": true,
+      "rollback_on_failure": true
+    },
+    "deployment_hooks": {
+      "pre_deploy": [
+        "backup_current_version",
+        "run_tests",
+        "validate_configuration"
+      ],
+      "post_deploy": [
+        "restart_services",
+        "run_health_checks",
+        "send_notifications"
+      ]
+    },
+    "testing": {
+      "unit_tests": true,
+      "integration_tests": true,
+      "contract_validation_tests": true,
+      "performance_tests": false
+    }
+  },
+  
+  "troubleshooting": {
+    "common_issues": {
+      "playwright_installation": {
+        "description": "Playwright browser installation fails",
+        "solution": "Run 'playwright install-deps' and ensure sufficient disk space"
+      },
+      "login_failures": {
+        "description": "Bulenox login automation fails",
+        "solution": "Check credentials, verify platform availability, update selectors"
+      },
+      "contract_size_errors": {
+        "description": "Contract size validation fails",
+        "solution": "Verify contract size limits, check platform requirements"
+      },
+      "memory_issues": {
+        "description": "High memory usage or OOM errors",
+        "solution": "Increase VPS memory, optimize browser settings, enable headless mode"
+      },
+      "network_timeouts": {
+        "description": "Network requests timeout",
+        "solution": "Check internet connection, increase timeout values, verify firewall"
+      }
+    },
+    "diagnostic_commands": {
+      "service_status": "systemctl status bulenox-trader",
+      "view_logs": "journalctl -u bulenox-trader -f",
+      "check_memory": "free -h && ps aux --sort=-%mem | head",
+      "check_disk": "df -h",
+      "check_network": "ping -c 4 bulenox.projectx.com",
+      "test_playwright": "cd /opt/trading-bot/src && python -c 'from playwright.sync_api import sync_playwright; print(\"Playwright OK\")'")
+    }
+  },
+  
+  "compliance": {
+    "data_protection": {
+      "gdpr_compliant": true,
+      "data_encryption": true,
+      "secure_storage": true,
+      "access_logging": true
+    },
+    "financial_regulations": {
+      "risk_disclosures": true,
+      "audit_trail": true,
+      "position_reporting": true,
+      "compliance_monitoring": true
+    },
+    "security_standards": {
+      "ssl_tls": true,
+      "secure_headers": true,
+      "input_validation": true,
+      "rate_limiting": true,
+      "access_controls": true
+    }
+  },
+  
+  "support": {
+    "documentation": {
+      "deployment_guide": "DEPLOYMENT_GUIDE.md",
+      "api_documentation": "API_DOCS.md",
+      "troubleshooting_guide": "TROUBLESHOOTING.md",
+      "user_manual": "USER_MANUAL.md"
+    },
+    "contact": {
+      "technical_support": "support@your-domain.com",
+      "emergency_contact": "+1-XXX-XXX-XXXX",
+      "documentation_url": "https://docs.your-domain.com",
+      "github_issues": "https://github.com/your-username/ai-trading-sentinel/issues"
+    },
+    "maintenance": {
+      "regular_updates": "Weekly security updates",
+      "feature_updates": "Monthly feature releases",
+      "emergency_patches": "As needed for critical issues",
+      "maintenance_window": "Sundays 02:00-04:00 UTC"
+    }
+  }
+}

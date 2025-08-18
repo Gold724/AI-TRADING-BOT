@@ -3,12 +3,14 @@ import SignalCard from './components/SignalCard'
 import SignalStats from './components/SignalStats'
 import SignalExport from './components/SignalExport'
 import BrokerAdminPanel from './components/BrokerAdminPanel'
+import BulenoxTradingPanel from './components/BulenoxTradingPanel'
 
 function App() {
   const [tradeMessage, setTradeMessage] = useState('')
   const [broker, setBroker] = useState('binance')
   const [showConfirm, setShowConfirm] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [bulenoxStrategy, setBulenoxStrategy] = useState<'fast' | 'slow' | 'scalping'>('fast')
 
   // Vault strategy related state
   const [vaultStrategies, setVaultStrategies] = useState<string[]>([])
@@ -19,8 +21,9 @@ function App() {
 
   // Authentication states
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const [username, setUsername] = useState('admin')
+  const [password, setPassword] = useState('password123')
+  const [showPassword, setShowPassword] = useState(false)
   const [authError, setAuthError] = useState('')
 
   // Trade parameters
@@ -33,10 +36,15 @@ function App() {
     takeProfit: ''
   })
 
+  // State for tracking backend connection status
+  const [backendError, setBackendError] = useState<string | null>(null)
+
   React.useEffect(() => {
     async function fetchStrategies() {
       try {
-        const response = await fetch('http://localhost:5000/api/strategy', {
+        setBackendError(null)
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+        const response = await fetch(`${apiUrl}/api/strategy`, {
           credentials: 'include',
           mode: 'cors',
           headers: {
@@ -48,16 +56,35 @@ function App() {
           setIsAuthenticated(false)
           return
         }
-        setIsAuthenticated(true)
         const data = await response.json()
+        
         // Adapt the response format from /api/strategy to match what the frontend expects
         if (data.strategy) {
           const strategies = [data.strategy];
           setVaultStrategies(strategies)
           setSelectedStrategy(data.strategy)
+        } else if (data.strategies) {
+          // Handle both string arrays and object arrays
+          const strategyNames = data.strategies.map(strategy => 
+            typeof strategy === 'string' ? strategy : strategy.name || strategy.id || String(strategy)
+          )
+          setVaultStrategies(strategyNames)
+          if (strategyNames.length > 0) {
+            setSelectedStrategy(strategyNames[0])
+          }
         }
       } catch (error) {
         console.error('Failed to fetch strategies', error)
+        setBackendError('Unable to connect to backend server - using demo data')
+        // Set some default strategies when backend is not available
+        const defaultStrategies = [
+          'vault-fvg-breakout',
+          'vault-support-resistance',
+          'vault-trend-following',
+          'vault-mean-reversion'
+        ];
+        setVaultStrategies(defaultStrategies)
+        setSelectedStrategy(defaultStrategies[0])
       }
     }
     fetchStrategies()
@@ -66,7 +93,14 @@ function App() {
   const handleLogin = async () => {
     setAuthError('')
     try {
-      const response = await fetch('http://localhost:5000/api/login', {
+      // For demo purposes, check if using the default credentials
+      if (username === 'admin' && password === 'password123') {
+        setIsAuthenticated(true)
+        return
+      }
+      
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const response = await fetch(`${apiUrl}/api/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -74,7 +108,10 @@ function App() {
         },
         credentials: 'include',
         mode: 'cors',
-        body: JSON.stringify({ account_id: username })
+        body: JSON.stringify({ 
+          username: username,
+          password: password 
+        })
       })
       if (response.ok) {
         setIsAuthenticated(true)
@@ -89,7 +126,8 @@ function App() {
   }
 
   const handleLogout = async () => {
-    await fetch('http://localhost:5000/api/logout', { 
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      await fetch(`${apiUrl}/api/logout`, { 
       method: 'POST',
       credentials: 'include'
     })
@@ -139,7 +177,8 @@ function App() {
       }
     }
     try {
-      const response = await fetch('http://localhost:5000/api/trade', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const response = await fetch(`${apiUrl}/api/trade`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -194,6 +233,11 @@ function App() {
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto p-4 max-w-md">
+        {backendError && (
+          <div className="mb-4 bg-yellow-100 text-yellow-800 p-3 rounded shadow">
+            {backendError}
+          </div>
+        )}
         <h2 className="text-2xl font-bold mb-4">Login</h2>
         {authError && <div className="text-red-600 mb-2">{authError}</div>}
         <input
@@ -203,25 +247,53 @@ function App() {
           onChange={e => setUsername(e.target.value)}
           className="mb-2 p-2 border rounded w-full"
         />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          className="mb-4 p-2 border rounded w-full"
-        />
+        <div className="relative mb-4">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="p-2 border rounded w-full"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+          >
+            {showPassword ? (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            )}
+          </button>
+        </div>
         <button
           onClick={handleLogin}
           className="bg-blue-600 text-white px-4 py-2 rounded w-full"
         >
           Login
         </button>
+        <div className="mt-2 text-sm text-gray-600">
+          <p>Default credentials:</p>
+          <p>Username: admin</p>
+          <p>Password: password123</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
+      {backendError && (
+        <div className="max-w-7xl mx-auto mb-4 bg-yellow-100 text-yellow-800 p-3 rounded shadow">
+          {backendError}
+        </div>
+      )}
       <h1 className="text-3xl font-bold mb-6">AI Trading Sentinel Dashboard</h1>
       
       <button
@@ -231,12 +303,18 @@ function App() {
         Logout
       </button>
 
-      <div className="mb-6">
+      <div className="flex space-x-4 mb-6">
         <button
-          className={`mr-4 px-4 py-2 rounded ${activeTab === 'dashboard' ? 'bg-blue-600 text-white' : 'bg-gray-300'}`}
+          className={`px-4 py-2 rounded ${activeTab === 'dashboard' ? 'bg-blue-600 text-white' : 'bg-gray-300'}`}
           onClick={() => setActiveTab('dashboard')}
         >
           Dashboard
+        </button>
+        <button
+          className={`px-4 py-2 rounded ${activeTab === 'bulenox' ? 'bg-green-600 text-white' : 'bg-gray-300'}`}
+          onClick={() => setActiveTab('bulenox')}
+        >
+          Bulenox Trading
         </button>
         <button
           className={`px-4 py-2 rounded ${activeTab === 'admin' ? 'bg-blue-600 text-white' : 'bg-gray-300'}`}
@@ -247,6 +325,26 @@ function App() {
       </div>
 
       {activeTab === 'admin' && <BrokerAdminPanel />}
+      
+      {activeTab === 'bulenox' && (
+        <BulenoxTradingPanel 
+          onTradeExecute={(tradeData) => {
+            console.log('Bulenox trade executed:', tradeData);
+            // Add trade to history
+            const newTrade = {
+              timestamp: new Date().toISOString(),
+              broker: 'bulenox',
+              symbol: tradeData.symbol,
+              side: tradeData.side,
+              quantity: tradeData.quantity,
+              stopLoss: tradeData.stopLoss,
+              takeProfit: tradeData.takeProfit,
+              status: 'executed'
+            };
+            setTradeHistory(prev => [newTrade, ...prev]);
+          }}
+        />
+      )}
 
       {activeTab === 'dashboard' && (
         <>
@@ -350,7 +448,8 @@ function App() {
                 onClick={async () => {
                   setBacktestResults(null)
                   try {
-                    const response = await fetch('http://localhost:5000/api/simulate', {
+                    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const response = await fetch(`${apiUrl}/api/simulate`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({

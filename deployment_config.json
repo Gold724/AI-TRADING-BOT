@@ -1,0 +1,23 @@
+{
+  "deployment_info": {
+    "project_name": "bulenox-trading-bot",
+    "version": "2.0.0",
+    "environment": "production"
+  },
+  "vps_connection": {
+    "host": "YOUR_CONTABO_VPS_IP",
+    "port": 22,
+    "username": "root",
+    "key_file": "/path/to/your/ssh/key"
+  },
+  "github_repository": {
+    "url": "https://github.com/yourusername/ai-trading-sentinel.git",
+    "branch": "main"
+  },
+  "environment_variables": {
+    "BULENOX_USERNAME": "YOUR_BULENOX_USERNAME",
+    "BULENOX_PASSWORD": "YOUR_BULENOX_PASSWORD",
+    "FLASK_SECRET_KEY": "your-random-secret-key",
+    "ALERT_EMAIL": "your-email@domain.com"
+  }
+}

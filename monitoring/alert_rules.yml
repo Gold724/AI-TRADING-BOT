@@ -1,0 +1,363 @@
+# Prometheus Alert Rules for TradeBot Sentinel
+groups:
+  - name: tradebot_critical
+    rules:
+      # Application Health Alerts
+      - alert: TradeBotDown
+        expr: up{job="tradebot-sentinel"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: tradebot
+        annotations:
+          summary: "TradeBot Sentinel is down"
+          description: "TradeBot Sentinel has been down for more than 1 minute. Instance: {{ $labels.instance }}"
+
+      - alert: TradeBotHealthUnhealthy
+        expr: tradebot_health_status < 1
+        for: 2m
+        labels:
+          severity: critical
+          service: tradebot
+        annotations:
+          summary: "TradeBot health check failing"
+          description: "TradeBot health status is {{ $value }} (1=healthy, 0.5=degraded, 0=unhealthy) for more than 2 minutes"
+
+      - alert: TradeBotHealthEndpointDown
+        expr: up{job="tradebot-health"} == 0
+        for: 30s
+        labels:
+          severity: warning
+          service: tradebot
+        annotations:
+          summary: "TradeBot health endpoint is down"
+          description: "TradeBot health endpoint has been unreachable for more than 30 seconds"
+
+      # Trading Performance Alerts
+      - alert: TradeBotHighErrorRate
+        expr: increase(tradebot_error_count_total[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          service: tradebot
+        annotations:
+          summary: "High error rate detected"
+          description: "TradeBot has encountered {{ $value }} errors in the last 5 minutes"
+
+      - alert: TradeBotNoTradesExecuted
+        expr: increase(tradebot_trade_count_total[1h]) == 0 and tradebot_uptime_seconds > 3600
+        for: 30m
+        labels:
+          severity: warning
+          service: tradebot
+        annotations:
+          summary: "No trades executed recently"
+          description: "TradeBot has not executed any trades in the last hour despite being up for more than 1 hour"
+
+      - alert: TradeBotExcessiveTrading
+        expr: increase(tradebot_trade_count_total[1h]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: tradebot
+        annotations:
+          summary: "Excessive trading activity detected"
+          description: "TradeBot has executed {{ $value }} trades in the last hour, which may indicate abnormal behavior"
+
+  - name: system_resources
+    rules:
+      # CPU Alerts
+      - alert: HighCPUUsage
+        expr: tradebot_cpu_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% for more than 5 minutes"
+
+      - alert: CriticalCPUUsage
+        expr: tradebot_cpu_percent > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical CPU usage detected"
+          description: "CPU usage is {{ $value }}% for more than 2 minutes"
+
+      # Memory Alerts
+      - alert: HighMemoryUsage
+        expr: tradebot_memory_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}% for more than 5 minutes"
+
+      - alert: CriticalMemoryUsage
+        expr: tradebot_memory_percent > 95
+        for: 1m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Memory usage is {{ $value }}% for more than 1 minute"
+
+      # Disk Alerts
+      - alert: HighDiskUsage
+        expr: tradebot_disk_percent > 80
+        for: 10m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is {{ $value }}% for more than 10 minutes"
+
+      - alert: CriticalDiskUsage
+        expr: tradebot_disk_percent > 95
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical disk usage detected"
+          description: "Disk usage is {{ $value }}% for more than 5 minutes"
+
+  - name: infrastructure
+    rules:
+      # Node Exporter Alerts
+      - alert: NodeExporterDown
+        expr: up{job="node-exporter"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "Node Exporter is down"
+          description: "Node Exporter has been down for more than 1 minute"
+
+      # System Load Alerts
+      - alert: HighSystemLoad
+        expr: node_load1 > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High system load detected"
+          description: "System load is {{ $value }} for more than 5 minutes"
+
+      # Disk Space Alerts (from node_exporter)
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Disk space critically low"
+          description: "Disk space on {{ $labels.device }} is {{ $value }}% full"
+
+      # Network Alerts
+      - alert: HighNetworkErrors
+        expr: increase(node_network_receive_errs_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "High network errors detected"
+          description: "Network interface {{ $labels.device }} has {{ $value }} receive errors in the last 5 minutes"
+
+  - name: external_services
+    rules:
+      # External Service Connectivity
+      - alert: BulenoxUnreachable
+        expr: probe_success{instance="https://bulenox.com"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: external
+        annotations:
+          summary: "Bulenox trading platform unreachable"
+          description: "Cannot reach Bulenox trading platform for more than 2 minutes"
+
+      - alert: InternetConnectivityIssue
+        expr: probe_success{instance="https://google.com"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: network
+        annotations:
+          summary: "Internet connectivity issue detected"
+          description: "Cannot reach Google for more than 1 minute, indicating potential internet connectivity issues"
+
+      - alert: GitHubUnreachable
+        expr: probe_success{instance="https://github.com"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: external
+        annotations:
+          summary: "GitHub unreachable"
+          description: "Cannot reach GitHub for more than 5 minutes, may affect deployment updates"
+
+  - name: docker_containers
+    rules:
+      # Container Health Alerts
+      - alert: ContainerDown
+        expr: container_last_seen{name=~"tradebot.*"} < (time() - 60)
+        for: 1m
+        labels:
+          severity: critical
+          service: docker
+        annotations:
+          summary: "TradeBot container is down"
+          description: "Container {{ $labels.name }} has been down for more than 1 minute"
+
+      - alert: ContainerHighMemoryUsage
+        expr: (container_memory_usage_bytes{name=~"tradebot.*"} / container_spec_memory_limit_bytes{name=~"tradebot.*"}) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: docker
+        annotations:
+          summary: "Container high memory usage"
+          description: "Container {{ $labels.name }} memory usage is {{ $value }}%"
+
+      - alert: ContainerHighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{name=~"tradebot.*"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: docker
+        annotations:
+          summary: "Container high CPU usage"
+          description: "Container {{ $labels.name }} CPU usage is {{ $value }}%"
+
+  - name: database
+    rules:
+      # PostgreSQL Alerts (if using PostgreSQL)
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database has been down for more than 1 minute"
+
+      - alert: PostgreSQLTooManyConnections
+        expr: pg_stat_activity_count > 80
+        for: 2m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "PostgreSQL too many connections"
+          description: "PostgreSQL has {{ $value }} active connections"
+
+      # Redis Alerts (if using Redis)
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cache
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache has been down for more than 1 minute"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          service: cache
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is {{ $value }}%"
+
+  - name: web_services
+    rules:
+      # Nginx Alerts
+      - alert: NginxDown
+        expr: up{job="nginx"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: web
+        annotations:
+          summary: "Nginx is down"
+          description: "Nginx web server has been down for more than 1 minute"
+
+      - alert: NginxHighErrorRate
+        expr: rate(nginx_http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: web
+        annotations:
+          summary: "Nginx high error rate"
+          description: "Nginx 5xx error rate is {{ $value }} requests/second"
+
+  - name: monitoring_stack
+    rules:
+      # Monitoring Stack Health
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus monitoring system has been down for more than 1 minute"
+
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana dashboard system has been down for more than 2 minutes"
+
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: "Alertmanager is down"
+          description: "Alertmanager notification system has been down for more than 1 minute"
+
+      # Prometheus Storage Alerts
+      - alert: PrometheusStorageSpaceLow
+        expr: prometheus_tsdb_lowest_timestamp_seconds > prometheus_tsdb_head_min_time_seconds + 86400
+        for: 5m
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "Prometheus storage space low"
+          description: "Prometheus is running out of storage space and may start dropping old data"
+
+      - alert: PrometheusTSDBCompactionsFailing
+        expr: increase(prometheus_tsdb_compactions_failed_total[1h]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "Prometheus TSDB compactions failing"
+          description: "Prometheus has {{ $value }} failed TSDB compactions in the last hour"

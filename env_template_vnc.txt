@@ -1,0 +1,256 @@
+# AI Trading Sentinel - VNC Deployment Environment Configuration
+# Copy this template to .env and configure with your actual values
+
+# ============================================================================
+# BROKER CONFIGURATION (REQUIRED)
+# ============================================================================
+
+# ✅ Broker Credentials
+BULENOX_USERNAME=BX64883
+BULENOX_PASSWORD=XujhMzFf6K
+BROKER_USERNAME=BX64883
+BROKER_PASSWORD=XujhMzFf6K
+BROKER_URL=https://bulenox.projectx.com/login
+BULENOX_ACCOUNT_ID=BX64883
+
+# ============================================================================
+# TRADING PARAMETERS
+# ============================================================================
+
+# Risk Management
+TRADE_AMOUNT=100
+MAX_DAILY_TRADES=10
+RISK_PERCENTAGE=2
+MAX_DRAWDOWN=5
+STOP_LOSS_PERCENTAGE=1.5
+TAKE_PROFIT_PERCENTAGE=3.0
+
+# Trading Strategy
+TRADING_STRATEGY=scalping
+TIME_FRAME=1m
+MIN_SPREAD=0.5
+MAX_SPREAD=2.0
+VOLATILITY_THRESHOLD=0.8
+
+# Trading Hours (24/7 for crypto, market hours for forex/stocks)
+TRADING_START_HOUR=0
+TRADING_END_HOUR=23
+TRADING_TIMEZONE=UTC
+
+# ============================================================================
+# VPS & VNC CONFIGURATION
+# ============================================================================
+
+# VPS Mode Settings
+VPS_MODE=true
+HEADLESS_BROWSER=true
+VNC_DISPLAY=:1
+VNC_RESOLUTION=1920x1080
+
+# Browser Configuration for VNC
+BROWSER_TYPE=chromium
+BROWSER_TIMEOUT=30000
+BROWSER_SLOW_MO=100
+BROWSER_ARGS=--no-sandbox,--disable-dev-shm-usage,--disable-gpu
+
+# Display Settings
+DISPLAY=:1
+XVFB_DISPLAY=:1
+XVFB_RESOLUTION=1920x1080x24
+
+# ============================================================================
+# LOGGING & MONITORING
+# ============================================================================
+
+# Log Configuration
+LOG_LEVEL=INFO
+LOG_FILE=/home/ubuntu/ai-trading-sentinel/logs/trae.log
+LOG_MAX_SIZE=10MB
+LOG_BACKUP_COUNT=5
+LOG_ROTATION=daily
+
+# Debug Settings
+DEBUG_MODE=false
+VERBOSE_LOGGING=true
+SCREENSHOT_ON_ERROR=true
+SCREENSHOT_DIR=/home/ubuntu/ai-trading-sentinel/screenshots
+
+# ============================================================================
+# NOTIFICATIONS
+# ============================================================================
+
+# Slack Notifications
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/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
+SLACK_CHANNEL=#trading-alerts
+SLACK_USERNAME=TradingBot
+
+# Email Notifications
+EMAIL_NOTIFICATIONS=true
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+EMAIL_USERNAME=edufyinc@gmail.com
+EMAIL_PASSWORD=your-app-password
+EMAIL_TO=alerts@yourdomain.com
+
+# Telegram Notifications (Optional)
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
+
+# ============================================================================
+# SECURITY & AUTHENTICATION
+# ============================================================================
+
+# API Security
+API_SECRET_KEY=your-super-secret-api-key-here
+JWT_SECRET=your-jwt-secret-key
+API_RATE_LIMIT=100
+
+# Database Security (if using)
+DB_ENCRYPTION_KEY=your-database-encryption-key
+
+# GitHub Integration
+GITHUB_TOKEN=your_github_personal_access_token
+GITHUB_REPO=your-username/ai-trading-sentinel
+GITHUB_BRANCH=main
+
+# ============================================================================
+# PERFORMANCE & OPTIMIZATION
+# ============================================================================
+
+# Memory Management
+MAX_MEMORY_USAGE=80
+GARBAGE_COLLECTION=true
+CACHE_SIZE=100MB
+
+# Network Settings
+CONNECTION_TIMEOUT=30
+REQUEST_TIMEOUT=15
+RETRY_ATTEMPTS=3
+RETRY_DELAY=5
+
+# Concurrent Operations
+MAX_CONCURRENT_TRADES=3
+MAX_BROWSER_INSTANCES=2
+THREAD_POOL_SIZE=4
+
+# ============================================================================
+# BACKUP & RECOVERY
+# ============================================================================
+
+# Data Backup
+BACKUP_ENABLED=true
+BACKUP_INTERVAL=24h
+BACKUP_RETENTION=7d
+BACKUP_LOCATION=/home/ubuntu/ai-trading-sentinel/backups
+
+# Recovery Settings
+AUTO_RECOVERY=true
+RECOVERY_ATTEMPTS=3
+RECOVERY_DELAY=60
+
+# ============================================================================
+# DEVELOPMENT & TESTING
+# ============================================================================
+
+# Environment
+ENVIRONMENT=production
+TEST_MODE=false
+SIMULATION_MODE=false
+
+# API Endpoints
+API_BASE_URL=http://localhost:5000
+WEBSOCKET_URL=ws://localhost:5000/ws
+FRONTEND_URL=http://localhost:3000
+
+# For Cloud Deployment
+VITE_API_URL=http://5.189.145.177:5000
+VITE_WEBSOCKET_URL=ws://5.189.145.177:5000/ws
+
+# ============================================================================
+# HEALTH CHECKS & MONITORING
+# ============================================================================
+
+# Health Check Settings
+HEALTH_CHECK_INTERVAL=60
+HEALTH_CHECK_TIMEOUT=10
+HEALTH_CHECK_RETRIES=3
+
+# System Monitoring
+CPU_THRESHOLD=80
+MEMORY_THRESHOLD=85
+DISK_THRESHOLD=90
+NETWORK_THRESHOLD=80
+
+# Alert Thresholds
+ERROR_THRESHOLD=5
+WARNING_THRESHOLD=10
+ALERT_COOLDOWN=300
+
+# ============================================================================
+# ADVANCED CONFIGURATION
+# ============================================================================
+
+# Machine Learning (if enabled)
+ML_MODEL_PATH=/home/ubuntu/ai-trading-sentinel/models
+ML_PREDICTION_THRESHOLD=0.7
+ML_RETRAIN_INTERVAL=24h
+
+# News & Sentiment Analysis
+NEWS_API_KEY=your_news_api_key
+SENTIMENT_ANALYSIS=true
+NEWS_IMPACT_THRESHOLD=0.6
+
+# Market Data
+MARKET_DATA_PROVIDER=yahoo
+MARKET_DATA_API_KEY=your_market_data_api_key
+REAL_TIME_DATA=true
+
+# ============================================================================
+# EXAMPLE VALUES FOR TESTING
+# ============================================================================
+
+# Uncomment and modify these for quick testing:
+# BROKER_USERNAME=demo_user
+# BROKER_PASSWORD=demo_pass
+# BROKER_URL=https://demo.broker.com
+# TRADE_AMOUNT=10
+# MAX_DAILY_TRADES=5
+# RISK_PERCENTAGE=1
+# DEBUG_MODE=true
+# TEST_MODE=true
+
+# ============================================================================
+# NOTES
+# ============================================================================
+
+# 1. Replace all placeholder values with your actual credentials
+# 2. Keep this file secure and never commit to version control
+# 3. Use strong passwords and API keys
+# 4. Enable 2FA where possible
+# 5. Regularly rotate credentials
+# 6. Monitor logs for suspicious activity
+# 7. Test in simulation mode before live trading
+# 8. Keep backups of working configurations
+
+# ============================================================================
+# VNC DEPLOYMENT SPECIFIC NOTES
+# ============================================================================
+
+# - VNC_DISPLAY should match your VNC session display
+# - HEADLESS_BROWSER=true for background operation
+# - Set appropriate BROWSER_ARGS for VNC environment
+# - Use absolute paths for all file locations
+# - Ensure proper permissions for log and backup directories
+# - Test browser functionality after configuration
+
+# ============================================================================
+# SECURITY REMINDER
+# ============================================================================
+
+# ⚠️  IMPORTANT SECURITY NOTES:
+# - Never share this file or commit it to version control
+# - Use environment-specific values for production
+# - Regularly audit and rotate credentials
+# - Monitor for unauthorized access
+# - Use encrypted connections where possible
+# - Keep VNC sessions secure and logged out when not in use

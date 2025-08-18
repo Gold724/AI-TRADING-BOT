@@ -116,7 +116,7 @@ def test_cypher_login():
             driver = webdriver.Chrome(service=service, options=options)
 
         # Navigate to Bulenox
-        driver.get("https://bulenox.com/member/login")
+        driver.get("https://bulenox.projectx.com/login")
         time.sleep(3)
 
         # Take screenshot

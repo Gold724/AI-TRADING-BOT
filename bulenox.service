@@ -1,0 +1,17 @@
+[Unit]
+Description=Bulenox Sentinel - Headless Selenium Automation Agent
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/bulenox
+ExecStart=/opt/bulenox/venv/bin/python /opt/bulenox/bulenox_sentinel.py
+Restart=on-failure
+RestartSec=10
+User=root
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=append:/var/log/bulenox.log
+StandardError=append:/var/log/bulenox.log
+
+[Install]
+WantedBy=multi-user.target

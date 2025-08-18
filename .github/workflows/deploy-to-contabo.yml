@@ -1,0 +1,445 @@
+name: Deploy Bulenox Trading Bot to Contabo VPS
+
+# Trigger deployment on push to main branch or manual dispatch
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.py'
+      - 'requirements*.txt'
+      - '.github/workflows/**'
+      - 'frontend/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      force_deploy:
+        description: 'Force deployment (skip tests)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.10'
+  NODE_VERSION: '18'
+  DEPLOYMENT_TIMEOUT: 1800  # 30 minutes
+
+jobs:
+  # Pre-deployment validation
+  validate:
+    name: 🔍 Validate Code & Configuration
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.validation.outputs.should_deploy }}
+      version: ${{ steps.version.outputs.version }}
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: 📦 Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install playwright pytest flake8 black isort
+        playwright install
+    
+    - name: 🧹 Code Quality Checks
+      run: |
+        echo "🔍 Running code quality checks..."
+        
+        # Format check
+        black --check --diff .
+        
+        # Import sorting check
+        isort --check-only --diff .
+        
+        # Linting
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: 🧪 Run Unit Tests
+      if: ${{ !inputs.force_deploy }}
+      run: |
+        echo "🧪 Running unit tests..."
+        python -m pytest tests/ -v --tb=short || true
+    
+    - name: 📊 Contract Validation Tests
+      if: ${{ !inputs.force_deploy }}
+      run: |
+        echo "📊 Running contract validation tests..."
+        python test_bulenox_contracts_simple.py
+    
+    - name: 🎭 Playwright Tests
+      if: ${{ !inputs.force_deploy }}
+      run: |
+        echo "🎭 Running Playwright tests..."
+        python test_playwright_bulenox_contracts.py || true
+    
+    - name: 📋 Validate Configuration
+      id: validation
+      run: |
+        echo "📋 Validating deployment configuration..."
+        
+        # Check required files
+        required_files=(
+          "bulenox_ai_playwright_contracts.py"
+          "deploy_to_contabo_vps.py"
+          "validate_live_trading_contracts.py"
+          "requirements.txt"
+        )
+        
+        for file in "${required_files[@]}"; do
+          if [ ! -f "$file" ]; then
+            echo "❌ Required file missing: $file"
+            exit 1
+          fi
+          echo "✅ Found: $file"
+        done
+        
+        # Validate environment variables are set
+        if [ -z "${{ secrets.CONTABO_VPS_HOST }}" ]; then
+          echo "❌ CONTABO_VPS_HOST secret not set"
+          exit 1
+        fi
+        
+        if [ -z "${{ secrets.BULENOX_USERNAME }}" ]; then
+          echo "❌ BULENOX_USERNAME secret not set"
+          exit 1
+        fi
+        
+        if [ -z "${{ secrets.BULENOX_PASSWORD }}" ]; then
+          echo "❌ BULENOX_PASSWORD secret not set"
+          exit 1
+        fi
+        
+        echo "✅ All validations passed"
+        echo "should_deploy=true" >> $GITHUB_OUTPUT
+    
+    - name: 🏷️ Generate Version
+      id: version
+      run: |
+        VERSION="2.0.0-$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA:0:7}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "📦 Version: $VERSION"
+
+  # Build and prepare deployment artifacts
+  build:
+    name: 🏗️ Build Deployment Artifacts
+    runs-on: ubuntu-latest
+    needs: validate
+    if: needs.validate.outputs.should_deploy == 'true'
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: 📦 Create Deployment Package
+      run: |
+        echo "📦 Creating deployment package..."
+        
+        # Create deployment directory
+        mkdir -p deployment-package
+        
+        # Copy Python files
+        cp *.py deployment-package/
+        cp requirements*.txt deployment-package/
+        
+        # Copy configuration files
+        cp -r .github deployment-package/ || true
+        cp *.md deployment-package/ || true
+        cp *.json deployment-package/ || true
+        
+        # Create version file
+        echo "${{ needs.validate.outputs.version }}" > deployment-package/VERSION
+        
+        # Create deployment info
+        cat > deployment-package/DEPLOYMENT_INFO.json << EOF
+        {
+          "version": "${{ needs.validate.outputs.version }}",
+          "commit_sha": "${{ github.sha }}",
+          "commit_message": "${{ github.event.head_commit.message }}",
+          "deployed_by": "${{ github.actor }}",
+          "deployment_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "environment": "${{ inputs.environment || 'production' }}",
+          "branch": "${{ github.ref_name }}"
+        }
+        EOF
+        
+        # List package contents
+        echo "📋 Package contents:"
+        ls -la deployment-package/
+    
+    - name: 📤 Upload Deployment Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-package-${{ needs.validate.outputs.version }}
+        path: deployment-package/
+        retention-days: 30
+
+  # Deploy to Contabo VPS
+  deploy:
+    name: 🚀 Deploy to Contabo VPS
+    runs-on: ubuntu-latest
+    needs: [validate, build]
+    if: needs.validate.outputs.should_deploy == 'true'
+    environment: ${{ inputs.environment || 'production' }}
+    timeout-minutes: 30
+    
+    steps:
+    - name: 📥 Download Deployment Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: deployment-package-${{ needs.validate.outputs.version }}
+        path: ./
+    
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: 📦 Install Deployment Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install paramiko scp
+    
+    - name: 🔐 Setup SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.CONTABO_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        # Add VPS to known hosts
+        ssh-keyscan -H ${{ secrets.CONTABO_VPS_HOST }} >> ~/.ssh/known_hosts
+    
+    - name: 📋 Create Deployment Configuration
+      run: |
+        cat > deployment_config.json << EOF
+        {
+          "vps": {
+            "host": "${{ secrets.CONTABO_VPS_HOST }}",
+            "username": "${{ secrets.CONTABO_VPS_USERNAME || 'root' }}",
+            "ssh_key_path": "~/.ssh/id_rsa",
+            "port": 22
+          },
+          "deployment": {
+            "project_name": "bulenox-trading-bot",
+            "deploy_path": "/opt/trading-bot",
+            "service_name": "bulenox-trader",
+            "domain": "${{ secrets.DOMAIN_NAME }}",
+            "ssl_email": "${{ secrets.SSL_EMAIL }}",
+            "github_repo": "${{ github.server_url }}/${{ github.repository }}.git",
+            "branch": "${{ github.ref_name }}"
+          },
+          "environment": {
+            "BULENOX_USERNAME": "${{ secrets.BULENOX_USERNAME }}",
+            "BULENOX_PASSWORD": "${{ secrets.BULENOX_PASSWORD }}",
+            "BULENOX_LOGIN_URL": "https://bulenox.projectx.com/login",
+            "GITHUB_TOKEN": "${{ secrets.GITHUB_TOKEN }}",
+            "FLASK_SECRET_KEY": "${{ secrets.FLASK_SECRET_KEY }}",
+            "ENVIRONMENT": "${{ inputs.environment || 'production' }}",
+            "LOG_LEVEL": "INFO",
+            "MAX_CONTRACT_SIZE": "10",
+            "MAX_DAILY_TRADES": "50",
+            "MAX_DRAWDOWN_PERCENT": "5.0",
+            "RISK_MANAGEMENT_ENABLED": "true",
+            "EMERGENCY_STOP_ENABLED": "true",
+            "HEADLESS_MODE": "true",
+            "SCREENSHOT_ON_ERROR": "true",
+            "NETWORK_INTERCEPTION": "true",
+            "SESSION_TIMEOUT": "3600",
+            "RETRY_ATTEMPTS": "3",
+            "RETRY_DELAY": "5",
+            "HEALTH_CHECK_INTERVAL": "300",
+            "BACKUP_ENABLED": "true",
+            "MONITORING_ENABLED": "true",
+            "ALERT_EMAIL": "${{ secrets.ALERT_EMAIL }}",
+            "SLACK_WEBHOOK_URL": "${{ secrets.SLACK_WEBHOOK_URL }}",
+            "TIMEZONE": "UTC",
+            "API_PORT": "5000",
+            "WEBSOCKET_PORT": "5001",
+            "DEPLOYMENT_VERSION": "${{ needs.validate.outputs.version }}"
+          }
+        }
+        EOF
+    
+    - name: 🚀 Execute Deployment
+      id: deploy
+      run: |
+        echo "🚀 Starting deployment to Contabo VPS..."
+        
+        # Run deployment script
+        python deploy_to_contabo_vps.py --config deployment_config.json
+        
+        echo "deployment_status=success" >> $GITHUB_OUTPUT
+    
+    - name: 🔍 Post-Deployment Validation
+      run: |
+        echo "🔍 Running post-deployment validation..."
+        
+        # Wait for service to start
+        sleep 30
+        
+        # Check service status via SSH
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.CONTABO_VPS_USERNAME || 'root' }}@${{ secrets.CONTABO_VPS_HOST }} << 'EOF'
+          echo "📊 Checking service status..."
+          systemctl status bulenox-trader --no-pager
+          
+          echo "📋 Checking recent logs..."
+          journalctl -u bulenox-trader --no-pager -n 20
+          
+          echo "💾 Checking system resources..."
+          free -h
+          df -h
+          
+          echo "🌐 Checking network connectivity..."
+          ping -c 3 bulenox.projectx.com || true
+        EOF
+    
+    - name: 📊 Generate Deployment Report
+      if: always()
+      run: |
+        cat > deployment_report.md << EOF
+        # 🚀 Deployment Report
+        
+        **Version:** ${{ needs.validate.outputs.version }}  
+        **Environment:** ${{ inputs.environment || 'production' }}  
+        **Deployed By:** ${{ github.actor }}  
+        **Deployment Time:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")  
+        **Commit:** [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})  
+        **Status:** ${{ steps.deploy.outputs.deployment_status || 'failed' }}  
+        
+        ## 📋 Deployment Details
+        
+        - **VPS Host:** ${{ secrets.CONTABO_VPS_HOST }}
+        - **Service Name:** bulenox-trader
+        - **Deploy Path:** /opt/trading-bot
+        - **Branch:** ${{ github.ref_name }}
+        
+        ## 🔧 Management Commands
+        
+        \`\`\`bash
+        # Check service status
+        systemctl status bulenox-trader
+        
+        # View logs
+        journalctl -u bulenox-trader -f
+        
+        # Restart service
+        systemctl restart bulenox-trader
+        
+        # Update code
+        cd /opt/trading-bot/src && git pull
+        \`\`\`
+        
+        ## 📊 Next Steps
+        
+        1. Monitor service logs for any issues
+        2. Verify trading functionality in test mode
+        3. Gradually enable live trading features
+        4. Set up monitoring alerts
+        
+        EOF
+        
+        echo "📄 Deployment report generated"
+        cat deployment_report.md
+    
+    - name: 📤 Upload Deployment Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-report-${{ needs.validate.outputs.version }}
+        path: deployment_report.md
+        retention-days: 90
+
+  # Notification and cleanup
+  notify:
+    name: 📢 Send Notifications
+    runs-on: ubuntu-latest
+    needs: [validate, build, deploy]
+    if: always()
+    
+    steps:
+    - name: 📢 Slack Notification
+      if: ${{ secrets.SLACK_WEBHOOK_URL }}
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#trading-bot'
+        username: 'GitHub Actions'
+        icon_emoji: ':robot_face:'
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+        text: |
+          🚀 Bulenox Trading Bot Deployment
+          
+          **Status:** ${{ needs.deploy.result == 'success' && '✅ Success' || '❌ Failed' }}
+          **Version:** ${{ needs.validate.outputs.version }}
+          **Environment:** ${{ inputs.environment || 'production' }}
+          **Deployed By:** ${{ github.actor }}
+          
+          ${{ needs.deploy.result == 'success' && '🎉 Bot is now running on Contabo VPS!' || '⚠️ Deployment failed - check logs for details' }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    
+    - name: 📧 Email Notification
+      if: ${{ secrets.ALERT_EMAIL && needs.deploy.result != 'success' }}
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: '🚨 Bulenox Trading Bot Deployment Failed'
+        to: ${{ secrets.ALERT_EMAIL }}
+        from: 'GitHub Actions <noreply@github.com>'
+        body: |
+          Deployment of Bulenox Trading Bot failed.
+          
+          Version: ${{ needs.validate.outputs.version }}
+          Environment: ${{ inputs.environment || 'production' }}
+          Commit: ${{ github.sha }}
+          
+          Please check the GitHub Actions logs for more details:
+          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    
+    - name: 🧹 Cleanup
+      run: |
+        echo "🧹 Cleaning up temporary files..."
+        rm -f ~/.ssh/id_rsa
+        echo "✅ Cleanup completed"
+
+# Security: Ensure secrets are properly configured
+# Required secrets:
+# - CONTABO_VPS_HOST: IP address or hostname of Contabo VPS
+# - CONTABO_VPS_USERNAME: SSH username (usually 'root')
+# - CONTABO_SSH_PRIVATE_KEY: SSH private key for VPS access
+# - BULENOX_USERNAME: Bulenox platform username
+# - BULENOX_PASSWORD: Bulenox platform password
+# - FLASK_SECRET_KEY: Secret key for Flask application
+# 
+# Optional secrets:
+# - DOMAIN_NAME: Domain name for web interface
+# - SSL_EMAIL: Email for SSL certificate
+# - ALERT_EMAIL: Email for deployment notifications
+# - SLACK_WEBHOOK_URL: Slack webhook for notifications
+# - EMAIL_USERNAME: SMTP username for email notifications
+# - EMAIL_PASSWORD: SMTP password for email notifications

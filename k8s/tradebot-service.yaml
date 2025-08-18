@@ -1,0 +1,366 @@
+# Kubernetes Services for TradeBot Sentinel
+# Provides load balancing and service discovery
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradebot-sentinel-service
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: trading-bot
+    tier: application
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8001"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  selector:
+    app: tradebot-sentinel
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
+    - name: health
+      port: 8001
+      targetPort: health
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 hours
+
+---
+# Headless service for StatefulSet (if needed)
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradebot-sentinel-headless
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: trading-bot
+    tier: application
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: tradebot-sentinel
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
+    - name: health
+      port: 8001
+      targetPort: health
+      protocol: TCP
+
+---
+# External LoadBalancer service (for cloud providers)
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradebot-sentinel-external
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: trading-bot
+    tier: application
+  annotations:
+    # AWS specific annotations
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "5"
+    service.beta.kubernetes.io/aws-load-balancer-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-unhealthy-threshold: "3"
+    
+    # Azure specific annotations
+    service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/health/ready"
+    
+    # GCP specific annotations
+    cloud.google.com/neg: '{"ingress": true}'
+    cloud.google.com/backend-config: '{"default": "tradebot-backend-config"}'
+spec:
+  type: LoadBalancer
+  selector:
+    app: tradebot-sentinel
+  ports:
+    - name: https
+      port: 443
+      targetPort: http
+      protocol: TCP
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  loadBalancerSourceRanges:
+    # Restrict access to specific IP ranges
+    - "0.0.0.0/0"  # Change this to your specific IP ranges
+
+---
+# NodePort service (for on-premises or development)
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradebot-sentinel-nodeport
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: trading-bot
+    tier: application
+spec:
+  type: NodePort
+  selector:
+    app: tradebot-sentinel
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      nodePort: 30800
+      protocol: TCP
+    - name: health
+      port: 8001
+      targetPort: health
+      nodePort: 30801
+      protocol: TCP
+
+---
+# Service Monitor for Prometheus
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tradebot-sentinel-monitor
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: trading-bot
+    tier: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: tradebot-sentinel
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      honorLabels: true
+    - port: health
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 5s
+      honorLabels: true
+  namespaceSelector:
+    matchNames:
+      - tradebot
+
+---
+# Ingress for HTTP/HTTPS access
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tradebot-sentinel-ingress
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: trading-bot
+    tier: application
+  annotations:
+    # Nginx ingress controller
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/rate-limit-connections: "10"
+    nginx.ingress.kubernetes.io/rate-limit-requests-per-minute: "100"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' wss: https:;" always;
+    
+    # Health checks
+    nginx.ingress.kubernetes.io/health-check-path: "/health/ready"
+    nginx.ingress.kubernetes.io/health-check-method: "GET"
+    nginx.ingress.kubernetes.io/health-check-interval: "10s"
+    nginx.ingress.kubernetes.io/health-check-timeout: "5s"
+    
+    # SSL/TLS
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    nginx.ingress.kubernetes.io/ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256,ECDHE-RSA-AES128-GCM-SHA256,ECDHE-ECDSA-AES256-GCM-SHA384,ECDHE-RSA-AES256-GCM-SHA384"
+    
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-next-upstream-timeout: "60"
+    
+    # Body size
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  tls:
+    - hosts:
+        - tradebot.yourdomain.com
+        - api.tradebot.yourdomain.com
+      secretName: tradebot-tls-secret
+  rules:
+    - host: tradebot.yourdomain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tradebot-sentinel-service
+                port:
+                  number: 8000
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: tradebot-sentinel-service
+                port:
+                  number: 8001
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: tradebot-sentinel-service
+                port:
+                  number: 9090
+    
+    - host: api.tradebot.yourdomain.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: tradebot-sentinel-service
+                port:
+                  number: 8000
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: tradebot-sentinel-service
+                port:
+                  number: 8001
+
+---
+# Network Policy for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tradebot-sentinel-netpol
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+spec:
+  podSelector:
+    matchLabels:
+      app: tradebot-sentinel
+  policyTypes:
+    - Ingress
+    - Egress
+  
+  ingress:
+    # Allow traffic from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 8001
+    
+    # Allow traffic from monitoring namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090
+        - protocol: TCP
+          port: 8001
+    
+    # Allow traffic from same namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: tradebot
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 8001
+        - protocol: TCP
+          port: 9090
+  
+  egress:
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    
+    # Allow HTTPS traffic (for external APIs)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+    
+    # Allow HTTP traffic (for external APIs)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 80
+    
+    # Allow database connections
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: database
+      ports:
+        - protocol: TCP
+          port: 5432  # PostgreSQL
+        - protocol: TCP
+          port: 6379  # Redis
+    
+    # Allow connections to other services in same namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: tradebot
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 8001
+        - protocol: TCP
+          port: 9090

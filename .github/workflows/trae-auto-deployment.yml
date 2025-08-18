@@ -1,0 +1,58 @@
+name: Trae Auto Deployment
+
+on:
+  workflow_dispatch:   # allow manual trigger
+  push:
+    paths:
+      - "strategy-config.json"   # redeploy when config changes
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Read strategy config
+        id: config
+        run: |
+          echo "MODE=$(jq -r .mode strategy-config.json)" >> $GITHUB_ENV
+          echo "SAFE=$(jq -c .safe strategy-config.json)" >> $GITHUB_ENV
+          echo "FAST=$(jq -c .fast strategy-config.json)" >> $GITHUB_ENV
+
+      - name: Select deployment config
+        id: select
+        run: |
+          if [ "$MODE" = "safe" ]; then
+            echo "DEPLOY_PARAMS=$SAFE" >> $GITHUB_ENV
+          else
+            echo "DEPLOY_PARAMS=$FAST" >> $GITHUB_ENV
+          fi
+
+      - name: Deploy with Trae
+        run: |
+          echo "Deploying Tesla 3-6-9 in $MODE mode..."
+          echo "Params: $DEPLOY_PARAMS"
+          # Deploy to VPS using the deployment API
+          curl -X POST "http://5.189.145.177:5000/api/deploy" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.DEPLOYMENT_TOKEN }}" \
+            -d "{\"strategy\":\"Tesla_369\",\"mode\":\"$MODE\",\"config\":$DEPLOY_PARAMS}"
+
+      - name: Verify deployment
+        run: |
+          echo "Verifying deployment status..."
+          curl -X GET "${{ secrets.VPS_DEPLOYMENT_URL }}/api/status" \
+            -H "Authorization: Bearer ${{ secrets.DEPLOYMENT_TOKEN }}" \
+            --max-time 60
+
+      - name: Notify deployment result
+        if: always()
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "✅ Tesla 3-6-9 deployment successful in $MODE mode"
+          else
+            echo "❌ Tesla 3-6-9 deployment failed in $MODE mode"
+            exit 1
+          fi

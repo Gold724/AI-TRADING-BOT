@@ -1,0 +1,386 @@
+# Kubernetes ConfigMaps and Secrets for TradeBot Sentinel
+# Provides configuration management and secure credential storage
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tradebot
+  labels:
+    name: tradebot
+    component: trading-bot
+    tier: application
+  annotations:
+    prometheus.io/scrape: "true"
+
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tradebot-config
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: config
+data:
+  # Application settings
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  DEBUG: "false"
+  PYTHONUNBUFFERED: "1"
+  
+  # Server configuration
+  HOST: "0.0.0.0"
+  PORT: "8000"
+  HEALTH_PORT: "8001"
+  METRICS_PORT: "9090"
+  
+  # Browser configuration
+  PLAYWRIGHT_BROWSERS_PATH: "/app/browsers"
+  HEADLESS: "true"
+  BROWSER_TIMEOUT: "30000"
+  PAGE_TIMEOUT: "60000"
+  
+  # Trading configuration
+  TRADING_ENABLED: "true"
+  MAX_CONCURRENT_TRADES: "5"
+  RISK_PERCENTAGE: "2.0"
+  STOP_LOSS_PERCENTAGE: "1.0"
+  TAKE_PROFIT_PERCENTAGE: "3.0"
+  
+  # Database configuration
+  DB_POOL_SIZE: "10"
+  DB_MAX_OVERFLOW: "20"
+  DB_POOL_TIMEOUT: "30"
+  DB_POOL_RECYCLE: "3600"
+  
+  # Redis configuration
+  REDIS_MAX_CONNECTIONS: "10"
+  REDIS_RETRY_ON_TIMEOUT: "true"
+  REDIS_SOCKET_KEEPALIVE: "true"
+  
+  # Monitoring configuration
+  METRICS_ENABLED: "true"
+  HEALTH_CHECK_INTERVAL: "30"
+  PROMETHEUS_MULTIPROC_DIR: "/tmp/prometheus_multiproc"
+  
+  # External services
+  BULENOX_TIMEOUT: "30"
+  BULENOX_RETRY_ATTEMPTS: "3"
+  BULENOX_RETRY_DELAY: "5"
+  
+  # Logging configuration
+  LOG_FORMAT: "json"
+  LOG_FILE: "/app/logs/tradebot.log"
+  LOG_MAX_SIZE: "100MB"
+  LOG_BACKUP_COUNT: "5"
+  
+  # Security settings
+  CORS_ORIGINS: "*"
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_WINDOW: "60"
+  
+  # Feature flags
+  ENABLE_WEBSOCKET: "true"
+  ENABLE_API_DOCS: "true"
+  ENABLE_METRICS_ENDPOINT: "true"
+  ENABLE_HEALTH_ENDPOINT: "true"
+
+---
+# Secret for sensitive configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tradebot-secrets
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: secrets
+type: Opaque
+stringData:
+  # Database credentials (base64 encoded in real deployment)
+  DATABASE_URL: "postgresql://username:password@postgres:5432/tradebot"
+  DB_USERNAME: "tradebot_user"
+  DB_PASSWORD: "secure_password_123"
+  
+  # Redis credentials
+  REDIS_URL: "redis://redis:6379/0"
+  REDIS_PASSWORD: "redis_password_123"
+  
+  # Bulenox credentials
+  BULENOX_USERNAME: "your_bulenox_username"
+  BULENOX_PASSWORD: "your_bulenox_password"
+  BULENOX_API_KEY: "your_bulenox_api_key"
+  BULENOX_BASE_URL: "https://bulenox.com"
+  
+  # GitHub credentials for updates
+  GITHUB_TOKEN: "ghp_your_github_token"
+  GITHUB_REPO: "your-username/ai-trading-sentinel"
+  
+  # Slack notifications
+  SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+  SLACK_CHANNEL: "#trading-alerts"
+  
+  # Email notifications
+  SMTP_SERVER: "smtp.gmail.com"
+  SMTP_PORT: "587"
+  SMTP_USERNAME: "your-email@gmail.com"
+  SMTP_PASSWORD: "your-app-password"
+  SMTP_FROM: "TradeBot Sentinel <noreply@yourdomain.com>"
+  SMTP_TO: "alerts@yourdomain.com"
+  
+  # JWT secrets
+  JWT_SECRET_KEY: "your-super-secret-jwt-key-here"
+  JWT_ALGORITHM: "HS256"
+  JWT_EXPIRATION: "3600"
+  
+  # Encryption keys
+  ENCRYPTION_KEY: "your-32-byte-encryption-key-here"
+  
+  # API keys for external services
+  ALPHA_VANTAGE_API_KEY: "your_alpha_vantage_key"
+  FINNHUB_API_KEY: "your_finnhub_key"
+  POLYGON_API_KEY: "your_polygon_key"
+  
+  # Cloud provider credentials
+  AWS_ACCESS_KEY_ID: "your_aws_access_key"
+  AWS_SECRET_ACCESS_KEY: "your_aws_secret_key"
+  AWS_REGION: "us-east-1"
+  
+  AZURE_CLIENT_ID: "your_azure_client_id"
+  AZURE_CLIENT_SECRET: "your_azure_client_secret"
+  AZURE_TENANT_ID: "your_azure_tenant_id"
+  
+  GCP_PROJECT_ID: "your_gcp_project_id"
+  GCP_SERVICE_ACCOUNT_KEY: "your_gcp_service_account_json"
+
+---
+# Service Account for RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tradebot-service-account
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: rbac
+automountServiceAccountToken: true
+
+---
+# Role for TradeBot permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tradebot-role
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: rbac
+rules:
+  # Allow reading pods and services
+  - apiGroups: [""]
+    resources: ["pods", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  
+  # Allow reading configmaps and secrets
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  
+  # Allow creating events
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  
+  # Allow reading deployments
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  
+  # Allow reading HPA
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+
+---
+# RoleBinding to associate ServiceAccount with Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tradebot-role-binding
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: rbac
+subjects:
+  - kind: ServiceAccount
+    name: tradebot-service-account
+    namespace: tradebot
+roleRef:
+  kind: Role
+  name: tradebot-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# PersistentVolumeClaim for data storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tradebot-data-pvc
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd  # Use appropriate storage class
+
+---
+# PersistentVolumeClaim for logs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tradebot-logs-pvc
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+
+---
+# ConfigMap for Promtail configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  namespace: tradebot
+  labels:
+    app: promtail
+    component: logging
+data:
+  config.yml: |
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+    
+    positions:
+      filename: /tmp/positions.yaml
+    
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+    
+    scrape_configs:
+      - job_name: tradebot-logs
+        static_configs:
+          - targets:
+              - localhost
+            labels:
+              job: tradebot-sentinel
+              __path__: /app/logs/*.log
+        
+        pipeline_stages:
+          - json:
+              expressions:
+                timestamp: timestamp
+                level: level
+                message: message
+                module: module
+          
+          - timestamp:
+              source: timestamp
+              format: RFC3339Nano
+          
+          - labels:
+              level:
+              module:
+
+---
+# ConfigMap for application-specific settings
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tradebot-app-config
+  namespace: tradebot
+  labels:
+    app: tradebot-sentinel
+    component: app-config
+data:
+  # Trading strategies configuration
+  strategies.json: |
+    {
+      "scalping": {
+        "enabled": true,
+        "timeframe": "1m",
+        "indicators": ["RSI", "MACD", "BB"],
+        "risk_per_trade": 0.02,
+        "max_trades_per_day": 50
+      },
+      "swing": {
+        "enabled": false,
+        "timeframe": "4h",
+        "indicators": ["EMA", "MACD", "Volume"],
+        "risk_per_trade": 0.05,
+        "max_trades_per_day": 5
+      }
+    }
+  
+  # Risk management rules
+  risk_rules.json: |
+    {
+      "max_daily_loss": 0.05,
+      "max_drawdown": 0.10,
+      "position_sizing": "fixed_percentage",
+      "correlation_limit": 0.7,
+      "max_positions": 10,
+      "emergency_stop": {
+        "enabled": true,
+        "loss_threshold": 0.03,
+        "time_window": 3600
+      }
+    }
+  
+  # Market hours configuration
+  market_hours.json: |
+    {
+      "forex": {
+        "monday": {"start": "00:00", "end": "23:59"},
+        "tuesday": {"start": "00:00", "end": "23:59"},
+        "wednesday": {"start": "00:00", "end": "23:59"},
+        "thursday": {"start": "00:00", "end": "23:59"},
+        "friday": {"start": "00:00", "end": "22:00"},
+        "saturday": {"start": null, "end": null},
+        "sunday": {"start": "22:00", "end": "23:59"}
+      }
+    }
+  
+  # Notification templates
+  notifications.json: |
+    {
+      "trade_opened": {
+        "title": "🟢 Trade Opened",
+        "template": "Opened {side} position on {symbol} at {price}. Size: {size}, SL: {stop_loss}, TP: {take_profit}"
+      },
+      "trade_closed": {
+        "title": "🔴 Trade Closed",
+        "template": "Closed {side} position on {symbol} at {price}. P&L: {pnl} ({pnl_percentage}%)"
+      },
+      "error": {
+        "title": "⚠️ Error Alert",
+        "template": "Error in {module}: {error_message}"
+      },
+      "system_status": {
+        "title": "📊 System Status",
+        "template": "Bot status: {status}. Uptime: {uptime}. Active trades: {active_trades}"
+      }
+    }

@@ -1,0 +1,126 @@
+{
+  "version": "1.0.0",
+  "backtesting": {
+    "enabled": true,
+    "default_capital": 10000.0,
+    "commission_rate": 0.0001,
+    "slippage_rate": 0.00005,
+    "max_concurrent_backtests": 3,
+    "cache_results": true
+  },
+  "data_sources": {
+    "csv": {
+      "enabled": true,
+      "directory": "data/historical",
+      "date_format": "%Y-%m-%d %H:%M:%S",
+      "columns": {
+        "timestamp": "timestamp",
+        "open": "open",
+        "high": "high",
+        "low": "low",
+        "close": "close",
+        "volume": "volume"
+      }
+    },
+    "yahoo_finance": {
+      "enabled": true,
+      "api_key": "",
+      "rate_limit": 5,
+      "timeout": 30,
+      "retry_attempts": 3
+    },
+    "alpha_vantage": {
+      "enabled": false,
+      "api_key": "",
+      "rate_limit": 5,
+      "timeout": 30,
+      "premium": false
+    },
+    "database": {
+      "enabled": true,
+      "path": "data/market_data.db",
+      "cache_duration": 3600
+    }
+  },
+  "strategies": {
+    "FVG Midpoint": {
+      "enabled": true,
+      "parameters": {
+        "min_gap_size": [5, 10, 15, 20],
+        "max_gap_age": [60, 120, 300, 600],
+        "confidence_threshold": [0.6, 0.7, 0.8],
+        "stop_loss": [10, 15, 20, 25],
+        "take_profit": [20, 30, 40, 50]
+      },
+      "optimization": {
+        "enabled": true,
+        "method": "grid_search",
+        "metric": "sharpe_ratio"
+      }
+    },
+    "Breakout Momentum": {
+      "enabled": true,
+      "parameters": {
+        "breakout_threshold": [0.0003, 0.0005, 0.0008, 0.001],
+        "volume_multiplier": [1.2, 1.5, 2.0, 2.5],
+        "momentum_period": [10, 14, 20, 28],
+        "stop_loss": [15, 20, 25, 30],
+        "take_profit": [30, 40, 50, 60]
+      },
+      "optimization": {
+        "enabled": true,
+        "method": "random_search",
+        "iterations": 100,
+        "metric": "total_return"
+      }
+    }
+  },
+  "symbols": {
+    "forex": ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD"],
+    "crypto": ["BTCUSD", "ETHUSD", "ADAUSD"],
+    "stocks": ["AAPL", "GOOGL", "MSFT", "TSLA"],
+    "default": ["EURUSD", "GBPUSD"]
+  },
+  "timeframes": {
+    "available": ["1m", "5m", "15m", "1h", "4h", "1d"],
+    "default": "5m",
+    "backtest_period": {
+      "start": "2023-01-01",
+      "end": "2024-01-01"
+    }
+  },
+  "performance_metrics": {
+    "calculate_sharpe": true,
+    "calculate_sortino": true,
+    "calculate_calmar": true,
+    "calculate_max_drawdown": true,
+    "calculate_win_rate": true,
+    "calculate_profit_factor": true,
+    "risk_free_rate": 0.02
+  },
+  "output": {
+    "save_results": true,
+    "results_directory": "backtests",
+    "save_trades": true,
+    "save_equity_curve": true,
+    "save_charts": true,
+    "export_formats": ["json", "csv", "html"]
+  },
+  "database": {
+    "path": "logs/backtests.db",
+    "retention_days": 90,
+    "compress_old_results": true
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/backtesting_engine.log",
+    "max_size_mb": 20,
+    "backup_count": 5
+  },
+  "validation": {
+    "min_trades": 10,
+    "min_data_points": 1000,
+    "max_drawdown_threshold": 0.5,
+    "min_sharpe_ratio": -2.0
+  }
+}

@@ -12,7 +12,7 @@ os.environ["DEV_MODE"] = "true"
 
 # Import the BulenoxFuturesExecutor
 sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
-from executor_bulenox_futures import BulenoxFuturesExecutor
+from backend.executor_bulenox_futures import BulenoxFuturesExecutor
 
 # Create logs directory if it doesn't exist
 os.makedirs("logs", exist_ok=True)

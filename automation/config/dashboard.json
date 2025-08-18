@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "dashboard": {
+    "enabled": true,
+    "mode": "web",
+    "host": "127.0.0.1",
+    "port": 5000,
+    "debug": false,
+    "auto_refresh": true,
+    "refresh_interval": 5
+  },
+  "alerts": {
+    "enabled": true,
+    "error_rate_threshold": 0.1,
+    "system_status_check": true,
+    "new_trade_notifications": true,
+    "performance_alerts": true
+  },
+  "metrics": {
+    "update_interval": 5,
+    "history_retention": 1440,
+    "calculate_pnl": true,
+    "track_performance": true
+  },
+  "database": {
+    "path": "logs/trades.db",
+    "query_timeout": 10,
+    "connection_pool_size": 5
+  },
+  "update_interval_seconds": 5,
+  "enable_web_interface": true,
+  "enable_cli_interface": true,
+  "web_port": 5000,
+  "web_host": "127.0.0.1"
+}

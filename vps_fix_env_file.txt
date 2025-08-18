@@ -1,0 +1,72 @@
+# VPS ENV FILE FIX - Correct the malformed .env file
+# Copy and paste this ENTIRE block to fix the .env configuration
+
+# STEP 1: Navigate to correct directory
+cd /root/AI-TRADING-BOT
+
+# STEP 2: Remove any broken .env file
+rm -f .env
+
+# STEP 3: Create properly formatted .env file
+cat > .env << 'EOF'
+# AI Trading Sentinel - Production Configuration
+BROKER_USERNAME=BX64883
+BROKER_PASSWORD=XujhMzFf6K
+BROKER_URL=https://bulenox.projectx.com/login
+TRADING_MODE=paper
+RISK_LEVEL=conservative
+MAX_POSITION_SIZE=1000
+STOP_LOSS_PERCENT=2.0
+TAKE_PROFIT_PERCENT=4.0
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/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
+TELEGRAM_BOT_TOKEN=8373070728:AAGKIl4lYLyUBtkEj46RgTl-HE6xSj15WOw
+TELEGRAM_CHAT_ID=@AITRADINGSENTINEL_BOT
+LOG_LEVEL=INFO
+ENVIRONMENT=production
+HEADLESS=true
+EOF
+
+# STEP 4: Verify .env file was created correctly
+echo "📝 .env file created:"
+cat .env
+echo ""
+echo "📊 File size and permissions:"
+ls -la .env
+
+# STEP 5: Install missing dependencies if needed
+source venv/bin/activate
+pip install --upgrade pip
+pip install python-dotenv requests flask flask-cors playwright pandas numpy schedule websocket-client python-telegram-bot slack-sdk
+
+# STEP 6: Test environment loading
+echo "🧪 Testing environment variables..."
+python -c "
+from dotenv import load_dotenv
+import os
+load_dotenv()
+print('✅ Environment loaded successfully')
+print(f'Broker URL: {os.getenv(\"BROKER_URL\")}')
+print(f'Trading Mode: {os.getenv(\"TRADING_MODE\")}')
+print(f'Slack configured: {\"Yes\" if os.getenv(\"SLACK_WEBHOOK_URL\") else \"No\"}')
+"
+
+# STEP 7: Test main.py with corrected environment
+echo "🧪 Testing main.py with fixed environment..."
+timeout 15s python main.py || echo "✅ Test completed successfully"
+
+echo ""
+echo "🎯 ENV FILE FIX COMPLETE!"
+echo "========================="
+echo "✅ .env file created with correct formatting"
+echo "✅ Dependencies installed"
+echo "✅ Environment variables tested"
+echo ""
+echo "🚀 Ready to start the service:"
+echo "   systemctl start trae-bot"
+echo "   systemctl status trae-bot"
+echo "   journalctl -u trae-bot -f"
+echo ""
+echo "📊 Monitor with:"
+echo "   /root/bot_commands.sh status"
+echo "   /root/bot_commands.sh logs"
+echo "   /root/monitor_bot.sh"

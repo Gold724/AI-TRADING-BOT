@@ -15,7 +15,7 @@ interface HeartbeatData {
 
 const HeartbeatStatus: React.FC<HeartbeatStatusProps> = ({
   className = '',
-  apiBaseUrl = 'http://localhost:5000',
+  apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000',
   pollingInterval = 10000 // Default to 10 seconds
 }) => {
   const [heartbeatData, setHeartbeatData] = useState<HeartbeatData | null>(null);

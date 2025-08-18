@@ -211,7 +211,7 @@ class StealthExecutor:
             # Execute the trade
             try:
                 # Check if already logged in
-                driver.get("https://bulenox.com/trading")
+                driver.get("https://bulenox.projectx.com/trading")
                 
                 # Wait for page to load
                 WebDriverWait(driver, 10).until(
@@ -255,7 +255,7 @@ class StealthExecutor:
                 
                 # Navigate to trading page
                 if "trading" not in driver.current_url.lower():
-                    driver.get("https://bulenox.com/trading")
+                    driver.get("https://bulenox.projectx.com/trading")
                     WebDriverWait(driver, 10).until(
                         EC.presence_of_element_located((By.TAG_NAME, "body"))
                     )

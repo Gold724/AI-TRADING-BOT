@@ -1,0 +1,128 @@
+# Prometheus configuration for TradeBot Sentinel monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'tradebot-sentinel'
+    environment: 'production'
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 5s
+    metrics_path: /metrics
+
+  # TradeBot Sentinel main application
+  - job_name: 'tradebot-sentinel'
+    static_configs:
+      - targets: ['tradebot-sentinel:8080']
+    scrape_interval: 10s
+    metrics_path: /metrics
+    scrape_timeout: 5s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+
+  # Node Exporter for system metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # Docker container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # Redis metrics
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # PostgreSQL metrics
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # Nginx metrics
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # Custom trading metrics
+  - job_name: 'trading-metrics'
+    static_configs:
+      - targets: ['tradebot-sentinel:5000']
+    scrape_interval: 30s
+    metrics_path: /api/metrics
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+
+  # Health check endpoints
+  - job_name: 'health-checks'
+    static_configs:
+      - targets: 
+        - 'tradebot-sentinel:8080'
+        - 'redis:6379'
+        - 'postgres:5432'
+    scrape_interval: 30s
+    metrics_path: /health
+    scrape_timeout: 5s
+
+  # Browser automation metrics
+  - job_name: 'browser-metrics'
+    static_configs:
+      - targets: ['tradebot-sentinel:8080']
+    scrape_interval: 60s
+    metrics_path: /browser/metrics
+    scrape_timeout: 10s
+
+# Remote write configuration for long-term storage
+remote_write:
+  - url: "http://victoria-metrics:8428/api/v1/write"
+    queue_config:
+      max_samples_per_send: 10000
+      batch_send_deadline: 5s
+      max_shards: 200
+      min_shards: 1
+      max_backoff: 5s
+      min_backoff: 30ms
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus
+    retention.time: 7d
+    retention.size: 10GB
+    wal-compression: true
+
+# Web configuration
+web:
+  console.libraries: /etc/prometheus/console_libraries
+  console.templates: /etc/prometheus/consoles
+  enable-lifecycle: true
+  enable-admin-api: true
+  max-connections: 512
+  read-timeout: 30s

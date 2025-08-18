@@ -1,22 +1,21 @@
 [Unit]
-Description=TRAE AI Trading Bot
+Description=AI Trading Sentinel Bot
 After=network.target
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/AI-TRADING-BOT
-ExecStart=/root/AI-TRADING-BOT/venv/bin/python main.py --auto
+WorkingDirectory=/root/ai-trading-sentinel
+ExecStartPre=/bin/bash -c "cd /root/ai-trading-sentinel && source venv/bin/activate"
+ExecStart=/root/ai-trading-sentinel/venv/bin/python main.py --auto
 Restart=always
 RestartSec=10
 Environment=PYTHONUNBUFFERED=1
-# Add standard logging to journalctl
-StandardOutput=journal
-StandardError=journal
-# Add file logging
-StandardOutput=append:/root/AI-TRADING-BOT/trae_output.log
-StandardError=append:/root/AI-TRADING-BOT/trae_output.log
-# Restart on failure with progressive backoff
+Environment=DISPLAY=:0
+# Logging configuration
+StandardOutput=append:/root/ai-trading-sentinel/logs/trae.log
+StandardError=append:/root/ai-trading-sentinel/logs/trae.log
+# Restart limits
 StartLimitIntervalSec=300
 StartLimitBurst=5
 

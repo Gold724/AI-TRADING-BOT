@@ -1,0 +1,160 @@
+{
+  "version": "1.0.0",
+  "monitoring": {
+    "enabled": true,
+    "check_interval": 30,
+    "confidence_threshold": 0.7,
+    "auto_fix_enabled": true,
+    "max_snapshots": 50
+  },
+  "selectors": {
+    "critical_selectors": [
+      "#username",
+      "#password",
+      "[data-testid='login-button']",
+      ".trade-button",
+      "[name='amount']",
+      "[name='symbol']",
+      "[name='price']",
+      ".order-form",
+      ".trading-interface",
+      "[data-testid='submit-order']",
+      ".buy-button",
+      ".sell-button"
+    ],
+    "fallback_strategies": [
+      "id",
+      "data-testid",
+      "name",
+      "class",
+      "text",
+      "xpath",
+      "role",
+      "aria-label"
+    ],
+    "stability_weights": {
+      "id": 0.95,
+      "data-testid": 0.9,
+      "name": 0.85,
+      "role": 0.8,
+      "class": 0.6,
+      "text": 0.5,
+      "xpath": 0.7
+    }
+  },
+  "ui_change_detection": {
+    "enabled": true,
+    "position_threshold": 10,
+    "content_similarity_threshold": 0.8,
+    "screenshot_comparison": true,
+    "dom_structure_tracking": true,
+    "attribute_monitoring": [
+      "id",
+      "class",
+      "name",
+      "data-testid",
+      "role",
+      "aria-label"
+    ]
+  },
+  "snapshots": {
+    "enabled": true,
+    "capture_on_error": true,
+    "capture_on_change": true,
+    "capture_on_login": true,
+    "capture_on_trade": true,
+    "retention_days": 7,
+    "max_size_mb": 100,
+    "compression_enabled": true,
+    "include_network_data": true,
+    "include_console_logs": true,
+    "include_performance_metrics": true
+  },
+  "auto_fix": {
+    "enabled": true,
+    "max_attempts": 3,
+    "verification_required": true,
+    "backup_selectors": true,
+    "confidence_threshold": 0.8,
+    "allowed_change_types": [
+      "selector_invalid",
+      "element_removed",
+      "element_moved"
+    ]
+  },
+  "heuristics": {
+    "enabled": true,
+    "trade_request_patterns": [
+      "/api/trade",
+      "/api/order",
+      "/api/execute",
+      "/trade/submit",
+      "/order/create",
+      "/position/open"
+    ],
+    "trade_keywords": [
+      "symbol",
+      "amount",
+      "price",
+      "order",
+      "trade",
+      "buy",
+      "sell",
+      "position",
+      "execute",
+      "submit"
+    ],
+    "noise_filters": [
+      "analytics",
+      "tracking",
+      "metrics",
+      "heartbeat",
+      "ping",
+      "status"
+    ],
+    "importance_scoring": {
+      "url_weight": 0.4,
+      "method_weight": 0.2,
+      "payload_weight": 0.3,
+      "headers_weight": 0.1
+    }
+  },
+  "notifications": {
+    "enabled": true,
+    "channels": ["log", "file"],
+    "critical_changes_only": false,
+    "include_screenshots": true,
+    "include_suggestions": true,
+    "rate_limit": {
+      "max_per_minute": 5,
+      "max_per_hour": 50
+    }
+  },
+  "database": {
+    "path": "logs/continuous_improvement.db",
+    "retention_days": 30,
+    "backup_interval": 86400,
+    "cleanup_interval": 3600
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/continuous_improvement.log",
+    "max_size_mb": 20,
+    "backup_count": 5,
+    "include_debug": false
+  },
+  "performance": {
+    "max_tracked_elements": 100,
+    "history_retention": 10,
+    "cleanup_interval": 3600,
+    "memory_limit_mb": 500
+  },
+  "replay": {
+    "enabled": true,
+    "save_user_actions": true,
+    "save_network_requests": true,
+    "save_console_logs": true,
+    "max_replay_sessions": 20,
+    "session_timeout": 3600
+  }
+}

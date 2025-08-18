@@ -1,120 +1,308 @@
-# Trae AI Trading Sentinel Deployment Kit
+# TradeBot Sentinel - Comprehensive Deployment Guide
 
-This document provides instructions for deploying the Trae AI Trading Sentinel to a Contabo VPS using the provided deployment tools, setting up the cloud control panel, and configuring the system for optimal performance and security.
+This document provides complete instructions for deploying the TradeBot Sentinel across multiple environments, from local development to production cloud deployment with full automation, monitoring, and security hardening.
 
 ## Deployment Options
 
-There are three main deployment approaches available:
+The TradeBot Sentinel supports multiple deployment strategies:
 
-1. **Local Execution** - Run deployment scripts from your local machine
-2. **GitHub Actions** - Automated deployment triggered by code pushes
-3. **Manual VPS Setup** - Direct setup on the VPS using systemd
+1. **Local Development** - Development environment setup
+2. **Docker Deployment** - Containerized deployment with Docker Compose
+3. **Kubernetes Deployment** - Scalable cloud-native deployment
+4. **Cloud VPS Deployment** - Traditional VPS deployment (Contabo, DigitalOcean, AWS, etc.)
+5. **GitHub Actions CI/CD** - Automated deployment pipeline
+6. **Manual VPS Setup** - Direct setup on VPS using systemd
 
-### Prerequisites
+## Prerequisites
 
-- A Contabo VPS with Ubuntu 22.04 installed
-- SSH access to your VPS
-- Your project pushed to GitHub
-- `.env.example` file committed to your repository
-- Python 3.8 or higher
-- Required Python packages (see `requirements.txt`)
+### System Requirements
 
-## New Features
+- **CPU**: 2+ cores (4+ recommended for production)
+- **RAM**: 4GB minimum (8GB+ recommended)
+- **Storage**: 20GB+ available space
+- **Network**: Stable internet connection with low latency
+
+### Software Dependencies
+
+- **Python**: 3.10+ (3.11 recommended)
+- **Node.js**: 18+ (for frontend)
+- **Docker**: 20.10+ (for containerized deployment)
+- **Docker Compose**: 2.0+
+- **Git**: Latest version
+- **kubectl**: Latest (for Kubernetes deployment)
+
+### Cloud Providers Supported
+
+- **Contabo VPS** (Primary recommendation)
+- **DigitalOcean Droplets**
+- **AWS EC2**
+- **Google Cloud Compute Engine**
+- **Azure Virtual Machines**
+- **Linode**
+- **Vultr**
+
+## Quick Start
+
+### Environment Setup
+
+```bash
+# Clone repository
+git clone https://github.com/your-username/ai-trading-sentinel.git
+cd ai-trading-sentinel
+
+# Copy and configure environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# Choose your deployment method:
+# 1. Docker (Recommended for quick start)
+docker-compose up -d --build
+
+# 2. Kubernetes (For production)
+./deployment/deploy-k8s.sh deploy
+
+# 3. Cloud VPS (For traditional deployment)
+./deployment/deploy-automation.sh deploy
+```
 
 ### Cloud Control Panel
 
 The cloud control panel provides a web interface for managing your trading system:
 
-1. Start the control panel API:
-   ```bash
-   python3 api/control_panel_api.py
-   ```
+- **Dashboard**: Real-time trading statistics and account balances
+- **Trade Management**: Execute manual trades and view trade history
+- **System Control**: Start/stop services, toggle simulation mode
+- **Monitoring**: View logs, system metrics, and performance data
+- **Security**: Manage API keys, user access, and security settings
 
-2. Access the dashboard at `http://your-server-ip:5000` or `https://your-domain.com` if HTTPS is configured.
+## Docker Deployment (Recommended)
 
-3. The dashboard allows you to:
-   - View trading statistics and account balances
-   - Execute manual trades
-   - Toggle Dreamer Mode (simulation)
-   - Start/stop the TRAE AI Agent
-   - View logs and monitor system status
+### Quick Start
 
-### Dreamer Mode (Simulation)
+```bash
+# Build and start all services
+docker-compose up -d --build
 
-Dreamer Mode allows you to simulate trades without real execution:
+# Check service status
+docker-compose ps
 
-1. Enable Dreamer Mode through the control panel or via command line:
-   ```bash
-   python3 main.py --liveops --dreamer
-   ```
+# View logs
+docker-compose logs -f tradebot-app
+```
 
-2. All trade executions will be simulated with realistic responses.
+### Production Docker Deployment
 
-3. Simulation results are stored in the data directory and can be viewed in the control panel.
+```bash
+# Use production compose file
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
-### TRAE AI Agent
+# Scale the application
+docker-compose up -d --scale tradebot-app=3
+```
 
-The TRAE AI Agent analyzes market data and generates trading signals:
+### Docker Services
 
-1. Configure the AI Agent:
-   ```bash
-   # Edit the configuration file
-   nano trae_ai_config.json
-   ```
+- **tradebot-app**: Main application container
+- **postgres**: PostgreSQL database
+- **redis**: Redis cache and message broker
+- **nginx**: Reverse proxy and load balancer
+- **prometheus**: Metrics collection
+- **grafana**: Monitoring dashboard
+- **loki**: Log aggregation
 
-2. Start the AI Agent:
-   ```bash
-   python3 trae_ai.py --start
-   ```
+## Kubernetes Deployment
 
-3. The AI Agent will analyze markets based on your configuration and generate signals.
+### Prerequisites
 
-### Scheduled Auto-Runs & Logs
+```bash
+# Install kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
-Configure the system to run automatically at specific times:
+# Install Helm
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+```
 
-1. Set up auto-scheduling:
-   ```bash
-   python3 setup_liveops_scheduler.py
-   ```
+### Deploy to Kubernetes
 
-2. This will configure cron jobs (Linux/macOS) or Task Scheduler tasks (Windows) to:
-   - Start the system at market open times
-   - Create daily log files
-   - Generate performance reports
+```bash
+# Make deployment script executable
+chmod +x deployment/deploy-k8s.sh
 
-### Secure Endpoints
+# Deploy to Kubernetes
+./deployment/deploy-k8s.sh deploy
 
-To secure your API endpoints:
+# Check deployment status
+kubectl get pods -n tradebot
+kubectl get services -n tradebot
+```
 
-1. Generate API keys and configure JWT authentication:
-   ```bash
-   python3 setup_liveops_security.py
-   ```
+### Kubernetes Management
 
-2. For secure HTTPS connections:
-   ```bash
-   python3 setup_https.py --domain yourdomain.com --email your@email.com
-   ```
-   Or for self-signed certificates:
-   ```bash
-   python3 setup_https.py --domain localhost --self-signed
-   ```
+```bash
+# Scale deployment
+./deployment/deploy-k8s.sh scale 5
 
-### Tiered Licensing Model
+# View logs
+./deployment/deploy-k8s.sh logs
 
-The TRAE AI Trading Sentinel supports a tiered licensing model:
+# Check metrics
+./deployment/deploy-k8s.sh metrics
 
-1. Set up licensing:
-   ```bash
-   python3 setup_licensing.py
-   ```
+# Restart deployment
+./deployment/deploy-k8s.sh restart
 
-2. Available tiers:
-   - **Free Tier**: Signals only, no execution
-   - **Standard Tier**: Manual execution via dashboard
-   - **Pro Tier**: Auto execution with webhooks
-   - **Elite Tier**: Stealth mode with secure AI-assisted trading
+# Cleanup
+./deployment/deploy-k8s.sh cleanup
+```
+
+## Cloud VPS Deployment
+
+### Contabo VPS Setup (Recommended)
+
+#### 1. Server Provisioning
+
+- **Plan**: VPS M (4 vCPU, 16GB RAM, 400GB SSD)
+- **OS**: Ubuntu 22.04 LTS
+- **Location**: Choose closest to your trading region
+
+#### 2. Initial Server Setup
+
+```bash
+# Connect to server
+ssh root@your-server-ip
+
+# Update system
+apt update && apt upgrade -y
+
+# Install essential packages
+apt install -y curl wget git htop unzip software-properties-common
+
+# Create deployment user
+useradd -m -s /bin/bash tradebot
+usermod -aG sudo tradebot
+
+# Setup SSH keys
+mkdir -p /home/tradebot/.ssh
+cp ~/.ssh/authorized_keys /home/tradebot/.ssh/
+chown -R tradebot:tradebot /home/tradebot/.ssh
+chmod 700 /home/tradebot/.ssh
+chmod 600 /home/tradebot/.ssh/authorized_keys
+```
+
+#### 3. Security Hardening
+
+```bash
+# Run security hardening script
+wget https://raw.githubusercontent.com/your-repo/ai-trading-sentinel/main/deployment/security-hardening.sh
+chmod +x security-hardening.sh
+./security-hardening.sh
+```
+
+#### 4. Application Deployment
+
+```bash
+# Switch to deployment user
+su - tradebot
+
+# Clone repository
+git clone https://github.com/your-username/ai-trading-sentinel.git
+cd ai-trading-sentinel
+
+# Setup environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# Run deployment
+chmod +x deployment/deploy-automation.sh
+./deployment/deploy-automation.sh deploy
+```
+
+## Security Hardening
+
+### Automated Security Setup
+
+```bash
+# Run comprehensive security hardening
+./deployment/security-hardening.sh
+```
+
+### Security Features Implemented
+
+#### Server Security
+- Custom SSH port configuration
+- SSH key-based authentication only
+- UFW firewall with strict rules
+- Fail2Ban intrusion prevention
+- Automatic security updates
+- System auditing with auditd
+- Intrusion detection (AIDE, rkhunter)
+- Antivirus scanning (ClamAV)
+
+#### Network Security
+- OpenVPN server setup
+- Private network configuration
+- Rate limiting and DDoS protection
+- Network traffic monitoring
+- Secure API endpoints with JWT
+
+#### Application Security
+- Environment variable encryption
+- Database connection security
+- API rate limiting
+- Input validation and sanitization
+- Secure session management
+
+### VPN Setup
+
+```bash
+# Create VPN client
+sudo ./deployment/tradebot-security vpn-create client1
+
+# Download client configuration
+scp root@your-server:/root/client1.ovpn ./
+
+# Connect using OpenVPN client
+sudo openvpn --config client1.ovpn
+```
+
+## Monitoring & Logging
+
+### Start Monitoring Stack
+
+```bash
+# Start all monitoring services
+chmod +x deployment/start-monitoring.sh
+./deployment/start-monitoring.sh start
+
+# Check status
+./deployment/start-monitoring.sh status
+
+# View logs
+./deployment/start-monitoring.sh logs
+```
+
+### Access Monitoring Dashboards
+
+- **Grafana**: https://your-domain.com/grafana (admin/admin)
+- **Prometheus**: https://your-domain.com/prometheus
+- **Alertmanager**: https://your-domain.com/alertmanager
+- **Loki**: https://your-domain.com/loki
+
+### Key Metrics Monitored
+
+- **Application Health**: Uptime, response time, error rate
+- **Trading Performance**: Trades per minute, success rate, P&L
+- **System Resources**: CPU, memory, disk usage, network I/O
+- **Browser Automation**: Page load time, element detection success
+- **Database Performance**: Query time, connection pool usage
+
+### Alert Configuration
+
+- **Critical Alerts**: Application crashes, failed trades, login issues
+- **Warning Alerts**: High resource usage, slow response times
+- **Info Alerts**: Successful deployments, daily reports
+- **Notification Channels**: Slack, email, SMS, webhook
 
 ## 1. Local Execution
 
@@ -147,144 +335,438 @@ The deployment scripts will:
 - Configure systemd service
 - Start the trading bot
 
-## 2. GitHub Actions
+## GitHub Actions CI/CD Pipeline
 
-The repository includes a GitHub Actions workflow file (`.github/workflows/deploy.yml`) that automatically tests and deploys the application when code is pushed to the main branch.
+The repository includes a comprehensive CI/CD pipeline that automatically handles code quality checks, testing, security scanning, building, and deployment.
 
-### Setup
+### Pipeline Features
 
-1. Add the following secrets to your GitHub repository:
+- **Code Quality**: Formatting, linting, type checking
+- **Security Scanning**: Vulnerability assessment, dependency audit
+- **Testing**: Unit tests, integration tests, frontend tests
+- **Building**: Docker image creation and registry push
+- **Deployment**: Automated deployment to staging and production
+- **Monitoring**: Health checks and rollback capabilities
 
-   - `SSH_PRIVATE_KEY` - Your SSH private key for VPS access
-   - `KNOWN_HOSTS` - SSH known hosts entry for your VPS
-   - `CONTABO_USERNAME` - Username for VPS login (default: "root")
-   - `CONTABO_VPS_IP` - IP address of your Contabo VPS (default: "161.97.112.146")
-   - `CONTABO_SSH_PORT` - SSH port for your VPS (default: "22")
-   - `API_KEY` - Your trading API key
-   - `API_SECRET` - Your trading API secret
-   - `BROKER_URL` - URL for your broker API
-   - `ADMIN_USERNAME` - Admin username for the application
-   - `ADMIN_PASSWORD` - Admin password for the application
-   - `SLACK_WEBHOOK_URL` - (Optional) Slack webhook URL for notifications
+### Required GitHub Secrets
 
-2. Push to the main branch or manually trigger the workflow from the GitHub Actions tab.
+Configure these secrets in your GitHub repository settings:
 
-## 3. Manual VPS Setup
-
-You can also set up the application directly on your VPS using systemd.
-
-1. Copy the `trae.service` file to your VPS:
-
-   ```bash
-   scp trae.service username@your-vps-ip:~/
-   ```
-
-2. SSH into your VPS and move the service file to the systemd directory:
-
-   ```bash
-   sudo mv ~/trae.service /etc/systemd/system/
-   ```
-
-3. Enable and start the service:
-
-   ```bash
-   sudo systemctl daemon-reload
-   sudo systemctl enable trae
-   sudo systemctl start trae
-   ```
-
-4. Check the service status:
-
-   ```bash
-   sudo systemctl status trae
-   ```
-
-## Monitoring and Logs
-
-To monitor your bot and view logs:
-
-```bash
-# View service status
-sudo systemctl status trae
-
-# View logs in real-time
-sudo journalctl -u trae -f
+#### Production Server
+```
+PRODUCTION_HOST=your-production-server-ip
+PRODUCTION_USER=tradebot
+PRODUCTION_SSH_KEY=your-private-ssh-key
+PRODUCTION_SSH_PORT=22
 ```
 
-## Updating the Bot
-
-To update your bot with the latest code:
-
-```bash
-cd ~/ai-trading-sentinel
-git pull
-source venv/bin/activate
-pip install -r requirements.txt
-sudo systemctl restart trae
+#### Staging Server
+```
+STAGING_HOST=your-staging-server-ip
+STAGING_USER=tradebot
+STAGING_SSH_KEY=your-private-ssh-key
+STAGING_SSH_PORT=22
 ```
 
-## Slack Notifications
+#### Application Secrets
+```
+BULENOX_USERNAME=your-username
+BULENOX_PASSWORD=your-password
+SECRET_KEY=your-secret-key
+JWT_SECRET_KEY=your-jwt-secret
+DATABASE_URL=postgresql://user:pass@host:5432/db
+REDIS_URL=redis://host:6379/0
+```
 
-The deployment kit includes support for Slack notifications. To use this feature:
+#### Container Registry
+```
+DOCKER_REGISTRY=your-registry.com
+DOCKER_USERNAME=your-username
+DOCKER_PASSWORD=your-password
+```
 
-1. Create a Slack app and webhook URL in your Slack workspace
-2. Add the webhook URL to your deployment configuration:
-   - For local deployment scripts: Use the `-NotifySlack` and `-SlackWebhookUrl` parameters
-   - For GitHub Actions: Add the `SLACK_WEBHOOK_URL` secret
-   - For manual setup: Use the included `notify_slack.py` script
+#### Notifications
+```
+SLACK_WEBHOOK_URL=your-slack-webhook
+SMTP_HOST=smtp.gmail.com
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+```
+
+### Pipeline Triggers
+
+- **Push to main**: Full pipeline with production deployment
+- **Push to develop**: Full pipeline with staging deployment
+- **Pull Request**: Code quality and testing only
+- **Manual Trigger**: Configurable environment and deployment target
+
+### Manual Deployment
 
 ```bash
-# Send a notification manually
-python notify_slack.py --webhook-url "your-webhook-url" --message "Deployment completed" --status "success"
+# Trigger manual deployment via GitHub CLI
+gh workflow run deploy.yml \
+  -f environment=production \
+  -f deploy_target=kubernetes
+
+# Or via GitHub web interface
+# Go to Actions → Deploy to Contabo VPS → Run workflow
+```
+
+## Manual VPS Setup
+
+### SystemD Service Setup
+
+For traditional systemd-based deployment:
+
+```bash
+# Copy service file to VPS
+scp deployment/tradebot.service username@your-vps-ip:~/
+
+# SSH into VPS and install service
+ssh username@your-vps-ip
+sudo mv ~/tradebot.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable tradebot
+sudo systemctl start tradebot
+
+# Check service status
+sudo systemctl status tradebot
+```
+
+### Alternative Deployment Methods
+
+#### Using Deploy Automation Script
+
+```bash
+# Local deployment to remote server
+./deployment/deploy-automation.sh deploy --target=vps --host=your-server-ip
+
+# Check deployment status
+./deployment/deploy-automation.sh status --target=vps --host=your-server-ip
+
+# Update deployment
+./deployment/deploy-automation.sh update --target=vps --host=your-server-ip
+```
+
+#### Using Docker on VPS
+
+```bash
+# Deploy using Docker Compose on VPS
+scp docker-compose.yml docker-compose.prod.yml username@your-vps-ip:~/
+scp .env username@your-vps-ip:~/
+
+ssh username@your-vps-ip
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 ## Troubleshooting
 
-### Service Not Starting
+### Common Issues
 
-If the service fails to start:
+#### Application Won't Start
 
 ```bash
-# Check for errors in the service
-sudo journalctl -u trae -e
+# Check logs
+docker-compose logs tradebot-app
 
-# Verify environment variables
-cat .env
+# Check environment variables
+docker-compose exec tradebot-app env | grep -E "(BULENOX|DATABASE|REDIS)"
 
-# Test running the bot manually
+# Restart services
+docker-compose restart
+```
+
+#### Browser Automation Fails
+
+```bash
+# Check Chrome/Chromium installation
+docker-compose exec tradebot-app which chromium-browser
+
+# Test browser in headless mode
+docker-compose exec tradebot-app python -c "from selenium import webdriver; driver = webdriver.Chrome(); print('Browser OK')"
+
+# Check display settings
+docker-compose exec tradebot-app echo $DISPLAY
+```
+
+#### Database Connection Issues
+
+```bash
+# Check PostgreSQL status
+docker-compose exec postgres pg_isready
+
+# Test connection
+docker-compose exec tradebot-app python -c "import psycopg2; psycopg2.connect('$DATABASE_URL'); print('DB OK')"
+
+# Check database logs
+docker-compose logs postgres
+```
+
+#### High Memory Usage
+
+```bash
+# Check memory usage
+docker stats
+
+# Optimize Chrome options in docker-compose.yml:
+# environment:
+#   - CHROME_OPTIONS=--no-sandbox --disable-dev-shm-usage --disable-gpu
+```
+
+### Performance Optimization
+
+#### Database Optimization
+
+```sql
+-- Add indexes for frequently queried columns
+CREATE INDEX idx_trades_timestamp ON trades(timestamp);
+CREATE INDEX idx_trades_symbol ON trades(symbol);
+
+-- Analyze query performance
+EXPLAIN ANALYZE SELECT * FROM trades WHERE timestamp > NOW() - INTERVAL '1 hour';
+```
+
+#### Application Optimization
+
+```python
+# Enable connection pooling
+DATABASE_URL = "postgresql://user:pass@host:5432/db?pool_size=20&max_overflow=30"
+
+# Use Redis for caching
+CACHE_URL = "redis://localhost:6379/1"
+
+# Optimize Selenium
+CHROME_OPTIONS = [
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu",
+    "--disable-extensions",
+    "--disable-images",
+]
+```
+
+### Health Checks
+
+```bash
+# Application health
+curl -f http://localhost:8000/health
+
+# Database health
+curl -f http://localhost:8000/health/db
+
+# Redis health
+curl -f http://localhost:8000/health/redis
+
+# Trading system health
+curl -f http://localhost:8000/health/trading
+```
+
+## Backup and Recovery
+
+### Database Backup
+
+```bash
+# Create backup
+docker-compose exec postgres pg_dump -U tradebot tradebot > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Restore backup
+docker-compose exec -T postgres psql -U tradebot tradebot < backup_20240101_120000.sql
+```
+
+### Application Data Backup
+
+```bash
+# Backup configuration and logs
+tar -czf tradebot_backup_$(date +%Y%m%d).tar.gz \
+  .env \
+  logs/ \
+  data/ \
+  deployment/
+```
+
+### Automated Backups
+
+```bash
+# Add to crontab for daily backups
+0 2 * * * /opt/tradebot-sentinel/scripts/backup.sh
+```
+
+## Updating the System
+
+### Automated Updates via CI/CD
+
+```bash
+# Push to main branch triggers automatic deployment
+git push origin main
+
+# Or trigger manual deployment
+gh workflow run deploy.yml -f environment=production
+```
+
+### Manual Updates
+
+```bash
+# Update using deployment automation
+./deployment/deploy-automation.sh update
+
+# Or update Docker containers
+docker-compose pull
+docker-compose up -d
+
+# Or update systemd service
+cd ~/ai-trading-sentinel
+git pull
 source venv/bin/activate
-python main.py
+pip install -r requirements.txt
+sudo systemctl restart tradebot
 ```
 
-### Deployment Script Issues
+## Notification Setup
 
-If the deployment scripts fail:
+### Slack Integration
 
-1. Check SSH connectivity to your VPS
-2. Verify that your SSH key has the correct permissions
-3. Ensure your `.env` file contains all required variables
-4. Check for any firewall rules that might block SSH or rsync
+```bash
+# Create Slack app and get webhook URL
+# Add SLACK_WEBHOOK_URL to your environment variables
 
-## Security Considerations
+# Test Slack notifications
+curl -X POST -H 'Content-type: application/json' \
+  --data '{"text":"TradeBot Sentinel deployment test"}' \
+  $SLACK_WEBHOOK_URL
+```
 
-- Use SSH key authentication instead of passwords
-- Store sensitive information in environment variables, not in code
-- Regularly update your system: `sudo apt update && sudo apt upgrade -y`
-- Consider setting up a firewall: `sudo ufw enable`
-- Regularly rotate API keys and credentials
-- Monitor your VPS for unusual activity
+### Email Notifications
 
-## Additional Resources
+```bash
+# Configure SMTP settings in .env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM=noreply@yourcompany.com
+SMTP_TO=admin@yourcompany.com
+```
 
-- [Contabo VPS Documentation](https://contabo.com/en/product-docs/)
-- [Systemd Service Documentation](https://www.freedesktop.org/software/systemd/man/systemd.service.html)
+### Webhook Notifications
+
+```bash
+# Configure webhook endpoints for external integrations
+WEBHOOK_URL=https://your-webhook-endpoint.com/notify
+WEBHOOK_SECRET=your-webhook-secret
+```
+
+## Alternative Cloud Providers
+
+### DigitalOcean Deployment
+
+```bash
+# Create droplet using doctl
+doctl compute droplet create tradebot-sentinel \
+  --size s-2vcpu-4gb \
+  --image ubuntu-22-04-x64 \
+  --region nyc1 \
+  --ssh-keys your-ssh-key-id
+
+# Deploy using automation script
+./deployment/deploy-automation.sh deploy --target=digitalocean --droplet-ip=your-droplet-ip
+```
+
+### AWS EC2 Deployment
+
+```bash
+# Launch instance using AWS CLI
+aws ec2 run-instances \
+  --image-id ami-0c02fb55956c7d316 \
+  --instance-type t3.medium \
+  --key-name your-key-pair \
+  --security-group-ids sg-xxxxxxxxx \
+  --subnet-id subnet-xxxxxxxxx
+
+# Deploy using automation script
+./deployment/deploy-automation.sh deploy --target=aws --instance-ip=your-instance-ip
+```
+
+### Google Cloud Platform
+
+```bash
+# Create VM instance
+gcloud compute instances create tradebot-sentinel \
+  --zone=us-central1-a \
+  --machine-type=e2-medium \
+  --image-family=ubuntu-2204-lts \
+  --image-project=ubuntu-os-cloud
+
+# Deploy using automation script
+./deployment/deploy-automation.sh deploy --target=gcp --instance-ip=your-instance-ip
+```
+
+## Production Checklist
+
+### Pre-Deployment
+
+- [ ] Environment variables configured and secured
+- [ ] SSH keys generated and deployed
+- [ ] Firewall rules configured
+- [ ] SSL certificates obtained (if using HTTPS)
+- [ ] Database backups scheduled
+- [ ] Monitoring and alerting configured
+- [ ] Load testing completed
+- [ ] Security audit performed
+
+### Post-Deployment
+
+- [ ] Health checks passing
+- [ ] Monitoring dashboards accessible
+- [ ] Log aggregation working
+- [ ] Backup and recovery tested
+- [ ] Performance metrics baseline established
+- [ ] Security monitoring active
+- [ ] Documentation updated
+- [ ] Team access configured
+
+### Maintenance Schedule
+
+- **Daily**: Check application logs, monitor trading performance
+- **Weekly**: Review system metrics, update dependencies
+- **Monthly**: Security audit, performance optimization
+- **Quarterly**: Full system backup, disaster recovery test
+
+## Support and Resources
+
+### Documentation
+
+- [Docker Documentation](https://docs.docker.com/)
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [Contabo VPS Documentation](https://contabo.com/en/product-docs/)
+- [DigitalOcean Documentation](https://docs.digitalocean.com/)
+- [AWS EC2 Documentation](https://docs.aws.amazon.com/ec2/)
 
+### Getting Help
 
+- **Documentation**: Check this guide and inline code comments
+- **Logs**: Always check application and system logs first
+- **Community**: Join our Discord/Slack for community support
+- **Issues**: Report bugs on GitHub Issues
 
+### Version Management
 
+```bash
+# Check current version
+./deployment/deploy-automation.sh version
 
+# Update to latest version
+./deployment/deploy-automation.sh update
 
+# Rollback to previous version
+./deployment/deploy-automation.sh rollback
 
-(crontab -l 2>/dev/null; echo "0 0 * * * ~/backup-trading-bot.sh") | crontab -
+# List available versions
+./deployment/deploy-automation.sh list-versions
 ```
+
+---
+
+**Note**: This deployment guide is continuously updated. Always refer to the latest version in the repository for the most current information.
+
+**Security Warning**: Never commit sensitive credentials to version control. Always use environment variables or secure secret management systems.

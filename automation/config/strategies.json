@@ -1,0 +1,48 @@
+{
+  "fvg_midpoint": {
+    "name": "FVG Midpoint Strategy",
+    "entry_conditions": {
+      "fvg_detected": true,
+      "price_at_midpoint": true,
+      "volume_confirmation": true
+    },
+    "exit_conditions": {
+      "profit_target_pips": 20,
+      "stop_loss_pips": 10,
+      "time_limit_minutes": 60
+    },
+    "risk_parameters": {
+      "max_risk_percent": 2.0,
+      "position_size_multiplier": 1.0
+    },
+    "symbol_filters": [
+      "EURUSD",
+      "GBPUSD",
+      "USDJPY"
+    ],
+    "enabled": true
+  },
+  "breakout_momentum": {
+    "name": "Breakout Momentum Strategy",
+    "entry_conditions": {
+      "breakout_confirmed": true,
+      "volume_spike": true,
+      "momentum_positive": true
+    },
+    "exit_conditions": {
+      "profit_target_pips": 30,
+      "stop_loss_pips": 15,
+      "trailing_stop": true
+    },
+    "risk_parameters": {
+      "max_risk_percent": 1.5,
+      "position_size_multiplier": 0.8
+    },
+    "symbol_filters": [
+      "GOLD",
+      "OIL",
+      "EURUSD"
+    ],
+    "enabled": true
+  }
+}

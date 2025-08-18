@@ -51,7 +51,7 @@ class StealthExecutor(BaseExecutor):
 
         # Ensure broker_url is a string
         if self.broker_url is None:
-            self.broker_url = "https://bulenox.com/login"
+            self.broker_url = "https://bulenox.projectx.com/login"
             print(f"Using default broker URL: {self.broker_url}")
 
         # Stealth settings
@@ -237,7 +237,7 @@ class StealthExecutor(BaseExecutor):
             # Ensure broker_url is a string
             if not isinstance(self.broker_url, str):
                 print(f"Invalid broker URL type: {type(self.broker_url)}")
-                self.broker_url = "https://bulenox.com/member/login"
+                self.broker_url = "https://bulenox.projectx.com/login"
                 print(f"Using default broker URL: {self.broker_url}")
 
             # Navigate to broker URL
@@ -272,7 +272,7 @@ class StealthExecutor(BaseExecutor):
                     return True
 
             # Specialized approach for Bulenox login
-            if "bulenox.com" in driver.current_url:
+            if "bulenox.projectx.com" in driver.current_url:
                 try:
                     print("Using specialized approach for Bulenox login")
                     # Save screenshot of initial page
@@ -562,9 +562,8 @@ class StealthExecutor(BaseExecutor):
             # Try multiple locator strategies for the login form
             login_form_found = False
             login_form_locators = [
-                (By.ID, "amember-login"),
-                (By.NAME, "amember_login"),
-                (By.XPATH, "//input[@type='text'][@name='amember_login']"),
+                (By.NAME, "userName"),  # Correct selector for ProjectX
+            (By.CSS_SELECTOR, "input[name='userName']"),
                 (By.XPATH, "//input[@type='text' and contains(@id, 'login')]"),
                 (By.XPATH, "//input[@type='text' and contains(@name, 'login')]"),
                 (
@@ -617,9 +616,8 @@ class StealthExecutor(BaseExecutor):
 
             # Try multiple locator strategies for username/email field
             username_locators = [
-                (By.ID, "amember-login"),
-                (By.NAME, "amember_login"),
-                (By.XPATH, "//input[@type='text'][@name='amember_login']"),
+                (By.NAME, "userName"),  # Correct selector for ProjectX
+                (By.CSS_SELECTOR, "input[name='userName']"),
                 (By.XPATH, "//input[@type='text' and contains(@id, 'login')]"),
                 (By.XPATH, "//input[@type='text' and contains(@name, 'login')]"),
                 (
@@ -640,9 +638,8 @@ class StealthExecutor(BaseExecutor):
 
             # Try multiple locator strategies for password field
             password_locators = [
-                (By.ID, "amember-pass"),
-                (By.NAME, "amember_pass"),
-                (By.XPATH, "//input[@type='password'][@name='amember_pass']"),
+                (By.NAME, "password"),  # Correct selector for ProjectX
+            (By.CSS_SELECTOR, "input[name='password']"),
                 (By.XPATH, "//input[@type='password' and contains(@id, 'pass')]"),
                 (By.XPATH, "//input[@type='password' and contains(@name, 'pass')]"),
                 (
@@ -750,7 +747,7 @@ class StealthExecutor(BaseExecutor):
                 # If we still can't find elements, try a more aggressive approach for Bulenox
                 if (
                     not email_field or not password_field or not login_button
-                ) and "bulenox.com" in driver.current_url:
+                ) and "bulenox.projectx.com" in driver.current_url:
                     print("Trying aggressive element finding for Bulenox")
                     # Try to find elements by their position on the page
                     all_inputs = driver.find_elements(By.TAG_NAME, "input")

@@ -1,63 +1,108 @@
-# AI Trading Sentinel - Bulenox Trade Execution System
-FROM python:3.9-slim
+# AI Trading Sentinel - Production Docker Container
+FROM ubuntu:22.04
 
-# Set working directory
-WORKDIR /app
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV DISPLAY=:99
+ENV HEADLESS=true
+ENV ENVIRONMENT=production
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    unzip \
+    python3 \
+    python3-pip \
+    python3-venv \
+    git \
     curl \
+    wget \
     xvfb \
-    libgconf-2-4 \
-    libxss1 \
-    libnss3 \
-    libnspr4 \
+    supervisor \
+    cron \
+    fonts-liberation \
     libasound2 \
-    libgbm1 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libatspi2.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libwayland-client0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxkbcommon0 \
+    libxrandr2 \
+    xdg-utils \
+    libu2f-udev \
+    libvulkan1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Chrome
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
-    && rm -rf /var/lib/apt/lists/*
+# Create app user
+RUN useradd -m -s /bin/bash tradebot
 
-# Copy requirements file
-COPY requirements.txt .
+# Set up supervisor configuration
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Install Python dependencies
+# Switch to app user
+USER tradebot
+WORKDIR /home/tradebot/app
+
+# Create virtual environment
+RUN python3 -m venv venv
+ENV PATH="/home/tradebot/app/venv/bin:$PATH"
+
+# Copy requirements first for better caching
+COPY --chown=tradebot:tradebot requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install Playwright browsers
+RUN playwright install chromium
+RUN playwright install-deps chromium
+
 # Copy application code
-COPY . .
+COPY --chown=tradebot:tradebot . .
 
 # Create necessary directories
-RUN mkdir -p logs/screenshots data/accounts data/signals
+RUN mkdir -p logs screenshots data backups
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    BULENOX_PROFILE_PATH="/app/chrome_profiles" \
-    BULENOX_PROFILE_NAME="Profile 13" \
-    PORT=5000 \
-    FLASK_RUN_HOST=0.0.0.0 \
-    USE_BULENOX=true \
-    AUTO_LOGIN=true \
-    DISPLAY=:99
+# Set up entrypoint script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "🚀 Starting AI Trading Sentinel..."\n\
+\n\
+# Start Xvfb\n\
+Xvfb :99 -screen 0 1920x1080x24 -ac +extension GLX +render -noreset &\n\
+XVFB_PID=$!\n\
+\n\
+# Wait for Xvfb to start\n\
+sleep 2\n\
+\n\
+# Function to cleanup on exit\n\
+cleanup() {\n\
+    echo "🛑 Shutting down..."\n\
+    kill $XVFB_PID 2>/dev/null || true\n\
+    exit 0\n\
+}\n\
+\n\
+# Set up signal handlers\n\
+trap cleanup SIGTERM SIGINT\n\
+\n\
+# Start the application\n\
+exec "$@"' > /home/tradebot/app/entrypoint.sh
+RUN chmod +x /home/tradebot/app/entrypoint.sh
 
-# Create Chrome profiles directory
-RUN mkdir -p /app/chrome_profiles
+# Health check
+HEALTHCHECK --interval=60s --timeout=30s --start-period=30s --retries=3 \
+    CMD python3 -c "import os; exit(0 if os.path.exists('logs/health.log') else 1)"
 
-# Expose port
-EXPOSE 5000
+# Expose port for monitoring dashboard
+EXPOSE 8080
 
-# Set entrypoint script
-COPY trae.sh /app/trae.sh
-RUN chmod +x /app/trae.sh
-
-# Run the application
-CMD ["/app/trae.sh"]
+# Set entrypoint
+ENTRYPOINT ["/home/tradebot/app/entrypoint.sh"]
+CMD ["python3", "tradebot_sentinel_advanced_pro.py"]
