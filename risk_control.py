@@ -16,8 +16,8 @@ except ImportError:
             return {}
         def get_risk_recommendation(self, strategy_name):
             return "maintain"
-        def should_pause_trading(self, strategy_name):
-            return False, ""
+        def should_pause_trading(self):
+            return False, "No pause conditions met"
 
 # Configure logging
 logging.basicConfig(
@@ -137,7 +137,7 @@ class RiskController:
             return False, f"No performance data found for strategy '{strategy_name}'.", risk_config
             
         # Check if trading should be paused
-        should_pause, pause_reason = self.evaluator.should_pause_trading(strategy_name)
+        should_pause, pause_reason = self.evaluator.should_pause_trading()
         
         if should_pause:
             # Set pause timestamp
@@ -264,6 +264,51 @@ class RiskController:
         
         return position_size
     
+    def calculate_position_size(self, strategy_name: str, symbol: str, account_balance: float = 10000.0, 
+                              risk_percent: float = None, entry_price: float = None, 
+                              stop_loss: float = None) -> float:
+        """Calculate position size with advanced risk parameters
+
+        Args:
+            strategy_name (str): Name of the strategy
+            symbol (str): Trading symbol
+            account_balance (float): Account balance (default: 10000.0)
+            risk_percent (float): Risk percentage override (optional)
+            entry_price (float): Entry price for position sizing (optional)
+            stop_loss (float): Stop loss price for position sizing (optional)
+
+        Returns:
+            float: Calculated position size
+        """
+        # Get strategy risk config
+        risk_config = self.get_strategy_risk_config(strategy_name)
+        
+        # Check if strategy is paused
+        if risk_config.get("paused", False):
+            return 0.0
+        
+        # Use provided risk_percent or default from config
+        risk_pct = risk_percent if risk_percent is not None else risk_config["base_risk_percent"]
+        
+        # If entry_price and stop_loss are provided, calculate position size based on risk amount
+        if entry_price and stop_loss and entry_price != stop_loss:
+            # Calculate risk amount in currency
+            risk_amount = account_balance * (risk_pct / 100.0)
+            
+            # Calculate price difference (risk per unit)
+            price_diff = abs(entry_price - stop_loss)
+            
+            # Calculate position size based on risk amount and price difference
+            position_size = risk_amount / price_diff
+            
+            # Ensure minimum position size
+            position_size = max(position_size, 0.01)
+            
+            return round(position_size, 2)
+        else:
+            # Fallback to percentage-based position sizing
+            return self.get_position_size(strategy_name, symbol, account_balance)
+    
     def is_trading_allowed(self, strategy_name: str) -> Tuple[bool, str]:
         """Check if trading is allowed for a strategy
 
@@ -297,7 +342,7 @@ class RiskController:
                 self.save_risk_config()
         
         # Check if trading should be paused
-        should_pause, pause_reason = self.evaluator.should_pause_trading(strategy_name)
+        should_pause, pause_reason = self.evaluator.should_pause_trading()
         
         if should_pause:
             # Set pause timestamp

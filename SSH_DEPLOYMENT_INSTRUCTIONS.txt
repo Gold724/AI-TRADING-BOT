@@ -1,0 +1,34 @@
+AI Trading Sentinel SSH Deployment Setup Instructions
+
+1. ADD PUBLIC KEY TO VPS:
+   ssh root@161.97.112.146
+   mkdir -p ~/.ssh
+   echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDMUyobuBr/HRmYa30CYVpiZoxZNM6GQKgE5QxYDdxbk+tyCVnCn0+GU5XI3kolpzU6P6QwqkmUb9yTlD7zntuuqEwAjSomgg7Cmp4gqTV1+p0JwNR6lQ+nac16Xorqc10SoZUNfkwd3/uf6v0GW+G5irePi+EfsIvv9/oAOrm8s3M6V9UsY50n7KgWgriq6WUtvwgxfAnEnR8U88UmmUhTX+0S801NvHE1Fyifyzq708ObqYYKA9Gtw+bj/5xk1in//PeX0OYh/1XT9rLkIpfCLK7KUDbmeS0CFfsVnx0diU28yFiyr/EBShpmW/MdpZnf+JLlHLSaX1+M0f/GA62T4PC2pnA6OnOnR6X1N0L1h4xgwGEBsxXmYMiQVTtjNR7BbMbmXmuv+c0pfhsqCErow/q2E16nfI+5Pj2zrqkIVUKUIM4F1GwaApXk+3LRq15CtJC4pAIBYQZPleysrx8paLHEoDcP/oE7YTkh8k+Q2erVR6We1kPLOd6aZgFwMrN+WGh11hI6dTcpdSxod6sALdqsiUro9XBstDO+La1QI90WfXqN3dqWqa5n24CbLnVRlqQw5gssk/Q+rxzC5pvanYSOIaUq+y9h69CrO328A7VfkSmrbolePICHxxK2srlmrFSsXbPjxHG/12Oj1B1rlxLrRy3G57D9obED+kS7Zw== trae-deployment-key' >> ~/.ssh/authorized_keys
+   chmod 600 ~/.ssh/authorized_keys
+   chmod 700 ~/.ssh
+   exit
+
+2. ADD TO GITHUB SECRETS:
+   Go to: https://github.com/YOUR_USERNAME/ai-trading-sentinel/settings/secrets/actions
+   
+   Secret Name: CONTABO_SSH_PRIVATE_KEY
+   Secret Value: (copy the private key content above)
+   
+   Secret Name: CONTABO_VPS_HOST
+   Secret Value: 161.97.112.146
+   
+   Secret Name: CONTABO_VPS_USER
+   Secret Value: root
+
+3. TEST SSH CONNECTION:
+   ssh -i "C:\Users\Admin\.ssh\trae_deploy_key" root@161.97.112.146 "echo 'SSH connection successful'"
+
+4. UPDATE SLACK WEBHOOK:
+   Get new webhook URL from Slack and add as SLACK_WEBHOOK_URL secret
+
+5. RUN GITHUB ACTIONS:
+   Push changes to main branch or manually trigger workflow
+
+Generated: 08/19/2025 07:47:54
+Key Location: C:\Users\Admin\.ssh\trae_deploy_key
+Public Key Location: C:\Users\Admin\.ssh\trae_deploy_key.pub

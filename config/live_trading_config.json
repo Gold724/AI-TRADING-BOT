@@ -1,0 +1,34 @@
+{
+    "broker": {
+        "name": "mock",
+        "config": {
+            "api_key": "",
+            "api_secret": "",
+            "server": "",
+            "account_id": ""
+        }
+    },
+    "risk": {
+        "max_risk_per_trade": 1.0,
+        "max_open_trades": 5,
+        "max_daily_drawdown": 5.0,
+        "default_stop_loss_pips": 50,
+        "default_take_profit_pips": 100
+    },
+    "symbols": [
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
+        "AUDUSD",
+        "USDCAD"
+    ],
+    "update_interval": 5,
+    "auto_update": true,
+    "max_order_history": 1000,
+    "notifications": {
+        "enabled": false,
+        "slack_webhook": "",
+        "telegram_bot_token": "",
+        "telegram_chat_id": ""
+    }
+}

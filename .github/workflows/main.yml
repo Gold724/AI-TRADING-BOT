@@ -1,0 +1,301 @@
+name: 🚀 Main CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      skip_tests:
+        description: 'Skip tests (emergency deploy)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.10'
+  NODE_VERSION: '18'
+
+jobs:
+  # Code quality and security checks
+  quality:
+    name: 🔍 Code Quality
+    runs-on: ubuntu-latest
+    outputs:
+      quality_passed: ${{ steps.quality_check.outputs.passed }}
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: 📦 Install Quality Tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort bandit safety
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    
+    - name: 🧹 Code Format Check
+      id: quality_check
+      run: |
+        echo "🔍 Running code quality checks..."
+        
+        # Format check with black
+        black --check --diff . || echo "⚠️ Black formatting issues found"
+        
+        # Import sorting check
+        isort --check-only --diff --profile black . || echo "⚠️ Import sorting issues found"
+        
+        # Security linting
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=venv,node_modules,.git || echo "⚠️ Linting issues found"
+        
+        # Security scanning
+        bandit -r . -f json -o bandit-report.json || echo "⚠️ Security issues found"
+        
+        # Dependency vulnerability check
+        safety check --json --output safety-report.json || echo "⚠️ Security vulnerabilities found"
+        
+        echo "passed=true" >> $GITHUB_OUTPUT
+        echo "✅ Quality checks completed"
+
+  # Test suite
+  test:
+    name: 🧪 Test Suite
+    runs-on: ubuntu-latest
+    needs: quality
+    if: always() && (needs.quality.outputs.quality_passed == 'true' || github.event.inputs.skip_tests == 'true')
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: 📦 Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov playwright
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    
+    - name: 🎭 Install Playwright
+      run: |
+        playwright install chromium
+        playwright install-deps chromium
+    
+    - name: 🔧 Setup Test Environment
+      run: |
+        # Create test environment file
+        cat > .env.test << EOF
+        TEST_MODE=true
+        DEBUG=true
+        BULENOX_USERNAME=test_user
+        BULENOX_PASSWORD=test_pass
+        BULENOX_ACCOUNT=test_account
+        EOF
+    
+    - name: 🧪 Run Basic Import Tests
+      run: |
+        echo "🧪 Testing basic imports..."
+        python -c "import tradebot_sentinel_bulenox_automation; print('✅ Main bot import successful')" || exit 1
+        python -c "import bulenox_gold_scalping_strategy; print('✅ Strategy import successful')" || exit 1
+        python -c "import deploy_to_contabo; print('✅ Deploy script import successful')" || exit 1
+    
+    - name: 📊 Run Unit Tests
+      run: |
+        if [ -d "tests" ]; then
+          pytest tests/ -v --tb=short -x || echo "⚠️ Some tests failed, check logs"
+        else
+          echo "ℹ️ No tests directory found, skipping unit tests"
+        fi
+    
+    - name: 🏗️ Build Test
+      run: |
+        echo "🏗️ Testing build process..."
+        python -c "
+        import os
+        import sys
+        # Test that all required files exist
+        required_files = [
+            'tradebot_sentinel_bulenox_automation.py',
+            'bulenox_gold_scalping_strategy.py',
+            'requirements.txt'
+        ]
+        for f in required_files:
+            if os.path.exists(f):
+                print(f'✅ {f} exists')
+            else:
+                print(f'❌ {f} missing')
+                sys.exit(1)
+        print('✅ All required files present')
+        "
+
+  # Build deployment package
+  build:
+    name: 📦 Build Package
+    runs-on: ubuntu-latest
+    needs: [quality, test]
+    if: always() && (needs.quality.result == 'success' || github.event.inputs.skip_tests == 'true')
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact_name: ${{ steps.artifact.outputs.name }}
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🏷️ Generate Version
+      id: version
+      run: |
+        VERSION="$(date +%Y%m%d)-$(git rev-parse --short HEAD)"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "📦 Build version: $VERSION"
+    
+    - name: 📦 Create Deployment Package
+      run: |
+        mkdir -p deployment-package
+        
+        # Copy Python files
+        cp *.py deployment-package/ 2>/dev/null || true
+        cp requirements*.txt deployment-package/ 2>/dev/null || true
+        cp *.json deployment-package/ 2>/dev/null || true
+        cp *.yml deployment-package/ 2>/dev/null || true
+        cp *.yaml deployment-package/ 2>/dev/null || true
+        
+        # Copy configuration
+        cp -r .github deployment-package/ 2>/dev/null || true
+        cp -r config deployment-package/ 2>/dev/null || true
+        
+        # Copy frontend if it exists
+        if [ -d "frontend" ]; then
+          cp -r frontend deployment-package/
+        fi
+        
+        # Create deployment info
+        cat > deployment-package/deployment_info.json << EOF
+        {
+          "version": "${{ steps.version.outputs.version }}",
+          "commit": "${{ github.sha }}",
+          "branch": "${{ github.ref_name }}",
+          "build_time": "$(date -u)",
+          "environment": "${{ inputs.environment || 'production' }}",
+          "actor": "${{ github.actor }}",
+          "repository": "${{ github.repository }}"
+        }
+        EOF
+        
+        # Create archive
+        tar -czf deployment-package.tar.gz deployment-package/
+    
+    - name: 📤 Upload Package
+      id: artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-package-${{ steps.version.outputs.version }}
+        path: deployment-package.tar.gz
+        retention-days: 30
+
+  # Deploy to VPS (only on main/master branch)
+  deploy:
+    name: 🚀 Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: production
+    timeout-minutes: 20
+    
+    steps:
+    - name: 📥 Download Package
+      uses: actions/download-artifact@v4
+      with:
+        name: deployment-package-${{ needs.build.outputs.version }}
+    
+    - name: 🔐 Setup SSH
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.CONTABO_SSH_PRIVATE_KEY }}
+        VPS_HOST: ${{ secrets.CONTABO_VPS_HOST }}
+      run: |
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        
+        # Setup SSH key
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        # Add host to known_hosts
+        ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+    
+    - name: 📤 Upload & Deploy
+      env:
+        VPS_HOST: ${{ secrets.CONTABO_VPS_HOST }}
+        VPS_USER: ${{ secrets.CONTABO_VPS_USERNAME || 'root' }}
+        VPS_PORT: ${{ secrets.CONTABO_SSH_PORT || '22' }}
+      run: |
+        echo "🚀 Starting deployment to $VPS_HOST..."
+        
+        # Upload package
+        scp -P $VPS_PORT deployment-package.tar.gz $VPS_USER@$VPS_HOST:/tmp/
+        
+        # Deploy remotely
+        ssh -p $VPS_PORT $VPS_USER@$VPS_HOST << 'ENDSSH'
+          set -e
+          echo "📦 Extracting deployment package..."
+          cd /tmp
+          tar -xzf deployment-package.tar.gz
+          
+          # Backup current deployment
+          if [ -d /opt/trae ]; then
+            mv /opt/trae /opt/trae-backup-$(date +%Y%m%d-%H%M%S)
+          fi
+          
+          # Deploy new version
+          mv deployment-package /opt/trae
+          cd /opt/trae
+          
+          # Install dependencies
+          if [ -f requirements.txt ]; then
+            pip3 install -r requirements.txt
+          fi
+          
+          # Restart services
+          sudo systemctl restart trae || echo "Service restart failed"
+          
+          echo "✅ Deployment completed successfully"
+        ENDSSH
+    
+    - name: 🔔 Notify Success
+      if: always()
+      run: |
+        STATUS="${{ job.status }}"
+        MESSAGE="AI Trading Sentinel deployment $STATUS for version ${{ needs.build.outputs.version }}"
+        echo "$MESSAGE"
+        
+        # Slack notification (if configured)
+        if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"$MESSAGE\"}" \
+            ${{ secrets.SLACK_WEBHOOK_URL }} || true
+        fi

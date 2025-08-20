@@ -40,8 +40,17 @@ yarn-error.log
 dist/
 build/
 
-# Chrome profiles
-temp_chrome_profile/
+# Chrome profiles and drivers
+chrome_profile/
+chrome_profiles/
+temp_chrome_profile*/
+temp_chrome_profile_futures/
+drivers/
+chromedriver*
+*trusted_vault.pb
+*optimization_guide_model_store*
+*passkey_enclave_state*
+*PrivacySandbox*
 
 # Screenshots and media
 screenshots/

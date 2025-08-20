@@ -97,12 +97,16 @@ class TradeBotSentinel:
     
     async def setup_browser(self) -> bool:
         """
-        Initialize browser with optimal settings for Bulenox automation.
+        Initialize browser with enhanced anti-detection measures for Bulenox automation.
         """
         try:
             playwright = await async_playwright().start()
             
-            # Launch browser with stealth settings
+            # Randomize viewport slightly to avoid detection
+            width = 1920 + random.randint(-50, 50)
+            height = 1080 + random.randint(-50, 50)
+            
+            # Enhanced stealth browser arguments with additional evasion
             self.browser = await playwright.chromium.launch(
                 headless=self.headless,
                 args=[
@@ -118,31 +122,172 @@ class TradeBotSentinel:
                     '--disable-renderer-backgrounding',
                     '--disable-backgrounding-occluded-windows',
                     '--disable-ipc-flooding-protection',
-                    '--window-size=1920,1080'
+                    f'--window-size={width},{height}',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-plugins',
+                    '--disable-images',
+                    '--disable-javascript-harmony-shipping',
+                    '--disable-webgl',
+                    '--disable-webgl2',
+                    '--disable-accelerated-2d-canvas',
+                    '--disable-reading-from-canvas',
+                    '--disable-background-networking',
+                    '--enable-features=NetworkService,NetworkServiceLogging',
+                    '--disable-component-extensions-with-background-pages',
+                    '--disable-default-apps',
+                    '--disable-extensions-http-throttling',
+                    '--disable-features=TranslateUI',
+                    '--disable-hang-monitor',
+                    '--disable-notifications',
+                    '--disable-popup-blocking',
+                    '--disable-prompt-on-repost',
+                    '--disable-speech-api',
+                    '--disable-web-resources',
+                    '--ignore-certificate-errors',
+                    '--ignore-ssl-errors',
+                    '--log-level=3',
+                    '--silent-debugger-extension-api',
+                    '--test-type=webdriver',
+                    '--disable-bundled-ppapi-flash',
+                    '--disable-plugins-discovery',
+                    '--disable-pepper-3d',
+                    '--disable-permissions-api',
+                    '--disable-background-timer-throttling',
+                    '--disable-renderer-throttling',
+                    '--disable-features=IsolateOrigins,site-per-process'
                 ]
             )
             
-            # Create context with realistic settings
+            # Create persistent user data directory for more human-like behavior
+            user_data_dir = Path.home() / '.bulenox_automation_data'
+            user_data_dir.mkdir(exist_ok=True)
+            
+            # Load or create persistent storage state
+            storage_file = user_data_dir / 'storage_state.json'
+            storage_state = None
+            if storage_file.exists():
+                try:
+                    with open(storage_file, 'r') as f:
+                        storage_state = json.load(f)
+                except Exception:
+                    pass
+            
+            # Enhanced stealth context with realistic browser fingerprint
             self.context = await self.browser.new_context(
-                viewport={'width': 1920, 'height': 1080},
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                viewport={'width': width, 'height': height},
+                user_agent=self.get_random_user_agent(),
                 locale='en-US',
                 timezone_id='America/New_York',
                 permissions=['geolocation'],
+                storage_state=storage_state,
                 extra_http_headers={
-                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept-Language': 'en-US,en;q=0.9,en-GB;q=0.8',
                     'Accept-Encoding': 'gzip, deflate, br',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                     'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1'
-                }
+                    'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                    'Cache-Control': 'max-age=0',
+                    'DNT': '1',
+                    'sec-ch-ua': '"Chromium";v="120", "Not_A Brand";v="24"',
+                    'sec-ch-ua-mobile': '?0',
+                    'sec-ch-ua-platform': '"Windows"',
+                    'sec-ch-ua-arch': '"x86"',
+                    'sec-ch-ua-bitness': '"64"',
+                    'sec-ch-ua-full-version': '"120.0.0.0"',
+                    'sec-ch-ua-full-version-list': '"Chromium";v="120.0.0.0", "Not_A Brand";v="24.0.0.0"'
+                },
+                record_video_dir=None,
+                record_har_path=None,
+                device_scale_factor=1,
+                is_mobile=False,
+                has_touch=False,
+                color_scheme='light',
+                reduced_motion='no-preference',
+                forced_colors='none'
             )
+            
+            # Add random delays to appear more human-like
+            await asyncio.sleep(random.uniform(1.5, 3.5))
             
             # Create page and setup network interception
             self.page = await self.context.new_page()
+            
+            # Inject enhanced anti-detection script immediately after page creation
+            await self.inject_anti_detection_script()
+            
+            # Execute anti-detection scripts to evade automation detection
+            await self.page.add_init_script("""
+                // Disable webdriver property
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined,
+                });
+                
+                // Override plugins and languages to appear more natural
+                Object.defineProperty(navigator, 'plugins', {
+                    get: () => [1, 2, 3, 4, 5],
+                });
+                
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['en-US', 'en'],
+                });
+                
+                // Mock chrome runtime if not present
+                if (!window.chrome) {
+                    window.chrome = {
+                        runtime: {},
+                        loadTimes: () => ({}),
+                        csi: () => ({})
+                    };
+                }
+                
+                // Override permissions API
+                const originalQuery = window.navigator.permissions.query;
+                window.navigator.permissions.query = (parameters) => (
+                    parameters.name === 'notifications' ?
+                        Promise.resolve({ state: Notification.permission }) :
+                        originalQuery(parameters)
+                );
+                
+                // Mock webgl vendor and renderer
+                const getParameter = WebGLRenderingContext.prototype.getParameter;
+                WebGLRenderingContext.prototype.getParameter = function(parameter) {
+                    if (parameter === 37445) {
+                        return 'Intel Inc.';
+                    }
+                    if (parameter === 37446) {
+                        return 'Intel Iris OpenGL Engine';
+                    }
+                    return getParameter(parameter);
+                };
+                
+                // Add random mouse movements and human-like behavior
+                const randomDelay = () => new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+                
+                // Mock user activity
+                window.addEventListener('mousemove', async () => {
+                    await randomDelay();
+                });
+                
+                // Remove automation indicators from window
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+                
+                console.log('Anti-detection scripts loaded successfully');
+            """)
+            
+            # Add human-like mouse movements and delays
+            await self.page.mouse.move(random.randint(100, 300), random.randint(100, 300))
+            await asyncio.sleep(random.uniform(0.5, 1.5))
+            
             await self.setup_network_interception()
             
-            logger.info("[SUCCESS] Browser setup completed successfully")
+            logger.info("[SUCCESS] Browser setup completed with enhanced anti-detection measures")
             return True
             
         except Exception as e:
@@ -515,10 +660,13 @@ if __name__ == "__main__":
     
     async def login_to_bulenox(self) -> bool:
         """
-        Perform secure login to Bulenox with robust fallback selectors.
+        Perform secure login to Bulenox with enhanced anti-detection measures and human-like behavior.
         """
         try:
-            logger.info("[LOGIN] Starting Bulenox login process...")
+            logger.info("[LOGIN] Starting Bulenox login process with enhanced stealth...")
+            
+            # Add initial random delay to appear more natural
+            await self.human_like_delay(1000, 2500)
             
             # Navigate to Bulenox login page
             bulenox_urls = [
@@ -529,8 +677,23 @@ if __name__ == "__main__":
             for url in bulenox_urls:
                 try:
                     logger.info(f"[LOGIN] Attempting login at: {url}")
-                    await self.page.goto(url, wait_until='networkidle', timeout=30000)
-                    await self.human_like_delay(2000, 3000)
+                    
+                    # Navigate with human-like mouse movements before page load
+                    await self.page.mouse.move(random.randint(400, 800), random.randint(200, 400))
+                    await asyncio.sleep(random.uniform(0.5, 1.2))
+                    
+                    await self.page.goto(url, wait_until='domcontentloaded', timeout=30000)
+                    
+                    # Wait for page to fully load with human-like timing
+                    await self.human_like_delay(2500, 4000)
+                    
+                    # Simulate natural reading behavior - move mouse around page
+                    for _ in range(random.randint(2, 4)):
+                        await self.page.mouse.move(
+                            random.randint(200, 1000), 
+                            random.randint(200, 600)
+                        )
+                        await asyncio.sleep(random.uniform(0.3, 0.8))
                     
                     # Check for time sync warning
                     await self.handle_time_sync_warning()
@@ -1051,12 +1214,185 @@ if __name__ == "__main__":
         finally:
             await self.cleanup()
     
+    def get_random_user_agent(self) -> str:
+        """Generate a realistic Chrome user agent with version variations."""
+        chrome_versions = [
+            "120.0.0.0", "119.0.0.0", "118.0.0.0", "117.0.0.0", "116.0.0.0"
+        ]
+        version = random.choice(chrome_versions)
+        return f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{version} Safari/537.36"
+
+    async def inject_anti_detection_script(self):
+        """Inject sophisticated anti-detection JavaScript to bypass Chrome automation detection."""
+        anti_detection_script = """
+        // Override navigator properties to remove automation indicators
+        Object.defineProperty(navigator, 'webdriver', {
+            get: () => undefined,
+        });
+        
+        // Remove automation flags from user agent
+        Object.defineProperty(navigator, 'userAgent', {
+            get: () => navigator.userAgent.replace(/HeadlessChrome/g, 'Chrome'),
+        });
+        
+        // Override plugins to appear like a real browser
+        Object.defineProperty(navigator, 'plugins', {
+            get: () => [
+                {
+                    0: {
+                        type: "application/x-google-chrome-pdf",
+                        suffixes: "pdf",
+                        description: "Portable Document Format",
+                        enabledPlugin: Plugin
+                    },
+                    description: "Portable Document Format",
+                    filename: "internal-pdf-viewer",
+                    length: 1,
+                    name: "Chrome PDF Plugin"
+                },
+                {
+                    0: {
+                        type: "application/pdf",
+                        suffixes: "pdf",
+                        description: "",
+                        enabledPlugin: Plugin
+                    },
+                    description: "",
+                    filename: "mhjfbmdgcfjbbpaeojofohoefgiehjai",
+                    length: 1,
+                    name: "Chrome PDF Viewer"
+                }
+            ],
+        });
+        
+        // Override languages
+        Object.defineProperty(navigator, 'languages', {
+            get: () => ['en-US', 'en'],
+        });
+        
+        // Override webdriver chrome
+        delete window.chrome;
+        window.chrome = {
+            runtime: {},
+            loadTimes: function() {
+                return {
+                    commitLoadTime: performance.timing.domContentLoadedEventStart / 1000,
+                    connectionInfo: 'h2',
+                    finishDocumentLoadTime: performance.timing.loadEventStart / 1000,
+                    finishLoadTime: performance.timing.loadEventEnd / 1000,
+                    firstPaintAfterLoadTime: 0,
+                    firstPaintTime: performance.timing.domContentLoadedEventStart / 1000,
+                    navigationStart: performance.timing.navigationStart / 1000,
+                    npnNegotiatedProtocol: 'h2',
+                    requestTime: performance.timing.requestStart / 1000,
+                    startLoadTime: performance.timing.responseStart / 1000,
+                    wasAlternateProtocolAvailable: false,
+                    wasFetchedViaSpdy: true,
+                    wasNpnNegotiated: true
+                };
+            },
+            csi: function() {
+                return {
+                    onloadT: Date.now(),
+                    pageT: Date.now() - performance.timing.navigationStart,
+                    startE: performance.timing.navigationStart,
+                    tran: 15
+                };
+            }
+        };
+        
+        // Override permissions API
+        const originalQuery = window.navigator.permissions.query;
+        window.navigator.permissions.query = (parameters) => (
+            parameters.name === 'notifications' ?
+                Promise.resolve({ state: Notification.permission }) :
+                originalQuery(parameters)
+        );
+        
+        // Mock WebGL vendor and renderer
+        const getParameter = WebGLRenderingContext.prototype.getParameter;
+        WebGLRenderingContext.prototype.getParameter = function(parameter) {
+            if (parameter === 37445) {
+                return 'Intel Inc.';
+            }
+            if (parameter === 37446) {
+                return 'Intel Iris OpenGL Engine';
+            }
+            return getParameter(parameter);
+        };
+        
+        // Add random mouse movements
+        function addRandomMouseMovement() {
+            const move = () => {
+                const x = Math.floor(Math.random() * window.innerWidth);
+                const y = Math.floor(Math.random() * window.innerHeight);
+                const event = new MouseEvent('mousemove', {
+                    clientX: x,
+                    clientY: y,
+                    bubbles: true
+                });
+                document.dispatchEvent(event);
+            };
+            
+            // Add random movements every 2-5 seconds
+            setInterval(move, Math.random() * 3000 + 2000);
+        }
+        
+        // Override screen properties
+        Object.defineProperty(screen, 'colorDepth', { get: () => 24 });
+        Object.defineProperty(screen, 'pixelDepth', { get: () => 24 });
+        
+        // Remove automation indicators from window
+        delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+        delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+        delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+        
+        // Override console.debug to prevent automation logs
+        const originalDebug = console.debug;
+        console.debug = function(...args) {
+            if (args[0] && args[0].includes && args[0].includes('DevTools')) {
+                return;
+            }
+            return originalDebug.apply(console, args);
+        };
+        
+        // Add random delays to appear more human-like
+        setTimeout(addRandomMouseMovement, 1000);
+        
+        // Override Date.now to add slight randomization
+        const originalNow = Date.now;
+        let offset = 0;
+        Date.now = function() {
+            if (Math.random() < 0.1) {
+                offset += Math.floor(Math.random() * 10) - 5;
+            }
+            return originalNow() + offset;
+        };
+        """
+        
+        await self.page.add_init_script(anti_detection_script)
+        logger.info("[STEALTH] Anti-detection script injected successfully")
+
+    async def save_storage_state(self):
+        """Save browser storage state to maintain session persistence."""
+        try:
+            if self.context:
+                user_data_dir = Path.home() / '.bulenox_automation_data'
+                storage_file = user_data_dir / 'storage_state.json'
+                await self.context.storage_state(path=str(storage_file))
+                logger.info("[STORAGE] Storage state saved for session persistence")
+        except Exception as e:
+            logger.error(f"[ERROR] Failed to save storage state: {e}")
+
     async def cleanup(self):
         """
         Clean up browser resources.
         """
         try:
             logger.info("[CLEANUP] Cleaning up browser resources...")
+            
+            # Save storage state before cleanup
+            await self.save_storage_state()
             
             if self.context:
                 await self.context.close()

@@ -24,7 +24,7 @@ app.secret_key = "your-secret-key"  # Replace with a secure random key
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 
-from auth import login, login_required, logout
+from .auth import login, login_required, logout
 
 # Initialize executors
 binance_executor = BinanceExecutor() if BinanceExecutor else None

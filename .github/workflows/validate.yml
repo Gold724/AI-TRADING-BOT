@@ -1,0 +1,49 @@
+name: ✅ Validate Repository
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    name: 🔍 Quick Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+    
+    - name: 📋 Validate Files
+      run: |
+        echo "🔍 Validating repository structure..."
+        
+        # Check essential files
+        files=(
+          "tradebot_sentinel_bulenox_automation.py"
+          "bulenox_gold_scalping_strategy.py"
+          "requirements.txt"
+          "deploy_to_contabo.py"
+        )
+        
+        for file in "${files[@]}"; do
+          if [[ -f "$file" ]]; then
+            echo "✅ $file exists"
+          else
+            echo "❌ $file missing"
+            exit 1
+          fi
+        done
+        
+        # Check Python syntax
+        python -m py_compile tradebot_sentinel_bulenox_automation.py || exit 1
+        python -m py_compile bulenox_gold_scalping_strategy.py || exit 1
+        python -m py_compile deploy_to_contabo.py || exit 1
+        
+        echo "✅ All validations passed"

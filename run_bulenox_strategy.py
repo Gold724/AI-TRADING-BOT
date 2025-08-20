@@ -19,6 +19,15 @@ import json
 import signal
 import threading
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    print("✅ Loaded environment variables from .env file")
+except ImportError:
+    print("⚠️  python-dotenv not found, using system environment variables only")
+    pass
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

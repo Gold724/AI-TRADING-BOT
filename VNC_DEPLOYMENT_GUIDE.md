@@ -5,6 +5,30 @@
 
 ---
 
+## 🔗 Current Service Links (ACTIVE)
+
+### Frontend (React/Vite)
+- **Local Access**: http://localhost:5173/
+- **Network Access**: Use `npm run dev -- --host` to expose on network
+- **Status**: ✅ Running (Vite v4.5.14)
+
+### Backend (Flask API)
+- **Local Access**: http://localhost:5000/
+- **API Health**: http://localhost:5000/api/status
+- **Trading Status**: http://localhost:5000/api/trading/status
+- **WebSocket**: ws://localhost:5000/ws
+- **Status**: ✅ Running (Active API requests logged)
+
+---
+
+## 🔗 Production URLs (After VPS Deployment)
+- **Frontend**: http://161.97.112.146/
+- **API**: http://161.97.112.146/api/status
+- **Trading Dashboard**: http://161.97.112.146/dashboard
+- **WebSocket**: ws://161.97.112.146/ws
+
+---
+
 ## 🎯 VNC Deployment Strategy
 
 ### Why VNC Over SSH?

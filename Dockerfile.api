@@ -1,0 +1,71 @@
+# AI Trading Sentinel - Flask API Backend
+# TRAE-SentinelOps: RESTful API for bot control and monitoring
+
+FROM python:3.10-slim-bullseye
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    FLASK_APP=backend.main:app \
+    FLASK_ENV=production
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app user
+RUN groupadd -r apiuser && useradd -r -g apiuser -m -d /app -s /bin/bash apiuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements
+COPY requirements.txt .
+COPY backend/requirements.txt backend_requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir -r backend_requirements.txt
+
+# Install additional API dependencies
+RUN pip install --no-cache-dir \
+    gunicorn \
+    flask-cors \
+    flask-socketio \
+    redis \
+    sqlalchemy \
+    flask-sqlalchemy \
+    flask-migrate \
+    flask-jwt-extended \
+    marshmallow \
+    webargs \
+    apispec \
+    apispec-webframeworks
+
+# Copy application code
+COPY backend/ ./backend/
+COPY shared/ ./shared/
+COPY *.py ./
+
+# Create necessary directories
+RUN mkdir -p logs data \
+    && chown -R apiuser:apiuser /app
+
+# Switch to non-root user
+USER apiuser
+
+# Expose API port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+# Default command with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--timeout", "120", "--keep-alive", "5", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload", "--access-logfile", "-", "--error-logfile", "-", "backend.main:app"]

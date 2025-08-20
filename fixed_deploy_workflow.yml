@@ -1,0 +1,400 @@
+name: 🚀 Fixed Production Deployment
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'src/**'
+      - 'frontend/**'
+      - 'requirements.txt'
+      - 'package.json'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      force_deploy:
+        description: 'Force deployment even if tests fail'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.10'
+  NODE_VERSION: '18'
+  VPS_HOST: '185.244.214.70'
+  DEPLOY_PATH: '/opt/trae'
+
+jobs:
+  # Pre-deployment validation
+  validate:
+    name: 🔍 Validate & Test
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.decision.outputs.deploy }}
+      version: ${{ steps.version.outputs.version }}
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: 📦 Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install pytest playwright
+    
+    - name: 🧪 Run Tests
+      id: tests
+      run: |
+        echo "Running basic validation tests..."
+        python -c "import sys; print(f'Python version: {sys.version}')"
+        
+        # Check critical files exist
+        test -f "src/main.py" || (echo "❌ main.py missing" && exit 1)
+        test -f "requirements.txt" || (echo "❌ requirements.txt missing" && exit 1)
+        
+        echo "✅ Basic validation passed"
+      continue-on-error: ${{ inputs.force_deploy == true }}
+    
+    - name: 📊 Generate Version
+      id: version
+      run: |
+        VERSION="v$(date +%Y%m%d)-$(git rev-parse --short HEAD)"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Generated version: $VERSION"
+    
+    - name: 🎯 Deployment Decision
+      id: decision
+      run: |
+        if [[ "${{ steps.tests.outcome }}" == "success" ]] || [[ "${{ inputs.force_deploy }}" == "true" ]]; then
+          echo "deploy=true" >> $GITHUB_OUTPUT
+          echo "✅ Deployment approved"
+        else
+          echo "deploy=false" >> $GITHUB_OUTPUT
+          echo "❌ Deployment blocked due to test failures"
+        fi
+
+  # Build deployment package
+  build:
+    name: 📦 Build Package
+    runs-on: ubuntu-latest
+    needs: validate
+    if: needs.validate.outputs.should_deploy == 'true'
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🏗️ Build Frontend
+      run: |
+        if [ -d "frontend" ]; then
+          cd frontend
+          if [ -f "package.json" ]; then
+            npm install
+            npm run build
+            cd ..
+            tar -czf frontend-deployment.tar.gz -C frontend/dist .
+          else
+            echo "No package.json found, skipping frontend build"
+          fi
+        else
+          echo "No frontend directory found"
+        fi
+    
+    - name: 📦 Create Deployment Package
+      run: |
+        mkdir -p deployment-package
+        
+        # Copy Python files
+        cp -r src/* deployment-package/ 2>/dev/null || echo "No src directory"
+        cp requirements.txt deployment-package/ 2>/dev/null || echo "No requirements.txt"
+        
+        # Copy frontend if built
+        if [ -f "frontend-deployment.tar.gz" ]; then
+          cp frontend-deployment.tar.gz deployment-package/
+        fi
+        
+        # Copy configuration files
+        cp *.py deployment-package/ 2>/dev/null || true
+        cp *.json deployment-package/ 2>/dev/null || true
+        cp *.yml deployment-package/ 2>/dev/null || true
+        
+        # Create version file
+        echo "${{ needs.validate.outputs.version }}" > deployment-package/VERSION
+        echo "$(date -u)" > deployment-package/DEPLOY_TIME
+        
+        # Create deployment info
+        cat > deployment-package/deployment_info.json << EOF
+        {
+          "version": "${{ needs.validate.outputs.version }}",
+          "commit": "${{ github.sha }}",
+          "branch": "${{ github.ref_name }}",
+          "deploy_time": "$(date -u)",
+          "environment": "${{ inputs.environment || 'production' }}",
+          "actor": "${{ github.actor }}"
+        }
+        EOF
+        
+        # Create archive
+        tar -czf deployment-package.tar.gz deployment-package/
+    
+    - name: 📤 Upload Deployment Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-package-${{ needs.validate.outputs.version }}
+        path: deployment-package.tar.gz
+        retention-days: 30
+
+  # Deploy to VPS
+  deploy:
+    name: 🚀 Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: [validate, build]
+    if: needs.validate.outputs.should_deploy == 'true'
+    environment: ${{ inputs.environment || 'production' }}
+    timeout-minutes: 15
+    
+    steps:
+    - name: 📥 Download Deployment Package
+      uses: actions/download-artifact@v4
+      with:
+        name: deployment-package-${{ needs.validate.outputs.version }}
+        path: ./
+    
+    - name: 🔐 Setup SSH Connection
+      run: |
+        # Create SSH directory
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        
+        # Setup SSH key with proper permissions
+        echo "${{ secrets.CONTABO_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        # Add VPS to known hosts
+        ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+        
+        # Test SSH connection
+        ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ env.VPS_HOST }} "echo 'SSH connection successful'"
+    
+    - name: 📤 Upload Deployment Package
+      run: |
+        # Upload deployment package
+        scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no \
+          deployment-package.tar.gz root@${{ env.VPS_HOST }}:/tmp/
+        
+        echo "✅ Deployment package uploaded successfully"
+    
+    - name: 🚀 Execute Deployment
+      id: deploy
+      run: |
+        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no root@${{ env.VPS_HOST }} << 'EOF'
+          set -e
+          
+          echo "🚀 Starting deployment process..."
+          
+          # Create deployment directory
+          mkdir -p ${{ env.DEPLOY_PATH }}
+          cd ${{ env.DEPLOY_PATH }}
+          
+          # Backup current deployment
+          if [ -d "current" ]; then
+            mv current backup-$(date +%Y%m%d-%H%M%S) || true
+          fi
+          
+          # Extract new deployment
+          mkdir -p current
+          cd current
+          tar -xzf /tmp/deployment-package.tar.gz --strip-components=1
+          
+          # Install Python dependencies
+          if [ -f "requirements.txt" ]; then
+            python3 -m pip install -r requirements.txt
+          fi
+          
+          # Setup environment
+          cat > .env << ENVEOF
+        BULENOX_USERNAME=${{ secrets.BULENOX_USERNAME }}
+        BULENOX_PASSWORD=${{ secrets.BULENOX_PASSWORD }}
+        FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }}
+        ENVIRONMENT=${{ inputs.environment || 'production' }}
+        LOG_LEVEL=INFO
+        HEADLESS_MODE=true
+        API_PORT=5000
+        DEPLOYMENT_VERSION=${{ needs.validate.outputs.version }}
+        ENVEOF
+          
+          # Set permissions
+          chmod +x *.py 2>/dev/null || true
+          chmod 600 .env
+          
+          # Extract frontend if present
+          if [ -f "frontend-deployment.tar.gz" ]; then
+            mkdir -p /var/www/html
+            cd /var/www/html
+            tar -xzf ${{ env.DEPLOY_PATH }}/current/frontend-deployment.tar.gz
+            chown -R www-data:www-data /var/www/html
+            echo "✅ Frontend deployed"
+          fi
+          
+          cd ${{ env.DEPLOY_PATH }}/current
+          
+          # Create systemd service
+          cat > /etc/systemd/system/trae-trading-bot.service << SERVICEEOF
+        [Unit]
+        Description=TRAE AI Trading Bot
+        After=network.target
+        
+        [Service]
+        Type=simple
+        User=root
+        WorkingDirectory=${{ env.DEPLOY_PATH }}/current
+        Environment=PATH=/usr/bin:/usr/local/bin
+        EnvironmentFile=${{ env.DEPLOY_PATH }}/current/.env
+        ExecStart=/usr/bin/python3 main.py
+        Restart=always
+        RestartSec=10
+        StandardOutput=journal
+        StandardError=journal
+        
+        [Install]
+        WantedBy=multi-user.target
+        SERVICEEOF
+          
+          # Reload systemd and restart service
+          systemctl daemon-reload
+          systemctl enable trae-trading-bot
+          systemctl restart trae-trading-bot
+          
+          # Wait for service to start
+          sleep 5
+          
+          # Check service status
+          if systemctl is-active --quiet trae-trading-bot; then
+            echo "✅ Service started successfully"
+          else
+            echo "❌ Service failed to start"
+            systemctl status trae-trading-bot
+            exit 1
+          fi
+          
+          echo "🎉 Deployment completed successfully!"
+        EOF
+        
+        echo "deployment_status=success" >> $GITHUB_OUTPUT
+    
+    - name: 🔍 Post-Deployment Validation
+      run: |
+        echo "🔍 Validating deployment..."
+        
+        # Wait for service to fully start
+        sleep 10
+        
+        # Test API endpoint
+        if curl -f -m 10 http://${{ env.VPS_HOST }}:5000/health; then
+          echo "✅ API health check passed"
+        else
+          echo "⚠️ API health check failed (may be normal if API not implemented)"
+        fi
+        
+        # Check service status
+        ssh root@${{ env.VPS_HOST }} "systemctl is-active trae-trading-bot && echo '✅ Service is running'"
+    
+    - name: 📝 Update Deployment Record
+      if: always()
+      run: |
+        ssh root@${{ env.VPS_HOST }} << 'EOF'
+          echo "$(date): Deployment ${{ needs.validate.outputs.version }} - Status: ${{ steps.deploy.outcome }}" >> ${{ env.DEPLOY_PATH }}/deployment.log
+        EOF
+
+  # Notifications
+  notify:
+    name: 📢 Send Notifications
+    runs-on: ubuntu-latest
+    needs: [validate, build, deploy]
+    if: always() && needs.validate.outputs.should_deploy == 'true'
+    
+    steps:
+    - name: 📢 Success Notification
+      if: needs.deploy.result == 'success' && secrets.SLACK_WEBHOOK_URL != ''
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data '{
+            "text": "🎉 AI Trading Sentinel Deployment Successful",
+            "attachments": [{
+              "color": "good",
+              "fields": [
+                {"title": "Version", "value": "${{ needs.validate.outputs.version }}", "short": true},
+                {"title": "Environment", "value": "${{ inputs.environment || 'production' }}", "short": true},
+                {"title": "Commit", "value": "${{ github.sha }}", "short": true},
+                {"title": "Actor", "value": "${{ github.actor }}", "short": true}
+              ]
+            }]
+          }' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+    
+    - name: 📢 Failure Notification
+      if: needs.deploy.result == 'failure' && secrets.SLACK_WEBHOOK_URL != ''
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data '{
+            "text": "🚨 AI Trading Sentinel Deployment Failed",
+            "attachments": [{
+              "color": "danger",
+              "fields": [
+                {"title": "Version", "value": "${{ needs.validate.outputs.version }}", "short": true},
+                {"title": "Environment", "value": "${{ inputs.environment || 'production' }}", "short": true},
+                {"title": "Error", "value": "Check GitHub Actions logs", "short": true},
+                {"title": "Actor", "value": "${{ github.actor }}", "short": true}
+              ]
+            }]
+          }' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Health monitoring job
+  monitor:
+    name: 🔍 Health Monitor
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: needs.deploy.result == 'success'
+    
+    steps:
+    - name: 🔍 Extended Health Check
+      run: |
+        echo "🔍 Running extended health checks..."
+        
+        # Wait for system to stabilize
+        sleep 30
+        
+        # Check service status
+        ssh root@${{ env.VPS_HOST }} << 'EOF'
+          echo "=== Service Status ==="
+          systemctl status trae-trading-bot --no-pager
+          
+          echo "\n=== Recent Logs ==="
+          journalctl -u trae-trading-bot --no-pager -n 20
+          
+          echo "\n=== System Resources ==="
+          free -h
+          df -h
+          
+          echo "\n=== Network Status ==="
+          netstat -tlnp | grep :5000 || echo "API port not listening"
+        EOF
+        
+        echo "✅ Health check completed"

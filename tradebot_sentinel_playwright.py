@@ -2,6 +2,7 @@
 """
 TradeBot Sentinel - Bulenox ProjectX Trading Platform Automation
 Expert automation agent for secure login, trade execution, and request interception.
+Integrated with Fibonacci Gold Scalping Strategy for dynamic profit targeting.
 """
 
 import asyncio
@@ -11,9 +12,29 @@ import subprocess
 import sys
 import random
 import math
-from datetime import datetime
+from datetime import datetime, time
 from playwright.async_api import async_playwright, Page, Browser, BrowserContext
 from typing import Optional, Dict, Any, List
+
+# Import Fibonacci Gold Scalping Strategy Configuration
+try:
+    from bulenox_strategy_config import CONFIG
+    STRATEGY_INTEGRATED = True
+except ImportError:
+    print("[WARNING] Strategy config not found, using fallback values")
+    STRATEGY_INTEGRATED = False
+    
+    # Fallback configuration
+    class CONFIG:
+        FIBONACCI_PROFIT_SEQUENCE = [10, 10, 20, 30, 50, 80, 130]
+        FULL_SYMBOL = "F.US.GCE"  # Gold futures
+        DEFAULT_CONTRACTS = 1
+        MAX_CONTRACTS = 3
+        TRADING_SESSIONS = {
+            'morning': {'start': time(3, 0), 'end': time(6, 0)},
+            'midday': {'start': time(8, 20), 'end': time(11, 30)},
+            'afternoon': {'start': time(13, 0), 'end': time(15, 30)}
+        }
 
 class TradeBotSentinel:
     """TradeBot Sentinel for Bulenox ProjectX automation"""
@@ -35,11 +56,79 @@ class TradeBotSentinel:
         self.typing_delay_max = 200
         self.mouse_move_steps = 10
         
+        # Fibonacci Strategy Integration
+        self.fibonacci_sequence = CONFIG.FIBONACCI_PROFIT_SEQUENCE
+        self.session_fib_index = {'morning': 0, 'midday': 0, 'afternoon': 0}
+        self.current_session = None
+        self.daily_trades = 0
+        self.session_trades = 0
+        self.daily_pnl = 0.0
+        
         # Note: Credentials are optional if already authenticated via saved session
         if self.username and self.password:
             print(f"[CREDENTIALS] Credentials loaded for user: {self.username[:3]}***")
         else:
             print("[WARNING] No credentials set - will attempt to use saved session")
+        
+        print(f"[STRATEGY] Fibonacci sequence loaded: {self.fibonacci_sequence}")
+        print(f"[STRATEGY] Gold symbol: {CONFIG.FULL_SYMBOL}")
+        print(f"[STRATEGY] Contract range: {CONFIG.DEFAULT_CONTRACTS}-{CONFIG.MAX_CONTRACTS}")
+    
+    def get_current_session(self):
+        """Determine current trading session based on NY time"""
+        current_time = datetime.now().time()
+        
+        for session_name, session_info in CONFIG.TRADING_SESSIONS.items():
+            if session_info['start'] <= current_time <= session_info['end']:
+                return session_name
+        return None
+    
+    def get_current_fibonacci_target(self, session_name=None):
+        """Get current Fibonacci profit target for the session"""
+        if session_name is None:
+            session_name = self.current_session or self.get_current_session()
+        
+        if session_name and session_name in self.session_fib_index:
+            index = self.session_fib_index[session_name]
+            return self.fibonacci_sequence[index]
+        
+        return self.fibonacci_sequence[0]  # Default to first level
+    
+    def advance_fibonacci(self, session_name, win=True):
+        """Advance or reset Fibonacci sequence based on trade outcome"""
+        if session_name not in self.session_fib_index:
+            return
+        
+        old_index = self.session_fib_index[session_name]
+        
+        if win:
+            # Advance to next Fibonacci level (max at sequence length - 1)
+            self.session_fib_index[session_name] = min(old_index + 1, len(self.fibonacci_sequence) - 1)
+            reason = 'winning_trade'
+        else:
+            # Reset to beginning on loss
+            self.session_fib_index[session_name] = 0
+            reason = 'losing_trade'
+        
+        new_index = self.session_fib_index[session_name]
+        print(f"[FIBONACCI] {session_name} progression: index {old_index} → {new_index} ({reason})")
+        
+        return new_index
+    
+    def get_fibonacci_contract_size(self, session_name=None):
+        """Calculate contract size based on Fibonacci progression"""
+        if session_name is None:
+            session_name = self.current_session or self.get_current_session()
+        
+        fib_target = self.get_current_fibonacci_target(session_name)
+        
+        # Scale contract size based on Fibonacci target (keeping within limits)
+        if fib_target <= 20:
+            return CONFIG.DEFAULT_CONTRACTS  # 1 contract
+        elif fib_target <= 50:
+            return min(2, CONFIG.MAX_CONTRACTS)  # 2 contracts
+        else:
+            return CONFIG.MAX_CONTRACTS  # 3 contracts
     
     async def setup_browser(self):
         """Initialize browser and context with network interception"""
@@ -466,7 +555,7 @@ print(f"Response: {{response.text}}")
                 input_id = await input_elem.get_attribute('id') or 'no-id'
                 print(f"  Input {i}: type='{input_type}', name='{input_name}', id='{input_id}', placeholder='{input_placeholder}'")
             
-            # Enhanced username selectors with more comprehensive detection
+            # Enhanced username selectors with React dynamic ID support
             username_selectors = [
                 'input[name="userName"]',  # Actual field name found on the page
                 'input[name="username"]',
@@ -490,10 +579,13 @@ print(f"Response: {{response.text}}")
                 'input[autocomplete="email"]',
                 'input[autocomplete="username"]',
                 'input[type="text"]:first-of-type',
-                'input:not([type="password"]):not([type="hidden"]):not([type="submit"]):not([type="button"])',
+                'input:not([type="password"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):first-of-type',
                 'form input:first-of-type',
                 'input[data-testid*="email"]',
-                'input[data-testid*="username"]'
+                'input[data-testid*="username"]',
+                # React dynamic ID patterns - target the first text input
+                'input[id^=":r"]:not([type="password"])',
+                'input[id*=":r"]:not([type="password"]):first-of-type'
             ]
             
             password_selectors = [
@@ -512,7 +604,10 @@ print(f"Response: {{response.text}}")
                 'input[autocomplete="current-password"]',
                 'input[autocomplete="password"]',
                 'input[data-testid*="password"]',
-                'form input[type="password"]:first-of-type'
+                'form input[type="password"]:first-of-type',
+                # React dynamic ID patterns - target password inputs
+                'input[id^=":r"][type="password"]',
+                'input[id*=":r"][type="password"]:first-of-type'
             ]
             
             # Enhanced username filling with visibility checks
@@ -534,7 +629,28 @@ print(f"Response: {{response.text}}")
                     continue
             
             if not username_filled:
-                raise Exception("Could not find username field")
+                print("[FALLBACK] Trying positional input detection...")
+                # Fallback: Use positional detection for React forms
+                try:
+                    all_inputs = await self.page.query_selector_all('input')
+                    if len(all_inputs) >= 2:
+                        # Assume first non-password input is username
+                        for input_elem in all_inputs:
+                            input_type = await input_elem.get_attribute('type') or 'text'
+                            if input_type != 'password':
+                                await input_elem.click()
+                                await self.human_delay(200, 500)
+                                await self.page.keyboard.press('Control+a')
+                                await self.human_delay(100, 300)
+                                await input_elem.type(username, delay=random.randint(50, 150))
+                                print("[SUCCESS] Username filled using positional detection")
+                                username_filled = True
+                                break
+                except Exception as e:
+                    print(f"[ERROR] Positional detection failed: {e}")
+                
+                if not username_filled:
+                    raise Exception("Could not find username field")
             
             # Add human delay between username and password
             await self.human_delay(500, 1200)
@@ -558,7 +674,26 @@ print(f"Response: {{response.text}}")
                     continue
             
             if not password_filled:
-                raise Exception("Could not find password field")
+                print("[FALLBACK] Trying positional password detection...")
+                # Fallback: Use positional detection for password field
+                try:
+                    all_inputs = await self.page.query_selector_all('input')
+                    for input_elem in all_inputs:
+                        input_type = await input_elem.get_attribute('type') or 'text'
+                        if input_type == 'password':
+                            await input_elem.click()
+                            await self.human_delay(200, 500)
+                            await self.page.keyboard.press('Control+a')
+                            await self.human_delay(100, 300)
+                            await input_elem.type(password, delay=random.randint(50, 150))
+                            print("[SUCCESS] Password filled using positional detection")
+                            password_filled = True
+                            break
+                except Exception as e:
+                    print(f"[ERROR] Password positional detection failed: {e}")
+                
+                if not password_filled:
+                    raise Exception("Could not find password field")
             
             # Enhanced submit button detection
             submit_selectors = [
@@ -1104,20 +1239,77 @@ print(f"Response: {{response.text}}")
             # Wait for order form to load
             await asyncio.sleep(2)
             
-            # Fill order form
-            await self.fill_order_form()
+            # Get current market price (placeholder - should be updated with real market data)
+            current_price = 2650.0  # Default Gold price
+            
+            # Determine trade direction (placeholder - should be based on strategy signal)
+            is_long = True  # Default to long position
+            
+            # Fill order form with Fibonacci parameters
+            trade_info = await self.fill_order_form(is_long=is_long, entry_price=current_price)
             
             # Submit order
-            return await self.submit_order()
+            order_success = await self.submit_order()
+            
+            if order_success:
+                print(f"[SUCCESS] Order placed: {trade_info['contracts']} contracts of {trade_info['symbol']}")
+                print(f"[TRADE] Entry: ${trade_info['entry_price']} | TP: ${trade_info['take_profit']} | SL: ${trade_info['stop_loss']}")
+                
+                # Simulate trade outcome (in real implementation, this would monitor actual trade results)
+                # For now, we'll simulate a win with the expected profit
+                simulated_win = True  # This should be replaced with actual trade monitoring
+                profit_loss = trade_info['profit_target_usd'] if simulated_win else -trade_info['profit_target_usd'] * 0.4
+                
+                # Handle trade outcome and advance Fibonacci
+                daily_complete = await self.handle_trade_outcome(simulated_win, profit_loss)
+                
+                if daily_complete:
+                    print("[COMPLETE] Daily profit target reached! Trading session complete.")
+                
+                return True
+            else:
+                print("[ERROR] Order submission failed")
+                return False
             
         except Exception as e:
             print(f"[ERROR] Trade order placement failed: {e}")
             await self.page.screenshot(path='trade_error.png')
             return False
     
-    async def fill_order_form(self):
-        """Fill the order form with test values"""
-        print("[FORM] Filling order form...")
+    async def fill_order_form(self, is_long=True, entry_price=None):
+        """Fill the order form with Fibonacci strategy parameters"""
+        print("[FORM] Filling order form with Fibonacci strategy parameters...")
+        
+        # Update current session
+        self.current_session = self.get_current_session()
+        if not self.current_session:
+            print("[WARNING] No active trading session, using morning session defaults")
+            self.current_session = 'morning'
+        
+        # Get dynamic strategy parameters
+        symbol = CONFIG.FULL_SYMBOL  # F.US.GCE for Gold futures
+        contracts = self.get_fibonacci_contract_size(self.current_session)
+        profit_target_usd = self.get_current_fibonacci_target(self.current_session)
+        
+        # Calculate Gold futures pricing (GC: $100 per full point, 0.1 points = $10)
+        points_per_dollar = 0.01  # $1 = 0.01 points for GC
+        profit_target_points = profit_target_usd * points_per_dollar
+        
+        # Use current market price if not provided
+        if entry_price is None:
+            entry_price = 2650.0  # Default Gold price, should be updated with real market data
+        
+        # Calculate take profit and stop loss levels
+        if is_long:
+            take_profit = round(entry_price + profit_target_points, 1)
+            stop_loss = round(entry_price - (profit_target_points * 0.4), 1)  # 2.5:1 R:R
+        else:
+            take_profit = round(entry_price - profit_target_points, 1)
+            stop_loss = round(entry_price + (profit_target_points * 0.4), 1)  # 2.5:1 R:R
+        
+        print(f"[STRATEGY] Session: {self.current_session.upper()}")
+        print(f"[STRATEGY] Fibonacci Level: {self.session_fib_index[self.current_session]} (${profit_target_usd} target)")
+        print(f"[STRATEGY] Contracts: {contracts} | Entry: ${entry_price} | TP: ${take_profit} | SL: ${stop_loss}")
         
         # Symbol/Instrument selectors
         symbol_selectors = [
@@ -1146,32 +1338,118 @@ print(f"Response: {{response.text}}")
             '[data-testid="price-input"]'
         ]
         
-        # Fill symbol (example: BTCUSDT)
+        # Take Profit selectors
+        tp_selectors = [
+            'input[name="takeProfit"]',
+            'input[name="take_profit"]',
+            '.take-profit-input',
+            '#takeProfit',
+            '[data-testid="take-profit-input"]'
+        ]
+        
+        # Stop Loss selectors
+        sl_selectors = [
+            'input[name="stopLoss"]',
+            'input[name="stop_loss"]',
+            '.stop-loss-input',
+            '#stopLoss',
+            '[data-testid="stop-loss-input"]'
+        ]
+        
+        # Fill symbol (Gold futures)
         for selector in symbol_selectors:
             try:
-                await self.page.fill(selector, 'BTCUSDT')
-                print(f"[SUCCESS] Symbol filled: {selector}")
+                await self.page.fill(selector, symbol)
+                print(f"[SUCCESS] Symbol filled: {selector} = {symbol}")
                 break
             except Exception:
                 continue
         
-        # Fill quantity (small test amount)
+        # Fill quantity (contracts)
         for selector in quantity_selectors:
             try:
-                await self.page.fill(selector, '0.001')
-                print(f"[SUCCESS] Quantity filled: {selector}")
+                await self.page.fill(selector, str(contracts))
+                print(f"[SUCCESS] Quantity filled: {selector} = {contracts}")
                 break
             except Exception:
                 continue
         
-        # Fill price (if limit order)
+        # Fill entry price
         for selector in price_selectors:
             try:
-                await self.page.fill(selector, '50000')
-                print(f"[SUCCESS] Price filled: {selector}")
+                await self.page.fill(selector, str(entry_price))
+                print(f"[SUCCESS] Price filled: {selector} = {entry_price}")
                 break
             except Exception:
                 continue
+        
+        # Fill take profit
+        for selector in tp_selectors:
+            try:
+                await self.page.fill(selector, str(take_profit))
+                print(f"[SUCCESS] Take Profit filled: {selector} = {take_profit}")
+                break
+            except Exception:
+                continue
+        
+        # Fill stop loss
+        for selector in sl_selectors:
+            try:
+                await self.page.fill(selector, str(stop_loss))
+                print(f"[SUCCESS] Stop Loss filled: {selector} = {stop_loss}")
+                break
+            except Exception:
+                continue
+        
+        # Update trade tracking
+        self.daily_trades += 1
+        self.session_trades += 1
+        
+        return {
+            'symbol': symbol,
+            'contracts': contracts,
+            'entry_price': entry_price,
+            'take_profit': take_profit,
+            'stop_loss': stop_loss,
+            'profit_target_usd': profit_target_usd,
+            'session': self.current_session,
+            'fib_index': self.session_fib_index[self.current_session]
+        }
+    
+    async def handle_trade_outcome(self, is_win: bool, profit_loss: float = 0.0):
+        """Handle trade outcome and advance Fibonacci sequence"""
+        session = self.current_session or 'morning'
+        
+        if is_win:
+            old_target = self.get_current_fibonacci_target(session)
+            self.advance_fibonacci(session, True)
+            new_target = self.get_current_fibonacci_target(session)
+            self.daily_pnl += abs(profit_loss)
+            
+            print(f"[WIN] Session: {session.upper()} | Profit: ${profit_loss:.2f}")
+            print(f"[FIBONACCI] Advanced from ${old_target} to ${new_target}")
+            print(f"[DAILY] Total P&L: ${self.daily_pnl:.2f} | Trades: {self.daily_trades}")
+        else:
+            self.advance_fibonacci(session, False)  # Reset to first level
+            self.daily_pnl += profit_loss  # profit_loss will be negative for losses
+            
+            print(f"[LOSS] Session: {session.upper()} | Loss: ${profit_loss:.2f}")
+            print(f"[FIBONACCI] Reset to ${self.get_current_fibonacci_target(session)}")
+            print(f"[DAILY] Total P&L: ${self.daily_pnl:.2f} | Trades: {self.daily_trades}")
+        
+        # Check daily profit target
+        if self.daily_pnl >= CONFIG.DAILY_PROFIT_TARGET:
+            print(f"[SUCCESS] Daily profit target reached: ${self.daily_pnl:.2f} >= ${CONFIG.DAILY_PROFIT_TARGET}")
+            return True
+        
+        # Check session limits
+        if self.session_trades >= 3:  # Max 3 trades per session
+            print(f"[SESSION] {session.upper()} session complete: {self.session_trades} trades")
+            self.session_trades = 0
+            # Reset Fibonacci for next session
+            self.session_fib_index[session] = 0
+        
+        return False
     
     async def submit_order(self) -> bool:
         """Submit the trade order"""

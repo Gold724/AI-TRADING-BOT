@@ -1,10 +1,13 @@
 #!/bin/bash
 
-# Fix GitHub Secrets - SLACK_WEBHOOK_URL Issue
-# This script provides solutions for the missing SLACK_WEBHOOK_URL secret
+# 🔧 GitHub Actions Secrets & Permissions Fix Script
+# This script helps fix the critical GitHub Actions issues
+# Updated: $(date)
 
-echo "🔧 Fixing GitHub Actions SLACK_WEBHOOK_URL Issue..."
-echo "==========================================="
+set -e
+
+echo "🔧 GitHub Actions CI/CD Fix Script - UPDATED"
+echo "=============================================="
 
 # Solution 1: Add SLACK_WEBHOOK_URL to GitHub Secrets (Recommended)
 echo "📋 SOLUTION 1: Add SLACK_WEBHOOK_URL to GitHub Repository Secrets"

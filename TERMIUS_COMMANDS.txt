@@ -1,0 +1,41 @@
+# AI Trading Sentinel - Termius Commands
+# Copy and paste these commands one by one in Termius
+
+# Step 1: Extract Frontend Files
+cd /root
+sudo mkdir -p /var/www/html/backup
+sudo cp -r /var/www/html/* /var/www/html/backup/ 2>/dev/null || true
+sudo tar -xzf frontend-deployment.tar.gz -C /var/www/html/
+sudo chown -R www-data:www-data /var/www/html/
+sudo chmod -R 755 /var/www/html/
+echo "✅ Frontend extracted"
+
+# Step 2: Configure Nginx
+sudo cp nginx-frontend.conf /etc/nginx/sites-available/ai-trading-sentinel
+sudo ln -sf /etc/nginx/sites-available/ai-trading-sentinel /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl reload nginx
+echo "✅ Nginx configured"
+
+# Step 3: Setup Monitoring
+chmod +x monitoring_setup.sh
+sudo ./monitoring_setup.sh
+echo "✅ Monitoring setup complete"
+
+# Step 4: Verify Deployment
+chmod +x verify_deployment.sh
+./verify_deployment.sh
+echo "✅ Verification complete"
+
+# Step 5: Final Status Check
+sudo systemctl status nginx ai-trading-backend monitoring-dashboard
+sudo netstat -tlnp | grep -E ':(80|5000|8080)'
+curl -s http://localhost/ | head -5
+curl -s http://localhost/api/health
+curl -s http://localhost:8080/
+
+# Access URLs:
+# Frontend: http://185.244.214.70/
+# API: http://185.244.214.70/api/
+# Monitoring: http://185.244.214.70:8080/

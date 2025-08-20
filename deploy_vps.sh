@@ -1,14 +1,39 @@
 #!/bin/bash
-# 🚀 AI Trading Sentinel - IP Deployment Script
-# Run this on your Contabo VPS
+# AI Trading Sentinel - Contabo VPS Deployment Script
+# TRAE-SentinelOps: Complete 24/7 production deployment for Contabo VPS
 
-set -e
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
+PROJECT_NAME="ai-trading-sentinel"
+PROJECT_DIR="/opt/$PROJECT_NAME"
+GITHUB_REPO="${GITHUB_REPO:-https://github.com/yourusername/ai-trading-sentinel.git}"
+BRANCH="${BRANCH:-main}"
+SERVICE_USER="tradebot"
+DOMAIN="${DOMAIN:-trading.yourdomain.com}"
+
+# Default ports
+BOT_PORT=8000
+API_PORT=5000
+FRONTEND_PORT=3000
+REDIS_PORT=6379
+
+# Logging
+LOG_FILE="/var/log/tradebot-setup.log"
+exec 1> >(tee -a "$LOG_FILE")
+exec 2> >(tee -a "$LOG_FILE" >&2)
 
 VPS_IP="192.168.1.100"
-GITHUB_REPO="https://github.com/Gold724/AI-TRADING-BOT.git"
 APP_DIR="/opt/ai-trading-sentinel"
 
-echo "🚀 Starting AI Trading Sentinel deployment on $VPS_IP"
+echo -e "${GREEN}🚀 Starting AI Trading Sentinel deployment on $VPS_IP${NC}"
 
 # 1. System Updates
 echo "📦 Updating system packages..."

@@ -1,95 +1,170 @@
-# AI Trading Sentinel - Cloud Deployment Configuration
-# Optimized for production cloud environments
+# AI Trading Sentinel - Production Cloud Deployment
+# TRAE-SentinelOps: Complete 24/7 Containerized Solution
+# Version: 2.0.0 - Enhanced for Contabo VPS
 
 version: '3.8'
 
 services:
-  # Main Trading Bot Service
-  trading-bot:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ai-trading-sentinel
-    restart: unless-stopped
-    environment:
-      - BULENOX_USERNAME=BX64883
-      - BULENOX_PASSWORD=XujhMzFf6K
-      - ENVIRONMENT=production
-      - HEADLESS=true
-      - LOG_LEVEL=INFO
-      - TZ=UTC
-    volumes:
-      - ./logs:/home/tradebot/app/logs
-      - ./screenshots:/home/tradebot/app/screenshots
-      - ./data:/home/tradebot/app/data
-      - ./backups:/home/tradebot/app/backups
-    ports:
-      - "8080:8080"
-    networks:
-      - trading-network
-    healthcheck:
-      test: ["CMD", "python3", "-c", "import os; exit(0 if os.path.exists('logs/health.log') else 1)"]
-      interval: 60s
-      timeout: 30s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-          cpus: '1.0'
-        reservations:
-          memory: 1G
-          cpus: '0.5'
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "5"
-
-  # Redis for caching and session management
+  # Redis for session management and caching
   redis:
     image: redis:7-alpine
-    container_name: trading-redis
+    container_name: sentinel-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-tradingbot123}
+    ports:
+      - "6379:6379"
     volumes:
-      - redis-data:/data
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     networks:
-      - trading-network
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.2'
+      - sentinel-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     logging:
       driver: "json-file"
       options:
         max-size: "50m"
         max-file: "3"
 
-  # Monitoring Dashboard
-  dashboard:
+  # Main Trading Bot Service
+  tradebot:
     build:
       context: .
-      dockerfile: Dockerfile.dashboard
-    container_name: trading-dashboard
+      dockerfile: Dockerfile.bot
+    container_name: sentinel-bot
     restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
     environment:
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-tradingbot123}@redis:6379/0
-      - DASHBOARD_SECRET=${DASHBOARD_SECRET:-dashboard123}
+      - REDIS_URL=redis://redis:6379
+      - TRADING_MODE=${TRADING_MODE:-live}
+      - BULENOX_USERNAME=${BULENOX_USERNAME:-BX64883}
+      - BULENOX_PASSWORD=${BULENOX_PASSWORD:-XujhMzFf6K}
+      - MAX_DAILY_TRADES=${MAX_DAILY_TRADES:-21}
+      - DAILY_PROFIT_TARGET=${DAILY_PROFIT_TARGET:-300}
+      - MAX_DRAWDOWN=${MAX_DRAWDOWN:-150}
+      - FIBONACCI_SEQUENCE=${FIBONACCI_SEQUENCE:-10,10,20,30,50,80,130}
+      - GOLD_SYMBOL=${GOLD_SYMBOL:-GCZ25}
+      - DEFAULT_CONTRACTS=${DEFAULT_CONTRACTS:-1}
+      - MAX_CONTRACTS=${MAX_CONTRACTS:-3}
+      - HEADLESS=${HEADLESS:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TZ=UTC
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - EMAIL_ALERTS=${EMAIL_ALERTS}
+      - SMTP_SERVER=${SMTP_SERVER}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./screenshots:/app/screenshots
+      - ./backups:/app/backups
+      - /dev/shm:/dev/shm  # Shared memory for Playwright
+    shm_size: 2gb
+    networks:
+      - sentinel-network
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_ADMIN
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=10)"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+          cpus: '1.5'
+        reservations:
+          memory: 1.5G
+          cpus: '0.75'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # Flask API Backend
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: sentinel-api
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=${SECRET_KEY:-$(openssl rand -hex 32)}
+      - JWT_SECRET=${JWT_SECRET:-$(openssl rand -hex 32)}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:80}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///data/trading.db}
+    volumes:
+      - ./logs:/app/logs:ro
+      - ./data:/app/data
+    networks:
+      - sentinel-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # React Frontend Dashboard
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:5000}
+        - VITE_WEBSOCKET_URL=${VITE_WEBSOCKET_URL:-ws://localhost:5000}
+    container_name: sentinel-frontend
+    restart: unless-stopped
     ports:
       - "3000:3000"
-    networks:
-      - trading-network
     depends_on:
-      - redis
-      - trading-bot
+      - api
+    networks:
+      - sentinel-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
           memory: 512M
           cpus: '0.3'
+        reservations:
+          memory: 256M
+          cpus: '0.15'
     logging:
       driver: "json-file"
       options:
@@ -99,20 +174,26 @@ services:
   # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
-    container_name: trading-nginx
+    container_name: sentinel-nginx
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./logs/nginx:/var/log/nginx
+      - ./ssl:/etc/nginx/ssl:ro
     networks:
-      - trading-network
+      - sentinel-network
     depends_on:
-      - trading-bot
-      - dashboard
+      - frontend
+      - api
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -124,36 +205,80 @@ services:
         max-size: "50m"
         max-file: "3"
 
-  # Log Aggregator (Optional)
+  # Monitoring and Health Checks
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
+    container_name: sentinel-monitor
+    restart: unless-stopped
+    depends_on:
+      - tradebot
+      - api
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - EMAIL_ALERTS=${EMAIL_ALERTS}
+      - SMTP_SERVER=${SMTP_SERVER}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-300}
+      - ALERT_COOLDOWN=${ALERT_COOLDOWN:-1800}
+    volumes:
+      - ./logs:/app/logs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - sentinel-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.2'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # Log Rotation Service
   logrotate:
     image: alpine:latest
-    container_name: trading-logrotate
+    container_name: sentinel-logrotate
     restart: unless-stopped
     volumes:
       - ./logs:/logs
-      - ./scripts/logrotate.sh:/usr/local/bin/logrotate.sh:ro
-    command: |
-      sh -c '
-        while true; do
-          /usr/local/bin/logrotate.sh
-          sleep 3600
-        done
-      '
+      - ./scripts/logrotate.conf:/etc/logrotate.conf:ro
+    command: >
+      sh -c "apk add --no-cache logrotate &&
+      while true; do
+        logrotate -f /etc/logrotate.conf
+        sleep 86400
+      done"
     networks:
-      - trading-network
+      - sentinel-network
     deploy:
       resources:
         limits:
           memory: 64M
           cpus: '0.05'
 
+volumes:
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/redis
+
 networks:
-  trading-network:
+  sentinel-network:
+    name: sentinel-network
     driver: bridge
     ipam:
       config:
         - subnet: 172.20.0.0/16
-
-volumes:
-  redis-data:
-    driver: local
+          gateway: 172.20.0.1
+    driver_opts:
+      com.docker.network.bridge.name: sentinel-br0

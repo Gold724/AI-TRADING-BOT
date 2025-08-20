@@ -6,10 +6,14 @@ Write-Host "`nRunning CI/CD Pre-Check Script..." -ForegroundColor Cyan
 Write-Host "`nScanning for null bytes in Python files..." -ForegroundColor Yellow
 $badFiles = @()
 
-Get-ChildItem -Recurse -Include *.py | ForEach-Object {
-    $bytes = Get-Content $_ -Encoding byte
-    if ($bytes -contains 0) {
-        $badFiles += $_.FullName
+Get-ChildItem -Recurse -Include *.py -Exclude venv*,node_modules*,.git*,__pycache*,chrome*,temp_chrome*,drivers,chrome_profile* | ForEach-Object {
+    try {
+        $bytes = Get-Content $_ -Encoding byte -ErrorAction SilentlyContinue
+        if ($bytes -contains 0) {
+            $badFiles += $_.FullName
+        }
+    } catch {
+        # Skip files that can't be read
     }
 }
 

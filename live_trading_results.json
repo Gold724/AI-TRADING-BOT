@@ -1,0 +1,12 @@
+{
+  "session_id": "session_20250819_231521",
+  "total_trades": 3,
+  "daily_profit": 990.0,
+  "target_achieved": false,
+  "contract_size": 1,
+  "features_tested": [
+    "trailing_stop",
+    "take_profit",
+    "contract_sizing"
+  ]
+}

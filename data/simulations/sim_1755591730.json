@@ -1,0 +1,118 @@
+{
+  "simulation_id": "sim_1755591730",
+  "start_time": "2025-08-19T11:22:10.184085",
+  "last_updated": "2025-08-19T11:22:14.192598",
+  "balances": {
+    "SCALPING_DEMO": 10000.0
+  },
+  "trades": [
+    {
+      "trade_id": "T17555917305691",
+      "account_id": "SCALPING_DEMO",
+      "broker": "bulenox_simulation",
+      "symbol": "XAUUSD",
+      "action": "BUY",
+      "lot_size": 0.01,
+      "position_size": 1000.0,
+      "open_price": 1.6891151849253243,
+      "take_profit": 1.9291753709253243,
+      "stop_loss": 1.4491049989253242,
+      "open_time": "2025-08-19T11:22:10.186067",
+      "status": "OPEN",
+      "pip_value": 0.1,
+      "simulated": true
+    },
+    {
+      "trade_id": "T17555917328645",
+      "account_id": "SCALPING_DEMO",
+      "broker": "bulenox_simulation",
+      "symbol": "EURUSD",
+      "action": "SELL",
+      "lot_size": 0.01,
+      "position_size": 1000.0,
+      "open_price": 1.2924260151093656,
+      "take_profit": 1.0523939061093657,
+      "stop_loss": 1.5324582541093656,
+      "open_time": "2025-08-19T11:22:12.189151",
+      "status": "OPEN",
+      "pip_value": 0.1,
+      "simulated": true
+    },
+    {
+      "trade_id": "T17555917346092",
+      "account_id": "SCALPING_DEMO",
+      "broker": "bulenox_simulation",
+      "symbol": "GBPUSD",
+      "action": "BUY",
+      "lot_size": 0.02,
+      "position_size": 2000.0,
+      "open_price": 1.9461999545560362,
+      "take_profit": 2.186234227556036,
+      "stop_loss": 1.7061658115560363,
+      "open_time": "2025-08-19T11:22:14.192585",
+      "status": "OPEN",
+      "pip_value": 0.2,
+      "simulated": true
+    }
+  ],
+  "positions": {
+    "SCALPING_DEMO": [
+      {
+        "trade_id": "T17555917305691",
+        "account_id": "SCALPING_DEMO",
+        "broker": "bulenox_simulation",
+        "symbol": "XAUUSD",
+        "action": "BUY",
+        "lot_size": 0.01,
+        "position_size": 1000.0,
+        "open_price": 1.6891151849253243,
+        "take_profit": 1.9291753709253243,
+        "stop_loss": 1.4491049989253242,
+        "open_time": "2025-08-19T11:22:10.186067",
+        "status": "OPEN",
+        "pip_value": 0.1,
+        "simulated": true
+      },
+      {
+        "trade_id": "T17555917328645",
+        "account_id": "SCALPING_DEMO",
+        "broker": "bulenox_simulation",
+        "symbol": "EURUSD",
+        "action": "SELL",
+        "lot_size": 0.01,
+        "position_size": 1000.0,
+        "open_price": 1.2924260151093656,
+        "take_profit": 1.0523939061093657,
+        "stop_loss": 1.5324582541093656,
+        "open_time": "2025-08-19T11:22:12.189151",
+        "status": "OPEN",
+        "pip_value": 0.1,
+        "simulated": true
+      },
+      {
+        "trade_id": "T17555917346092",
+        "account_id": "SCALPING_DEMO",
+        "broker": "bulenox_simulation",
+        "symbol": "GBPUSD",
+        "action": "BUY",
+        "lot_size": 0.02,
+        "position_size": 2000.0,
+        "open_price": 1.9461999545560362,
+        "take_profit": 2.186234227556036,
+        "stop_loss": 1.7061658115560363,
+        "open_time": "2025-08-19T11:22:14.192585",
+        "status": "OPEN",
+        "pip_value": 0.2,
+        "simulated": true
+      }
+    ]
+  },
+  "market_data": {
+    "prices": {
+      "XAUUSD": 1.6891151849253243,
+      "EURUSD": 1.2924260151093656,
+      "GBPUSD": 1.9461999545560362,
+      "USDJPY": 1.49158
+    }
+  }
+}

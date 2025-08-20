@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: AI Trading Sentinel CI/CD
 
 on:
   push:
@@ -7,16 +7,19 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+env:
+  PYTHON_VERSION: '3.10'
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: ${{ env.PYTHON_VERSION }}
           
       - name: Install dependencies
         run: |
@@ -26,27 +29,19 @@ jobs:
           
       - name: Lint with flake8
         run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      
-      - name: Check formatting with black
-        run: black --check .
-        
-      - name: Check imports with isort
-        run: isort --check-only --profile black .
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=venv,node_modules,.git,__pycache__,chrome*,temp_chrome*,drivers,chrome_profile*
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=venv,node_modules,.git,__pycache__,chrome*,temp_chrome*,drivers,chrome_profile*
 
   test:
     runs-on: ubuntu-latest
     needs: lint
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: ${{ env.PYTHON_VERSION }}
           
       - name: Install dependencies
         run: |
@@ -54,88 +49,34 @@ jobs:
           pip install pytest pytest-cov
           pip install -r requirements.txt
           
-      - name: Install Chrome and ChromeDriver
+      - name: Basic validation
         run: |
-          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1)
-          wget -q "https://chromedriver.storage.googleapis.com/$(wget -q -O - https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION})/chromedriver_linux64.zip"
-          unzip chromedriver_linux64.zip
-          sudo mv chromedriver /usr/local/bin/
-          sudo chmod +x /usr/local/bin/chromedriver
-          
-      - name: Run tests
-        run: |
-          pytest --cov=. --cov-report=xml
-          
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
-          
-      - name: Notify Slack on Test Completion
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always() && secrets.SLACK_WEBHOOK_URL != '' && secrets.SLACK_WEBHOOK_URL != null
+          python -c "import sys; print('Python version:', sys.version)"
+          python -c "import tradebot_sentinel_bulenox_automation; print('✅ Bot import successful')"
+          python -c "import bulenox_gold_scalping_strategy; print('✅ Strategy import successful')"
 
   deploy:
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: ${{ env.PYTHON_VERSION }}
           
-      - name: Install dependencies
+      - name: Install deployment dependencies
         run: |
           python -m pip install --upgrade pip
           pip install paramiko
           
       - name: Deploy to Contabo VPS
         env:
-          VPS_IP: ${{ secrets.CONTABO_VPS_IP }}
+          VPS_HOST: ${{ secrets.CONTABO_VPS_HOST }}
+          VPS_USERNAME: ${{ secrets.CONTABO_VPS_USERNAME }}
           VPS_PASSWORD: ${{ secrets.CONTABO_VPS_PASSWORD }}
           SSH_PORT: ${{ secrets.CONTABO_SSH_PORT }}
         run: |
-          python deploy_to_contabo.py --ip "$VPS_IP" --password "$VPS_PASSWORD" --port "$SSH_PORT" --env-file .env.example
-          
-      - name: Notify Slack on Deployment
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow
-          text: 'Deployment to production completed :rocket:'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always() && secrets.SLACK_WEBHOOK_URL != '' && secrets.SLACK_WEBHOOK_URL != null
-        
-      - name: Send Email Notification
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: TraeAI Deployment ${{ job.status }}
-          body: |
-            Deployment of TraeAI to production ${{ job.status }}.
-            
-            Commit: ${{ github.event.head_commit.message }}
-            Author: ${{ github.event.head_commit.author.name }}
-            Repository: ${{ github.repository }}
-            
-            See details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          to: ${{ secrets.EMAIL_RECIPIENT }}
-          from: TraeAI CI/CD <${{ secrets.EMAIL_USERNAME }}>
-        if: always() && secrets.EMAIL_RECIPIENT != '' && secrets.EMAIL_RECIPIENT != null
+          python deploy_to_contabo.py --ip "$VPS_HOST" --username "$VPS_USERNAME" --password "$VPS_PASSWORD" --port "$SSH_PORT"

@@ -1,0 +1,22 @@
+[
+    {
+        "symbol": "EURUSD",
+        "order_type": "MARKET",
+        "direction": "BUY",
+        "volume": 0.01,
+        "entry_price": null,
+        "stop_loss": 1.09,
+        "take_profit": 1.11,
+        "comment": "Test order",
+        "strategy": "Test",
+        "signal_id": "",
+        "status": "CLOSED",
+        "order_id": "1000",
+        "open_time": "2025-08-19T23:12:25.411966",
+        "close_time": "2025-08-19T23:12:30.413985",
+        "profit": -0.19999999999997797,
+        "commission": 0.0,
+        "swap": 0.0,
+        "error": null
+    }
+]

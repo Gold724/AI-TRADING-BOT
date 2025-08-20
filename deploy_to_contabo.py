@@ -55,7 +55,8 @@ def parse_args():
         description="Deploy AI Trading Sentinel to Contabo VPS"
     )
     parser.add_argument("--ip", required=True, help="VPS IP address")
-    parser.add_argument("--password", required=True, help="VPS root password")
+    parser.add_argument("--username", default="root", help="VPS username (default: root)")
+    parser.add_argument("--password", required=True, help="VPS password")
     parser.add_argument("--port", default=22, type=int, help="SSH port (default: 22)")
     parser.add_argument(
         "--env-file", default=".env.example", help="Path to .env file to upload"
@@ -303,7 +304,7 @@ def main():
     print()
 
     # Connect to VPS
-    client = create_ssh_client(args.ip, args.port, "root", args.password)
+    client = create_ssh_client(args.ip, args.port, args.username, args.password)
 
     # Deploy the trading sentinel
     if (
