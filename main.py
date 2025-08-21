@@ -10,12 +10,12 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 from dotenv import load_dotenv
 
-# Configure logging first
+# Configure logging first with UTF-8 encoding
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("logs/trae.log"),
+        logging.FileHandler("logs/trae.log", encoding='utf-8'),
         logging.StreamHandler()
     ]
 )

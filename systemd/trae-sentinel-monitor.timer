@@ -1,0 +1,16 @@
+[Unit]
+Description=Trae AI Trading Sentinel Health Monitor Timer
+Requires=trae-sentinel-monitor.service
+
+[Timer]
+# Run health check every 2 minutes
+OnCalendar=*:0/2
+# Run immediately on boot
+OnBootSec=30
+# Ensure timer persists across reboots
+Persistent=true
+# Randomize execution time by up to 10 seconds to avoid system load spikes
+RandomizedDelaySec=10
+
+[Install]
+WantedBy=timers.target

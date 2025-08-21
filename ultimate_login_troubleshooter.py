@@ -104,13 +104,13 @@ DOMAIN_CONFIGS = [
     },
     {
         "name": "Alt Domain 1", 
-        "login_url": "https://app.bulenox.com/login",
+        "login_url": "https://app.bulenox.projectx.com/login",
         "dashboard_urls": ["https://app.bulenox.com/dashboard", "https://app.bulenox.com/trade"],
         "priority": 2
     },
     {
         "name": "Alt Domain 2",
-        "login_url": "https://trade.bulenox.com/login", 
+        "login_url": "https://trade.bulenox.projectx.com/login", 
         "dashboard_urls": ["https://trade.bulenox.com/dashboard", "https://trade.bulenox.com/trade"],
         "priority": 3
     }

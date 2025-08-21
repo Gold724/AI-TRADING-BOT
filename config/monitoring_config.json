@@ -1,0 +1,110 @@
+{
+  "monitoring": {
+    "check_interval": 60,
+    "metrics_save_interval": 300,
+    "chart_update_interval": 3600,
+    "alert_cooldown": 1800,
+    "max_history_size": 1000,
+    "health_check_timeout": 30
+  },
+  "thresholds": {
+    "system": {
+      "cpu_usage": 85.0,
+      "memory_usage": 90.0,
+      "disk_usage": 95.0,
+      "load_average": 5.0,
+      "temperature": 80.0
+    },
+    "trading": {
+      "daily_drawdown": 5.0,
+      "consecutive_losses": 5,
+      "win_rate_min": 40.0,
+      "balance_drop": 10.0,
+      "max_open_trades": 10,
+      "risk_per_trade": 2.0
+    },
+    "network": {
+      "api_latency": 2000,
+      "response_timeout": 10000,
+      "connection_failures": 3,
+      "packet_loss": 5.0
+    },
+    "services": {
+      "backend_response_time": 5.0,
+      "frontend_response_time": 3.0,
+      "database_response_time": 2.0,
+      "bulenox_response_time": 10.0
+    }
+  },
+  "services": {
+    "backend": {
+      "url": "http://localhost:5000/api/health",
+      "enabled": true,
+      "critical": true
+    },
+    "frontend": {
+      "url": "http://localhost:3000",
+      "enabled": true,
+      "critical": false
+    },
+    "bulenox_api": {
+      "url": "http://localhost:5000/api/bulenox/status",
+      "enabled": true,
+      "critical": true
+    },
+    "trading_bot": {
+      "process_name": "python",
+      "script_name": "main.py",
+      "enabled": true,
+      "critical": true
+    },
+    "health_monitor": {
+      "process_name": "python",
+      "script_name": "health_check.py",
+      "enabled": true,
+      "critical": false
+    }
+  },
+  "alerts": {
+    "escalation_levels": {
+      "info": {
+        "cooldown": 3600,
+        "channels": ["slack"]
+      },
+      "warning": {
+        "cooldown": 1800,
+        "channels": ["slack", "email"]
+      },
+      "error": {
+        "cooldown": 900,
+        "channels": ["slack", "email"]
+      },
+      "critical": {
+        "cooldown": 300,
+        "channels": ["slack", "email", "sms"]
+      },
+      "emergency": {
+        "cooldown": 0,
+        "channels": ["slack", "email", "sms", "webhook"]
+      }
+    },
+    "retry_policy": {
+      "max_retries": 3,
+      "retry_delay": 60,
+      "exponential_backoff": true
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/monitoring.log",
+    "max_size": "100MB",
+    "backup_count": 5,
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  },
+  "data_retention": {
+    "metrics_days": 30,
+    "alerts_days": 90,
+    "logs_days": 7,
+    "cleanup_interval": 86400
+  }
+}

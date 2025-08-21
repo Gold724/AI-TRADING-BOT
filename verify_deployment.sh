@@ -1,8 +1,93 @@
 #!/bin/bash
-# AI Trading Sentinel - Deployment Verification Script
-# Verify that all services are running correctly after deployment
 
-set -e
+# AI Trading Sentinel - Deployment Verification Script
+# TRAE-SentinelOps: Complete deployment testing and validation
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_DIR="/var/log/trae-sentinel"
+LOG_FILE="${LOG_DIR}/deployment_verification.log"
+TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+REPORT_FILE="${LOG_DIR}/deployment_report_${TIMESTAMP}.json"
+
+# Deployment configuration
+DEPLOY_USER="trae-sentinel"
+DEPLOY_DIR="/opt/trae-sentinel"
+CONFIG_DIR="/etc/trae-sentinel"
+SERVICE_DIR="/etc/systemd/system"
+NGINX_CONFIG="/etc/nginx/sites-available/trae-sentinel"
+
+# Test results
+declare -a TEST_RESULTS=()
+TOTAL_TESTS=0
+PASSED_TESTS=0
+FAILED_TESTS=0
+
+# Logging function
+log() {
+    local level=$1
+    shift
+    local message="$*"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] [$level] $message" | tee -a "$LOG_FILE"
+}
+
+# Print colored output
+print_status() {
+    local status=$1
+    local message=$2
+    case $status in
+        "PASS")
+            echo -e "${GREEN}✅ PASS${NC}: $message"
+            ;;
+        "FAIL")
+            echo -e "${RED}❌ FAIL${NC}: $message"
+            ;;
+        "WARN")
+            echo -e "${YELLOW}⚠️  WARN${NC}: $message"
+            ;;
+        "INFO")
+            echo -e "${BLUE}ℹ️  INFO${NC}: $message"
+            ;;
+    esac
+}
+
+# Add test result
+add_test_result() {
+    local test_name="$1"
+    local status="$2"
+    local message="$3"
+    local details="${4:-}"
+    
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    
+    if [[ "$status" == "PASS" ]]; then
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+    else
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+    fi
+    
+    TEST_RESULTS+=("$test_name|$status|$message|$details")
+    print_status "$status" "$test_name: $message"
+    log "INFO" "Test: $test_name - $status - $message"
+}
+
+# Check if running as root
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        log "ERROR" "This script must be run as root"
+        exit 1
+    fi
+}
 
 echo "🔍 AI Trading Sentinel - Deployment Verification"
 echo "==============================================="
@@ -12,13 +97,6 @@ VPS_IP=$(curl -s ifconfig.me 2>/dev/null || echo "localhost")
 BACKEND_PORT="8080"
 FRONTEND_PORT="80"
 MONITORING_PORT="3000"
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
 
 # Function to print colored output
 print_status() {

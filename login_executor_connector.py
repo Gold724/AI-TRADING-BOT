@@ -142,7 +142,7 @@ class BulenoxConnector:
                 os.environ["BULENOX_PROFILE_NAME"] = f"Profile {current_profile}"
                 
                 # Attempt login with AI-powered approach
-                self.driver = ai_login_bulenox(debug=self.debug, profile_index=current_profile)
+                self.driver = ai_login_bulenox(debug=self.debug)
                 
                 if self.driver:
                     # Update heartbeat status

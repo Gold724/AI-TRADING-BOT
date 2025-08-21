@@ -1,0 +1,230 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+    service-type: main
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- if and (eq .Values.service.type "LoadBalancer") .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  {{- end }}
+  {{- if and (eq .Values.service.type "LoadBalancer") .Values.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- range .Values.service.loadBalancerSourceRanges }}
+    - {{ . }}
+    {{- end }}
+  {{- end }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
+      {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+    {{- range .Values.service.additionalPorts }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      protocol: {{ .protocol | default "TCP" }}
+      name: {{ .name }}
+      {{- if and (or (eq $.Values.service.type "NodePort") (eq $.Values.service.type "LoadBalancer")) .nodePort }}
+      nodePort: {{ .nodePort }}
+      {{- end }}
+    {{- end }}
+  selector:
+    {{- include "trading-sentinel.selectorLabels" . | nindent 4 }}
+  {{- if eq .Values.service.type "ClusterIP" }}
+  clusterIP: {{ .Values.service.clusterIP | default "" }}
+  {{- end }}
+  {{- if .Values.service.sessionAffinity }}
+  sessionAffinity: {{ .Values.service.sessionAffinity }}
+  {{- if .Values.service.sessionAffinityConfig }}
+  sessionAffinityConfig:
+    {{- toYaml .Values.service.sessionAffinityConfig | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
+  {{- end }}
+  {{- if .Values.service.healthCheckNodePort }}
+  healthCheckNodePort: {{ .Values.service.healthCheckNodePort }}
+  {{- end }}
+
+---
+{{- if .Values.app.websocket.enabled }}
+# WebSocket Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}-websocket
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+    service-type: websocket
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+    {{- with .Values.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.app.websocket.port }}
+      targetPort: websocket
+      protocol: TCP
+      name: websocket
+  selector:
+    {{- include "trading-sentinel.selectorLabels" . | nindent 4 }}
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
+{{- end }}
+
+---
+{{- if .Values.monitoring.metrics.enabled }}
+# Metrics Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}-metrics
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+    service-type: metrics
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ .Values.monitoring.metrics.port | quote }}
+    prometheus.io/path: {{ .Values.monitoring.metrics.path | quote }}
+    {{- with .Values.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.monitoring.metrics.port }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    - port: 9100
+      targetPort: node-metrics
+      protocol: TCP
+      name: node-metrics
+  selector:
+    {{- include "trading-sentinel.selectorLabels" . | nindent 4 }}
+{{- end }}
+
+---
+# Headless Service for StatefulSet-like behavior
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}-headless
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+    service-type: headless
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: {{ .Values.app.api.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    {{- if .Values.app.websocket.enabled }}
+    - port: {{ .Values.app.websocket.port }}
+      targetPort: websocket
+      protocol: TCP
+      name: websocket
+    {{- end }}
+    {{- if .Values.monitoring.metrics.enabled }}
+    - port: {{ .Values.monitoring.metrics.port }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    {{- end }}
+  selector:
+    {{- include "trading-sentinel.selectorLabels" . | nindent 4 }}
+
+---
+{{- if and .Values.service.external.enabled .Values.service.external.database }}
+# External Database Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}-external-db
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+    service-type: external-database
+spec:
+  type: ExternalName
+  externalName: {{ .Values.service.external.database.host }}
+  ports:
+    - port: {{ .Values.service.external.database.port | default 5432 }}
+      targetPort: {{ .Values.service.external.database.port | default 5432 }}
+      protocol: TCP
+      name: postgresql
+{{- end }}
+
+---
+{{- if and .Values.service.external.enabled .Values.service.external.redis }}
+# External Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}-external-redis
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+    service-type: external-redis
+spec:
+  type: ExternalName
+  externalName: {{ .Values.service.external.redis.host }}
+  ports:
+    - port: {{ .Values.service.external.redis.port | default 6379 }}
+      targetPort: {{ .Values.service.external.redis.port | default 6379 }}
+      protocol: TCP
+      name: redis
+{{- end }}
+
+---
+{{- if .Values.app.environment == "development" }}
+# Development Debug Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}-debug
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+    service-type: debug
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  type: NodePort
+  ports:
+    - port: 5678
+      targetPort: 5678
+      protocol: TCP
+      name: debugpy
+      nodePort: 30678
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: debug-ui
+      nodePort: 30680
+  selector:
+    {{- include "trading-sentinel.selectorLabels" . | nindent 4 }}
+{{- end }}

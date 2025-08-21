@@ -1,32 +1,35 @@
 #!/usr/bin/env python3
 """
-AI Trading Sentinel - Monitoring & Alerting System
-Comprehensive 24/7 monitoring for trading operations
+AI Trading Sentinel - Automated Monitoring & Health Check System
+This script sets up comprehensive monitoring with alerts and automated recovery.
 """
 
 import os
-import time
+import sys
 import json
+import time
+import smtplib
 import psutil
 import requests
-import smtplib
+import subprocess
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from pathlib import Path
 from typing import Dict, List, Optional
 import logging
 from dataclasses import dataclass
-import subprocess
 
-# Configure logging
+# Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('monitoring.log'),
+        logging.FileHandler('/home/aitrading/ai-trading-sentinel/logs/monitoring.log'),
         logging.StreamHandler()
     ]
 )
+logger = logging.getLogger(__name__)
 
 @dataclass
 class HealthCheck:

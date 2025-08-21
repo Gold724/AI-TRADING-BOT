@@ -15,7 +15,7 @@ def execute_bulenox_trade(token, symbol="EURUSD", volume=0.01, side="buy", trade
     Returns:
         dict: JSON response from the API
     """
-    url = 'https://bulenox.com/api/trade'
+    url = 'https://bulenox.projectx.com/api/trade'
     
     headers = {
         'authority': 'bulenox.com',
@@ -23,8 +23,8 @@ def execute_bulenox_trade(token, symbol="EURUSD", volume=0.01, side="buy", trade
         'accept-language': 'en-US,en;q=0.9',
         'authorization': f'Bearer {token}',
         'content-type': 'application/json',
-        'origin': 'https://bulenox.com',
-        'referer': 'https://bulenox.com/trade',
+        'origin': 'https://bulenox.projectx.com',
+        'referer': 'https://bulenox.projectx.com/trade',
         'sec-ch-ua': '"Chromium";v="112"',
         'sec-ch-ua-mobile': '?0',
         'sec-ch-ua-platform': '"Windows"',

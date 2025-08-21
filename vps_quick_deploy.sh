@@ -162,7 +162,7 @@ if [ ! -f ".env" ]; then
 # Bulenox Configuration
 BULENOX_EMAIL=your_email@example.com
 BULENOX_PASSWORD=your_password
-BULENOX_BASE_URL=https://bulenox.com
+BULENOX_BASE_URL=https://bulenox.projectx.com
 
 # Trading Configuration
 TRADING_MODE=demo

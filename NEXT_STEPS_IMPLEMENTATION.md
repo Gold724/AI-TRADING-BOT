@@ -64,7 +64,7 @@ nano .env
 # Bulenox Broker Credentials
 BULENOX_USERNAME=your_username
 BULENOX_PASSWORD=your_password
-BULENOX_LOGIN_URL=https://bulenox.com/login
+BULENOX_LOGIN_URL=https://bulenox.projectx.com/login
 
 # Trading Configuration
 TRADING_MODE=LIVE  # or DEMO for testing

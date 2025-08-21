@@ -52,7 +52,7 @@ Replace these values in the `.env.production` file:
 # ═══════════════════════════════════════
 BULENOX_USERNAME=your_actual_username
 BULENOX_PASSWORD=your_actual_password
-BULENOX_LOGIN_URL=https://bulenox.com/login
+BULENOX_LOGIN_URL=https://bulenox.projectx.com/login
 
 # ═══════════════════════════════════════
 # 🌐 PRODUCTION SETTINGS

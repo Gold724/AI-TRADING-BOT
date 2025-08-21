@@ -159,8 +159,8 @@ class EnvironmentSetup:
             credentials['BULENOX_API_KEY'] = api_key
         
         # Base URL
-        base_url = input("Bulenox Base URL [https://bulenox.com]: ").strip()
-        credentials['BULENOX_BASE_URL'] = base_url or 'https://bulenox.com'
+        base_url = input("Bulenox Base URL [https://bulenox.projectx.com]: ").strip()
+        credentials['BULENOX_BASE_URL'] = base_url or 'https://bulenox.projectx.com'
         
         return credentials
     

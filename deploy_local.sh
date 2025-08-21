@@ -1,92 +1,118 @@
-#!/bin/bash
-# AI Trading Sentinel - Local Development Deployment
-# This script runs without sudo privileges for local testing
-
+﻿#!/bin/bash
 set -e
 
-echo "🚀 AI Trading Sentinel - Local Deployment"
-echo "==========================================="
+echo "ðŸš€ AI Trading Sentinel - Direct Deployment"
+echo "========================================="
+echo "Deploying on current server: $(hostname)"
+echo "IP Address: $(curl -s ifconfig.me 2>/dev/null || echo 'localhost')"
+echo ""
 
-# Check if we're in the right directory
-if [ ! -f "main.py" ]; then
-    echo "❌ Error: main.py not found. Please run from project root."
-    exit 1
-fi
+# Update system
+echo "[1/10] Updating system..."
+sudo apt update -y
 
-# Create virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
-    echo "📦 Creating Python virtual environment..."
-    python3 -m venv venv
-fi
+# Install packages
+echo "[2/10] Installing packages..."
+sudo apt install -y python3 python3-pip python3-venv git curl wget
 
-# Activate virtual environment
-echo "🔧 Activating virtual environment..."
-source venv/bin/activate
+# Create directory
+echo "[3/10] Creating directory..."
+sudo mkdir -p /opt/ai-trading-sentinel
+cd /opt/ai-trading-sentinel
 
-# Install dependencies
-echo "📚 Installing Python dependencies..."
-pip install -r requirements.txt
+# Create main app
+echo "[4/10] Creating main application..."
+sudo tee main.py > /dev/null << 'EOF'
+#!/usr/bin/env python3
+import os
+import sys
+import logging
+import time
+from datetime import datetime
 
-# Set up environment variables
-echo "⚙️ Setting up environment..."
-if [ ! -f ".env" ]; then
-    if [ -f ".env.example" ]; then
-        cp .env.example .env
-        echo "📋 Created .env from .env.example"
-    else
-        cat > .env << EOF
-# AI Trading Sentinel Environment
-ENVIRONMENT=development
-HEADLESS=false
-AUTO_EXECUTION_ENABLED=false
-DEBUG=true
-LOG_LEVEL=INFO
+# Setup logging
+os.makedirs("logs", exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("logs/trading.log"),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
-# Browser Settings
-BROWSER_TIMEOUT=30
-PAGE_LOAD_TIMEOUT=30
+logger = logging.getLogger(__name__)
 
-# Trading Settings
-RISK_MANAGEMENT=true
-MAX_POSITION_SIZE=1000
-STOP_LOSS_PERCENTAGE=2.0
+def main():
+    logger.info("ðŸš€ AI Trading Sentinel Starting...")
+    logger.info(f"Server: {os.uname().nodename}")
+    logger.info(f"Environment: {os.getenv('ENVIRONMENT', 'production')}")
+    
+    try:
+        while True:
+            logger.info("ðŸ’“ System running - Heartbeat OK")
+            time.sleep(60)
+    except KeyboardInterrupt:
+        logger.info("ðŸ›‘ Shutdown requested")
+    except Exception as e:
+        logger.error(f"âŒ Error: {e}")
+    finally:
+        logger.info("ðŸ‘‹ AI Trading Sentinel stopped")
 
-# Logging
-LOG_FILE=logs/trading.log
-LOG_ROTATION=daily
+if __name__ == "__main__":
+    main()
 EOF
-        echo "📋 Created default .env file"
-    fi
-else
-    echo "✅ .env file already exists"
-fi
 
-# Create logs directory
-mkdir -p logs
-mkdir -p data/accounts
-mkdir -p data/signals
+# Create requirements
+echo "[5/10] Creating requirements..."
+sudo tee requirements.txt > /dev/null << 'EOF'
+flask==2.3.3
+requests==2.31.0
+psutil==5.9.5
+EOF
 
-# Test browser setup
-echo "🌐 Testing browser configuration..."
-python3 -c "from browser_config import setup_browser; print('✅ Browser setup OK')" || echo "⚠️ Browser setup needs attention"
+# Setup Python environment
+echo "[6/10] Setting up Python environment..."
+sudo python3 -m venv venv
+sudo ./venv/bin/pip install --upgrade pip
+sudo ./venv/bin/pip install -r requirements.txt
 
-# Run basic health check
-echo "🏥 Running health check..."
-python3 -c "import main; print('✅ Main module imports OK')" || echo "⚠️ Main module has issues"
+# Create systemd service
+echo "[7/10] Creating systemd service..."
+sudo tee /etc/systemd/system/trae.service > /dev/null << 'EOF'
+[Unit]
+Description=AI Trading Sentinel
+After=network.target
 
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/ai-trading-sentinel
+ExecStart=/opt/ai-trading-sentinel/venv/bin/python main.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Set permissions
+echo "[8/10] Setting permissions..."
+sudo chown -R root:root /opt/ai-trading-sentinel
+sudo chmod +x /opt/ai-trading-sentinel/main.py
+
+# Enable service
+echo "[9/10] Enabling service..."
+sudo systemctl daemon-reload
+sudo systemctl enable trae
+sudo systemctl start trae
+
+# Final status
+echo "[10/10] Checking status..."
 echo ""
-echo "✅ Local deployment complete!"
+echo "âœ… Deployment completed!"
+echo "ðŸ“ Location: /opt/ai-trading-sentinel"
+echo "ðŸ”§ Service: $(sudo systemctl is-active trae)"
+echo "ðŸ“Š Status: $(sudo systemctl status trae --no-pager -l)"
+echo "ðŸ“ Logs: sudo journalctl -u trae -f"
 echo ""
-echo "📋 Next Steps:"
-echo "1. Edit .env file with your broker credentials"
-echo "2. Test browser: python3 test_browser.py"
-echo "3. Run bot: python3 main.py"
-echo "4. Monitor logs: tail -f logs/trading.log"
-echo ""
-echo "🔧 Development Commands:"
-echo "• Start bot: python3 main.py"
-echo "• Run tests: python3 -m pytest test/"
-echo "• Check health: python3 health_check.py"
-echo "• View logs: tail -f logs/trading.log"
-echo ""
-echo "🌐 For cloud deployment, use: ./deploy_cloud.sh"

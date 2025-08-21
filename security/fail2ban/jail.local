@@ -1,0 +1,220 @@
+# Fail2Ban Configuration for AI Trading Sentinel
+# Advanced Intrusion Detection and Prevention
+
+[DEFAULT]
+# Ban settings
+bantime = 3600
+findtime = 600
+maxretry = 5
+banaction = iptables-multiport
+banaction_allports = iptables-allports
+
+# Email notifications
+destemail = admin@your-domain.com
+sender = fail2ban@your-domain.com
+mta = sendmail
+action = %(action_mwl)s
+
+# Whitelist trusted IPs (add your management IPs)
+ignoreip = 127.0.0.1/8 ::1 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+
+# SSH Protection
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 7200
+findtime = 600
+
+# Nginx HTTP Auth
+[nginx-http-auth]
+enabled = true
+filter = nginx-http-auth
+logpath = /var/log/nginx/error.log
+maxretry = 3
+bantime = 3600
+
+# Nginx Rate Limiting
+[nginx-limit-req]
+enabled = true
+filter = nginx-limit-req
+logpath = /var/log/nginx/error.log
+maxretry = 10
+findtime = 600
+bantime = 7200
+
+# Nginx Bad Bots
+[nginx-badbots]
+enabled = true
+filter = nginx-badbots
+logpath = /var/log/nginx/access.log
+maxretry = 2
+bantime = 86400
+findtime = 600
+
+# Nginx Exploit Attempts
+[nginx-exploits]
+enabled = true
+filter = nginx-exploits
+logpath = /var/log/nginx/access.log
+maxretry = 1
+bantime = 86400
+findtime = 600
+
+# API Abuse Protection
+[nginx-api-abuse]
+enabled = true
+filter = nginx-api-abuse
+logpath = /var/log/nginx/access.log
+maxretry = 20
+findtime = 300
+bantime = 3600
+
+# Login Brute Force Protection
+[nginx-login-bruteforce]
+enabled = true
+filter = nginx-login-bruteforce
+logpath = /var/log/nginx/access.log
+maxretry = 5
+findtime = 600
+bantime = 7200
+
+# SQL Injection Attempts
+[nginx-sqli]
+enabled = true
+filter = nginx-sqli
+logpath = /var/log/nginx/access.log
+maxretry = 1
+bantime = 86400
+findtime = 600
+
+# XSS Attempts
+[nginx-xss]
+enabled = true
+filter = nginx-xss
+logpath = /var/log/nginx/access.log
+maxretry = 1
+bantime = 86400
+findtime = 600
+
+# Directory Traversal
+[nginx-traversal]
+enabled = true
+filter = nginx-traversal
+logpath = /var/log/nginx/access.log
+maxretry = 1
+bantime = 86400
+findtime = 600
+
+# Scanning Attempts
+[nginx-scanning]
+enabled = true
+filter = nginx-scanning
+logpath = /var/log/nginx/access.log
+maxretry = 5
+findtime = 300
+bantime = 86400
+
+# WordPress Protection (if applicable)
+[nginx-wordpress]
+enabled = true
+filter = nginx-wordpress
+logpath = /var/log/nginx/access.log
+maxretry = 3
+findtime = 600
+bantime = 7200
+
+# Application-specific protection
+[trading-bot-abuse]
+enabled = true
+filter = trading-bot-abuse
+logpath = /var/log/trading-bot/security.log
+maxretry = 10
+findtime = 300
+bantime = 3600
+
+# Database Connection Abuse
+[postgresql-abuse]
+enabled = true
+filter = postgresql-abuse
+logpath = /var/log/postgresql/postgresql-*.log
+maxretry = 5
+findtime = 600
+bantime = 7200
+
+# Redis Abuse
+[redis-abuse]
+enabled = true
+filter = redis-abuse
+logpath = /var/log/redis/redis-server.log
+maxretry = 10
+findtime = 300
+bantime = 3600
+
+# Docker Container Escape Attempts
+[docker-escape]
+enabled = true
+filter = docker-escape
+logpath = /var/log/docker/docker.log
+maxretry = 1
+findtime = 600
+bantime = 86400
+
+# System Log Monitoring
+[system-auth]
+enabled = true
+filter = system-auth
+logpath = /var/log/auth.log
+maxretry = 3
+findtime = 600
+bantime = 7200
+
+# Recidive (repeat offenders)
+[recidive]
+enabled = true
+filter = recidive
+logpath = /var/log/fail2ban.log
+banaction = iptables-allports
+bantime = 604800  # 1 week
+findtime = 86400  # 1 day
+maxretry = 3
+
+# Custom action for Slack notifications
+[nginx-exploits-slack]
+enabled = true
+filter = nginx-exploits
+logpath = /var/log/nginx/access.log
+maxretry = 1
+bantime = 86400
+findtime = 600
+action = %(action_)s
+         slack-notify[name=%(__name__)s]
+
+# DDoS Protection
+[nginx-ddos]
+enabled = true
+filter = nginx-ddos
+logpath = /var/log/nginx/access.log
+maxretry = 100
+findtime = 60
+bantime = 3600
+
+# Port Scanning Detection
+[port-scan]
+enabled = true
+filter = port-scan
+logpath = /var/log/kern.log
+maxretry = 1
+findtime = 300
+bantime = 86400
+
+# Honeypot Protection
+[honeypot]
+enabled = true
+filter = honeypot
+logpath = /var/log/honeypot/honeypot.log
+maxretry = 1
+findtime = 1
+bantime = 2592000  # 30 days

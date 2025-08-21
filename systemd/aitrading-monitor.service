@@ -1,0 +1,45 @@
+[Unit]
+Description=AI Trading Sentinel Monitoring Service
+After=network.target aitrading-backend.service aitrading-bot.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=aitrading
+Group=aitrading
+WorkingDirectory=/home/aitrading/ai-trading-sentinel
+Environment=PATH=/home/aitrading/ai-trading-sentinel/venv/bin
+Environment=PYTHONPATH=/home/aitrading/ai-trading-sentinel
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/aitrading/ai-trading-sentinel/venv/bin/python monitoring_setup.py --daemon
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+Restart=always
+RestartSec=60
+StartLimitInterval=300
+StartLimitBurst=3
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/aitrading/ai-trading-sentinel/logs
+ReadWritePaths=/home/aitrading/ai-trading-sentinel/temp
+ReadWritePaths=/home/aitrading/ai-trading-sentinel/data
+
+# Resource limits
+LimitNOFILE=1024
+LimitNPROC=512
+MemoryMax=512M
+CPUQuota=50%
+
+# Logging
+StandardOutput=append:/home/aitrading/ai-trading-sentinel/logs/monitoring.log
+StandardError=append:/home/aitrading/ai-trading-sentinel/logs/monitoring-error.log
+SyslogIdentifier=aitrading-monitor
+
+[Install]
+WantedBy=multi-user.target

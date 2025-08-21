@@ -122,7 +122,7 @@ Your `.env` file is configured with:
 ```env
 BULENOX_USERNAME=your_username
 BULENOX_PASSWORD=your_password
-BROKER_URL=https://bulenox.com
+BROKER_URL=https://bulenox.projectx.com
 ```
 
 ### Pro Features:

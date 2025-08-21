@@ -1,0 +1,19 @@
+[Unit]
+Description=AI Trading Sentinel - Enhanced Monitoring Timer
+Documentation=https://github.com/your-repo/ai-trading-sentinel
+Requires=trae-enhanced-monitor.service
+
+[Timer]
+# Run every 2 minutes
+OnCalendar=*:0/2
+# Run immediately on boot
+OnBootSec=30
+# Randomize start time by up to 30 seconds to avoid system load spikes
+RandomizedDelaySec=30
+# Ensure timer is persistent across reboots
+Persistent=true
+# Accuracy within 1 second
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

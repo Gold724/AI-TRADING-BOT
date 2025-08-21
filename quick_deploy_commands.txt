@@ -1,0 +1,145 @@
+# 🚀 AI Trading Sentinel - Quick Deploy Commands
+# Copy and paste these commands directly into your Contabo server terminal
+
+# ===== STEP 1: CREATE DEPLOYMENT SCRIPT =====
+cat > /tmp/quick_deploy.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "🚀 AI Trading Sentinel - Quick Deployment"
+echo "Server: $(hostname)"
+echo "User: $(whoami)"
+echo "Date: $(date)"
+echo ""
+
+# Update system
+echo "[1/8] Updating system..."
+sudo apt update -y
+
+# Install packages
+echo "[2/8] Installing packages..."
+sudo apt install -y python3 python3-pip python3-venv curl wget
+
+# Create directory
+echo "[3/8] Creating application directory..."
+sudo mkdir -p /opt/ai-trading-sentinel
+cd /opt/ai-trading-sentinel
+
+# Create main application
+echo "[4/8] Creating main application..."
+sudo tee main.py > /dev/null << 'PYEOF'
+#!/usr/bin/env python3
+import os
+import sys
+import logging
+import time
+from datetime import datetime
+
+# Setup logging
+os.makedirs("logs", exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("logs/trading.log"),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+def main():
+    logger.info("🚀 AI Trading Sentinel Starting...")
+    logger.info(f"Server: {os.uname().nodename}")
+    logger.info(f"User: {os.getenv('USER', 'unknown')}")
+    logger.info(f"Working Directory: {os.getcwd()}")
+    logger.info(f"Python Version: {sys.version}")
+    
+    try:
+        counter = 0
+        while True:
+            counter += 1
+            logger.info(f"💓 Heartbeat #{counter} - System running OK")
+            time.sleep(30)  # Heartbeat every 30 seconds
+    except KeyboardInterrupt:
+        logger.info("🛑 Shutdown requested by user")
+    except Exception as e:
+        logger.error(f"❌ Unexpected error: {e}")
+        raise
+    finally:
+        logger.info("👋 AI Trading Sentinel stopped")
+
+if __name__ == "__main__":
+    main()
+PYEOF
+
+# Create requirements
+echo "[5/8] Creating requirements file..."
+sudo tee requirements.txt > /dev/null << 'REQEOF'
+flask==2.3.3
+requests==2.31.0
+psutil==5.9.5
+REQEOF
+
+# Setup Python environment
+echo "[6/8] Setting up Python environment..."
+sudo python3 -m venv venv
+sudo ./venv/bin/pip install --upgrade pip
+sudo ./venv/bin/pip install -r requirements.txt
+
+# Create systemd service
+echo "[7/8] Creating systemd service..."
+sudo tee /etc/systemd/system/trae.service > /dev/null << 'SVCEOF'
+[Unit]
+Description=AI Trading Sentinel
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/ai-trading-sentinel
+ExecStart=/opt/ai-trading-sentinel/venv/bin/python main.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+# Set permissions and start service
+echo "[8/8] Starting service..."
+sudo chown -R root:root /opt/ai-trading-sentinel
+sudo chmod +x /opt/ai-trading-sentinel/main.py
+sudo systemctl daemon-reload
+sudo systemctl enable trae
+sudo systemctl start trae
+
+# Show results
+echo ""
+echo "✅ Deployment completed!"
+echo "📍 Location: /opt/ai-trading-sentinel"
+echo "🔧 Service Status: $(sudo systemctl is-active trae)"
+echo "📊 Service Info:"
+sudo systemctl status trae --no-pager -l
+echo ""
+echo "📝 To view logs: sudo journalctl -u trae -f"
+echo "🔄 To restart: sudo systemctl restart trae"
+echo "🛑 To stop: sudo systemctl stop trae"
+echo ""
+EOF
+
+# ===== STEP 2: RUN DEPLOYMENT =====
+chmod +x /tmp/quick_deploy.sh
+/tmp/quick_deploy.sh
+
+# ===== STEP 3: VERIFY DEPLOYMENT =====
+echo ""
+echo "🔍 Verification Commands:"
+echo "========================"
+sudo systemctl status trae
+echo ""
+echo "📝 Live logs (Ctrl+C to exit):"
+sudo journalctl -u trae -f

@@ -270,7 +270,7 @@ echo $BULENOX_USERNAME
 echo $BULENOX_PASSWORD
 
 # Check network connectivity
-curl -I https://bulenox.com
+curl -I https://bulenox.projectx.com
 
 # Review screenshots
 ls -la screenshots/

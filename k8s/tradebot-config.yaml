@@ -112,7 +112,7 @@ stringData:
   BULENOX_USERNAME: "your_bulenox_username"
   BULENOX_PASSWORD: "your_bulenox_password"
   BULENOX_API_KEY: "your_bulenox_api_key"
-  BULENOX_BASE_URL: "https://bulenox.com"
+  BULENOX_BASE_URL: "https://bulenox.projectx.com"
   
   # GitHub credentials for updates
   GITHUB_TOKEN: "ghp_your_github_token"

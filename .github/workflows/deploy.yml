@@ -1,175 +1,490 @@
-name: Consolidated AI Trading Sentinel Deployment
+name: AI Trading Sentinel - CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       environment:
         description: 'Deployment environment'
         required: true
         default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+        - development
+      force_deploy:
+        description: 'Force deployment even if tests fail'
+        required: false
+        default: false
+        type: boolean
   schedule:
-    - cron: '0 3 * * *' # Run daily at 3:00 AM UTC
+    - cron: '0 3 * * *' # Daily security scan at 3:00 AM UTC
+    
 permissions:
-  issues: write
+  contents: read
+  packages: write
+  security-events: write
+  actions: read
 
 env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  NODE_VERSION: '18'
   PYTHON_VERSION: '3.10'
+  DEPLOYMENT_USER: 'root'
+  DEPLOYMENT_PATH: '/opt/ai-trading-sentinel'
 
 jobs:
-  lint:
+  # Security and Code Quality Checks
+  security-scan:
+    name: Security Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+
+  # Backend Testing
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: test_trading_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install lint dependencies
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
+
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 black isort
-          pip install -r requirements.txt || echo 'requirements.txt not found, skipping'
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio pytest-mock flake8 black isort
+
       - name: Lint with flake8
-        run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=venv,node_modules,.git,__pycache__,chrome*,temp_chrome*,drivers,chrome_profile* || true
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=venv,node_modules,.git,__pycache__,chrome*,temp_chrome*,drivers,chrome_profile*
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
-  test:
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-cov
-          pip install -r requirements.txt || echo 'requirements.txt not found, skipping'
-      - name: Run tests
-        run: pytest || echo 'Tests failed, continuing with warnings'
-      - name: Basic validation
-        run: |
-          python -c "import sys; print('Python version:', sys.version)"
-          python -c "import tradebot_sentinel_bulenox_automation; print('✅ Bot import successful')" || true
-          python -c "import bulenox_gold_scalping_strategy; print('✅ Strategy import successful')" || true
+      - name: Check code formatting
+        run: black --check .
 
-  build:
+      - name: Check import sorting
+        run: isort --check-only .
+
+      - name: Create test environment file
+        run: |
+          cat > .env.test << EOF
+          ENVIRONMENT=test
+          DEBUG=true
+          REDIS_URL=redis://localhost:6379/0
+          POSTGRES_URL=postgresql://test_user:test_password@localhost:5432/test_trading_db
+          API_SECRET_KEY=test-secret-key
+          JWT_SECRET_KEY=test-jwt-secret
+          BROKER_USERNAME=test_user
+          BROKER_PASSWORD=test_password
+          TRADING_ENABLED=false
+          EOF
+
+      - name: Run backend tests
+        run: |
+          pytest tests/ -v --cov=. --cov-report=xml --cov-report=html
+        env:
+          ENVIRONMENT: test
+
+      - name: Upload coverage reports
+         uses: codecov/codecov-action@v3
+         with:
+           file: ./coverage.xml
+           flags: backend
+           name: backend-coverage
+
+  # Frontend Testing
+  test-frontend:
+    name: Test Frontend
     runs-on: ubuntu-latest
-    needs: test
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt || echo 'requirements.txt not found, skipping'
-      - name: Create deployment package
-        run: |
-          mkdir -p deployment_package
-          cp -r liveops deployment_package/ || true
-          cp sentinel_decider.py deployment_package/ || true
-          cp main.py deployment_package/ || true
-          cp -r config deployment_package/ || true
-          cp requirements.txt deployment_package/ || true
-          echo "version: ${{ github.sha }}" > deployment_package/version.txt
-          echo "build_date: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> deployment_package/version.txt
-          echo "environment: ${{ github.event.inputs.environment || 'production' }}" >> deployment_package/version.txt
-          cd deployment_package
-          zip -r ../trae_deployment.zip .
-      - name: Upload artifact
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Lint frontend code
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm run test:ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Upload frontend build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: trae-deployment
-          path: trae_deployment.zip
+          name: frontend-build
+          path: frontend/dist/
+          retention-days: 1
 
-  deploy:
+  # E2E Testing
+  test-e2e:
+    name: End-to-End Tests
     runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
-    environment: ${{ github.event.inputs.environment || 'production' }}
+    needs: [test-backend, test-frontend]
+    if: github.event_name != 'schedule'
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Download artifact
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser xvfb
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install playwright pytest-playwright
+
+      - name: Install Playwright browsers
+        run: playwright install chromium
+
+      - name: Download frontend build
         uses: actions/download-artifact@v3
         with:
-          name: trae-deployment
-          path: .
-      - name: Set up SSH key
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Create E2E test environment
+        run: |
+          cat > .env.e2e << EOF
+          ENVIRONMENT=e2e
+          DEBUG=false
+          REDIS_URL=redis://localhost:6379/1
+          API_SECRET_KEY=e2e-test-secret
+          TRADING_ENABLED=false
+          BROKER_USERNAME=demo_user
+          BROKER_PASSWORD=demo_password
+          EOF
+
+      - name: Start backend server
+        run: |
+          python app.py &
+          sleep 10
+        env:
+          ENVIRONMENT: e2e
+
+      - name: Run E2E tests
+        run: |
+          xvfb-run -a pytest tests/e2e/ -v --headed
+        env:
+          ENVIRONMENT: e2e
+
+  # Docker Build and Push
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [security-scan, test-backend, test-frontend]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+           cache-to: type=gha,mode=max
+           platforms: linux/amd64,linux/arm64
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-and-push, test-e2e]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    environment:
+      name: production
+      url: https://trading.yourdomain.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: Add VPS to known hosts
         run: |
           mkdir -p ~/.ssh
-          KEY_CONTENT="${{ secrets.VPS_SSH_KEY || secrets.DEPLOY_SSH_KEY }}"
-          echo "$KEY_CONTENT" | base64 -d > ~/.ssh/id_rsa 2>/dev/null || echo "$KEY_CONTENT" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          if ssh-keygen -y -f ~/.ssh/id_rsa > /dev/null 2>&1; then
-            echo "SSH key is valid"
-          else
-            echo "Invalid SSH key format - please check secrets"
-            exit 1
-          fi
-          for i in {1..3}; do
-            ssh-keyscan ${{ secrets.CONTABO_VPS_IP || secrets.VPS_HOST || '161.97.112.146' }} >> ~/.ssh/known_hosts && break
-            echo "Keyscan attempt $i failed, retrying..."
-            sleep 5
-          done
-      - name: Test Slack Webhook
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
         run: |
-          RESPONSE=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-type: application/json' --data '{"text":"🚀 TRAÉ Test: Webhook Validation"}' ${{ secrets.SLACK_WEBHOOK_URL }})
-          if [ "$RESPONSE" -eq 200 ]; then
-            echo "Slack webhook test successful"
-          else
-            echo "Slack webhook failed with status $RESPONSE - using fallback notification"
-            # Fallback: Log to console or alternative method
-            echo "Deployment notification: ${{ job.status }}" 
-          fi
-      - name: Transfer deployment package
+          ssh ${{ env.DEPLOYMENT_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            
+            # Navigate to deployment directory
+            cd ${{ env.DEPLOYMENT_PATH }}
+            
+            # Backup current deployment
+            sudo cp -r . ../ai-trading-sentinel-backup-$(date +%Y%m%d-%H%M%S) || true
+            
+            # Pull latest changes
+            sudo git fetch origin
+            sudo git reset --hard origin/main
+            
+            # Update Docker images
+            sudo docker-compose pull
+            
+            # Run database migrations if needed
+            sudo docker-compose run --rm backend python manage.py migrate || true
+            
+            # Restart services with zero downtime
+            sudo docker-compose up -d --remove-orphans
+            
+            # Wait for services to be healthy
+            sleep 30
+            
+            # Health check
+            curl -f http://localhost/api/health || exit 1
+            
+            # Clean up old images
+            sudo docker image prune -f
+            
+            echo "Deployment completed successfully"
+          EOF
+
+      - name: Run post-deployment tests
         run: |
-          for attempt in {1..3}; do
-            scp trae_deployment.zip ${{ secrets.CONTABO_USERNAME || secrets.VPS_USERNAME || 'root' }}@${{ secrets.CONTABO_VPS_IP || secrets.VPS_HOST || '161.97.112.146' }}:/opt/trae/ && break
-            echo "Transfer attempt $attempt failed, retrying in 10 seconds..."
-            sleep 10
-          done
-          if [ $attempt -eq 3 ]; then
-            echo "Transfer failed after 3 attempts"
-            exit 1
-          fi
-      - name: Deploy via SSH
-        run: |
-          for attempt in {1..3}; do
-            ssh ${{ secrets.CONTABO_USERNAME || secrets.VPS_USERNAME || 'root' }}@${{ secrets.CONTABO_VPS_IP || secrets.VPS_HOST || '161.97.112.146' }} 'bash /opt/trae/trae_deploy.sh --auto' && break
-            echo "Deployment attempt $attempt failed, retrying in 10 seconds..."
-            sleep 10
-          done
-          if [ $attempt -eq 3 ]; then
-            echo "Deployment failed after 3 attempts"
-            exit 1
-          fi
-      - name: Create GitHub Issue on Failure
-        if: failure()
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const issue = await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: 'Deployment Failure: ${{ github.workflow }}',
-              body: `Deployment failed on ${{ github.ref }}.\n\nError details: ${{ steps.deploy.outcome }}` + '\n\nRun ID: ${{ github.run_id }}',
-              labels: ['deployment-failure', 'urgent']
-            });
-      - name: Send Slack notification
-        if: always()
+          # Wait for deployment to stabilize
+          sleep 60
+          
+          # Test API endpoints
+          curl -f https://trading.yourdomain.com/api/health
+          curl -f https://trading.yourdomain.com/api/status
+          
+          # Test WebSocket connection
+          python -c "
+          import websocket
+          import ssl
+          ws = websocket.create_connection('wss://trading.yourdomain.com/ws', sslopt={'cert_reqs': ssl.CERT_NONE})
+          ws.close()
+          print('WebSocket connection successful')
+          "
+
+      - name: Notify deployment success
+        if: success()
         uses: 8398a7/action-slack@v3
         with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow
+          status: success
+          text: '🚀 AI Trading Sentinel deployed successfully to production!'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify deployment failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: '❌ AI Trading Sentinel deployment failed!'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment:
+      name: staging
+      url: https://staging-trading.yourdomain.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+
+      - name: Deploy to Staging VPS
+        run: |
+          ssh ${{ env.DEPLOYMENT_USER }}@${{ secrets.STAGING_HOST }} << 'EOF'
+            set -e
+            cd /opt/ai-trading-sentinel-staging
+            sudo git fetch origin
+            sudo git reset --hard origin/develop
+            sudo docker-compose -f docker-compose.staging.yml pull
+            sudo docker-compose -f docker-compose.staging.yml up -d --remove-orphans
+            sleep 20
+            curl -f http://localhost:8081/api/health || exit 1
+          EOF
+
+  # Performance and Load Testing
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.event_name == 'schedule' || github.event.inputs.environment == 'staging'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run load tests
+        run: |
+          k6 run tests/performance/load-test.js
+        env:
+          TARGET_URL: https://staging-trading.yourdomain.com
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: performance-results.json
+
+  # Cleanup
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    needs: [deploy-production, deploy-staging, performance-test]
+    if: always()
+    steps:
+      - name: Clean up artifacts
+        uses: geekyeggo/delete-artifact@v2
+        with:
+          name: |
+            frontend-build
+            performance-results
+          failOnError: false

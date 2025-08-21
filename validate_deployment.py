@@ -1,34 +1,47 @@
 #!/usr/bin/env python3
 """
-Bulenox Trading Bot - Deployment Validation Script
-TRAE-SentinelOps v2.0.0 - Production Readiness Checker
-
-This script validates that the Bulenox trading bot deployment
-is properly configured and ready for production use.
+AI Trading Sentinel - Deployment Validation Script
+Comprehensive testing suite for production deployment validation
 """
 
 import os
 import sys
-import json
 import time
+import json
 import requests
 import subprocess
-import socket
+import psutil
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from datetime import datetime
 import logging
+from dataclasses import dataclass
+from enum import Enum
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('deployment_validation.log')
+        logging.FileHandler('deployment_validation.log'),
+        logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger(__name__)
+
+class TestStatus(Enum):
+    PASS = "✅ PASS"
+    FAIL = "❌ FAIL"
+    WARN = "⚠️  WARN"
+    SKIP = "⏭️  SKIP"
+
+@dataclass
+class TestResult:
+    name: str
+    status: TestStatus
+    message: str
+    duration: float = 0.0
+    details: Optional[Dict] = None
 
 class DeploymentValidator:
     """Comprehensive deployment validation for Bulenox trading bot."""

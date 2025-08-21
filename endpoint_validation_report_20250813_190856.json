@@ -1968,7 +1968,7 @@
     {
       "file": "sample_trade_20241201_143022.sh",
       "method": "POST",
-      "url": "https://bulenox.com/api/trade/execute",
+      "url": "https://bulenox.projectx.com/api/trade/execute",
       "headers": {
         "Content-Type": "application/json",
         "Authorization": "Bearer sample_token",

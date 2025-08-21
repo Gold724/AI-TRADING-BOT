@@ -369,14 +369,14 @@ async def try_login_domains(page, username, password):
         # Alternative configurations
         {
             "login_url": "https://bulenox.projectx.com/login", 
-            "trade_url": "https://bulenox.com/trade",
-            "trading_url": "https://bulenox.com/trading",
+            "trade_url": "https://bulenox.projectx.com/trade",
+            "trading_url": "https://bulenox.projectx.com/trading",
             "name": "Main Domain - Member Login"
         },
         {
-            "login_url": "https://bulenox.com/login",
-            "trade_url": "https://bulenox.com/trade", 
-            "trading_url": "https://bulenox.com/trading",
+            "login_url": "https://bulenox.projectx.com/login",
+            "trade_url": "https://bulenox.projectx.com/trade", 
+            "trading_url": "https://bulenox.projectx.com/trading",
             "name": "Main Domain - Direct Login"
         }
     ]

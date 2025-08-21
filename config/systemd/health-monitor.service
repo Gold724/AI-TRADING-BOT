@@ -1,0 +1,37 @@
+[Unit]
+Description=AI Trading Sentinel Health Monitor
+After=network.target redis.service
+Wants=redis.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+User=trading
+Group=trading
+WorkingDirectory=/opt/ai-trading-sentinel
+Environment=PYTHONPATH=/opt/ai-trading-sentinel
+Environment=PATH=/opt/ai-trading-sentinel/venv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/opt/ai-trading-sentinel/venv/bin/python /opt/ai-trading-sentinel/scripts/health_monitor.py --interval 30
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=30
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/ai-trading-sentinel/logs
+NoNewPrivileges=true
+LimitNOFILE=65536
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=health-monitor
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

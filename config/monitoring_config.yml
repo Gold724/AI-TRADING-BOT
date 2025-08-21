@@ -1,0 +1,655 @@
+# AI Trading Sentinel - Monitoring Configuration
+# Comprehensive monitoring settings for production deployment
+
+# Global monitoring settings
+global:
+  enabled: true
+  environment: production
+  project_name: "ai-trading-sentinel"
+  monitoring_interval: 15s
+  retention_period: "30d"
+  
+# Prometheus configuration
+prometheus:
+  enabled: true
+  port: 9090
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  retention_time: "200h"
+  storage_path: "/var/lib/prometheus"
+  
+  # External labels for federation
+  external_labels:
+    monitor: "ai-trading-sentinel"
+    environment: "production"
+    datacenter: "contabo-vps"
+  
+  # Scrape targets configuration
+  scrape_configs:
+    - job_name: "prometheus"
+      static_configs:
+        - targets: ["localhost:9090"]
+    
+    - job_name: "node-exporter"
+      static_configs:
+        - targets: ["localhost:9100"]
+    
+    - job_name: "redis-exporter"
+      static_configs:
+        - targets: ["localhost:9121"]
+    
+    - job_name: "nginx-exporter"
+      static_configs:
+        - targets: ["localhost:9113"]
+    
+    - job_name: "trading-api"
+      metrics_path: "/metrics"
+      static_configs:
+        - targets: ["localhost:5000"]
+      scrape_interval: 5s
+    
+    - job_name: "trading-bot"
+      metrics_path: "/metrics"
+      static_configs:
+        - targets: ["localhost:8080"]
+      scrape_interval: 5s
+    
+    - job_name: "blackbox-http"
+      metrics_path: "/probe"
+      params:
+        module: ["http_2xx"]
+      static_configs:
+        - targets:
+          - "http://localhost:5000/health"
+          - "http://localhost:3000"
+          - "https://your-domain.com"
+      relabel_configs:
+        - source_labels: ["__address__"]
+          target_label: "__param_target"
+        - source_labels: ["__param_target"]
+          target_label: "instance"
+        - target_label: "__address__"
+          replacement: "localhost:9115"
+
+# Alertmanager configuration
+alertmanager:
+  enabled: true
+  port: 9093
+  
+  # Global settings
+  global:
+    smtp_smarthost: "localhost:587"
+    smtp_from: "alerts@ai-trading-sentinel.com"
+    slack_api_url: "${SLACK_WEBHOOK_URL}"
+  
+  # Routing configuration
+  route:
+    group_by: ["alertname", "cluster", "service"]
+    group_wait: "10s"
+    group_interval: "10s"
+    repeat_interval: "1h"
+    receiver: "default"
+  
+  # Notification channels
+  receivers:
+    default:
+      slack:
+        channel: "#trading-alerts"
+        title: "AI Trading Sentinel Alert"
+        send_resolved: true
+    
+    critical:
+      slack:
+        channel: "#trading-critical"
+        title: "🚨 CRITICAL: AI Trading Sentinel"
+        color: "danger"
+        send_resolved: true
+    
+    warning:
+      slack:
+        channel: "#trading-warnings"
+        title: "⚠️ WARNING: AI Trading Sentinel"
+        color: "warning"
+        send_resolved: true
+    
+    trading:
+      slack:
+        channel: "#trading-system"
+        title: "📈 Trading System Alert"
+        color: "good"
+        send_resolved: true
+
+# Grafana configuration
+grafana:
+  enabled: true
+  port: 3001
+  admin_password: "${GRAFANA_ADMIN_PASSWORD}"
+  
+  # Security settings
+  security:
+    admin_user: "admin"
+    allow_sign_up: false
+    cookie_secure: true
+    cookie_samesite: "strict"
+  
+  # Datasources
+  datasources:
+    - name: "Prometheus"
+      type: "prometheus"
+      url: "http://localhost:9090"
+      access: "proxy"
+      is_default: true
+  
+  # Dashboard settings
+  dashboards:
+    default_home_dashboard_path: "/var/lib/grafana/dashboards/trading_overview.json"
+    versions_to_keep: 20
+
+# Alert rules configuration
+alert_rules:
+  # Trading system alerts
+  trading_system:
+    - alert: "TradingBotDown"
+      expr: 'up{job="trading-bot"} == 0'
+      for: "1m"
+      severity: "critical"
+      summary: "Trading bot is down"
+      description: "Trading bot has been down for more than 1 minute"
+    
+    - alert: "TradingAPIDown"
+      expr: 'up{job="trading-api"} == 0'
+      for: "1m"
+      severity: "critical"
+      summary: "Trading API is down"
+      description: "Trading API has been down for more than 1 minute"
+    
+    - alert: "HighErrorRate"
+      expr: 'rate(http_requests_total{status=~"5.."}[5m]) > 0.1'
+      for: "2m"
+      severity: "warning"
+      summary: "High error rate detected"
+      description: "Error rate is above 10% for 2 minutes"
+    
+    - alert: "TradingLatencyHigh"
+      expr: 'histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2'
+      for: "3m"
+      severity: "warning"
+      summary: "High trading latency"
+      description: "95th percentile latency is above 2 seconds"
+    
+    - alert: "LoginFailure"
+      expr: 'increase(trading_login_failures_total[5m]) > 3'
+      for: "1m"
+      severity: "critical"
+      summary: "Multiple login failures"
+      description: "More than 3 login failures in 5 minutes"
+    
+    - alert: "TradeExecutionFailure"
+      expr: 'increase(trading_execution_failures_total[5m]) > 5'
+      for: "2m"
+      severity: "warning"
+      summary: "High trade execution failures"
+      description: "More than 5 trade execution failures in 5 minutes"
+    
+    - alert: "RiskLimitBreached"
+      expr: 'trading_risk_score > 0.8'
+      for: "30s"
+      severity: "critical"
+      summary: "Risk limit breached"
+      description: "Trading risk score is above 80%"
+    
+    - alert: "DrawdownHigh"
+      expr: 'trading_drawdown_percentage > 10'
+      for: "1m"
+      severity: "warning"
+      summary: "High drawdown detected"
+      description: "Portfolio drawdown is above 10%"
+  
+  # System resource alerts
+  system_resources:
+    - alert: "HighCPUUsage"
+      expr: '100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80'
+      for: "5m"
+      severity: "warning"
+      summary: "High CPU usage"
+      description: "CPU usage is above 80% for 5 minutes"
+    
+    - alert: "CriticalCPUUsage"
+      expr: '100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95'
+      for: "2m"
+      severity: "critical"
+      summary: "Critical CPU usage"
+      description: "CPU usage is above 95% for 2 minutes"
+    
+    - alert: "HighMemoryUsage"
+      expr: '(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85'
+      for: "5m"
+      severity: "warning"
+      summary: "High memory usage"
+      description: "Memory usage is above 85% for 5 minutes"
+    
+    - alert: "CriticalMemoryUsage"
+      expr: '(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95'
+      for: "2m"
+      severity: "critical"
+      summary: "Critical memory usage"
+      description: "Memory usage is above 95% for 2 minutes"
+    
+    - alert: "DiskSpaceLow"
+      expr: '(1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 85'
+      for: "5m"
+      severity: "warning"
+      summary: "Low disk space"
+      description: "Disk usage is above 85%"
+    
+    - alert: "DiskSpaceCritical"
+      expr: '(1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 95'
+      for: "2m"
+      severity: "critical"
+      summary: "Critical disk space"
+      description: "Disk usage is above 95%"
+    
+    - alert: "HighNetworkTraffic"
+      expr: 'rate(node_network_receive_bytes_total[5m]) > 100000000'
+      for: "5m"
+      severity: "info"
+      summary: "High network traffic"
+      description: "Network receive rate is above 100MB/s"
+  
+  # Database alerts
+  database:
+    - alert: "RedisDown"
+      expr: 'up{job="redis-exporter"} == 0'
+      for: "1m"
+      severity: "critical"
+      summary: "Redis is down"
+      description: "Redis database is not responding"
+    
+    - alert: "RedisMemoryHigh"
+      expr: 'redis_memory_used_bytes / redis_memory_max_bytes > 0.9'
+      for: "5m"
+      severity: "warning"
+      summary: "Redis memory usage high"
+      description: "Redis memory usage is above 90%"
+    
+    - alert: "RedisConnectionsHigh"
+      expr: 'redis_connected_clients > 100'
+      for: "5m"
+      severity: "warning"
+      summary: "High Redis connections"
+      description: "Redis has more than 100 connected clients"
+    
+    - alert: "RedisSlowQueries"
+      expr: 'increase(redis_slowlog_length[5m]) > 10'
+      for: "2m"
+      severity: "warning"
+      summary: "Redis slow queries detected"
+      description: "More than 10 slow queries in 5 minutes"
+  
+  # Web server alerts
+  web_server:
+    - alert: "NginxDown"
+      expr: 'up{job="nginx-exporter"} == 0'
+      for: "1m"
+      severity: "critical"
+      summary: "Nginx is down"
+      description: "Nginx web server is not responding"
+    
+    - alert: "HighRequestRate"
+      expr: 'rate(nginx_http_requests_total[5m]) > 1000'
+      for: "5m"
+      severity: "warning"
+      summary: "High request rate"
+      description: "Request rate is above 1000 req/s for 5 minutes"
+    
+    - alert: "SSLCertificateExpiring"
+      expr: '(probe_ssl_earliest_cert_expiry - time()) / 86400 < 30'
+      for: "1h"
+      severity: "warning"
+      summary: "SSL certificate expiring soon"
+      description: "SSL certificate expires in less than 30 days"
+
+# Health check configuration
+health_checks:
+  enabled: true
+  interval: 30s
+  timeout: 10s
+  
+  endpoints:
+    - name: "trading-api"
+      url: "http://localhost:5000/health"
+      expected_status: 200
+      timeout: 5s
+    
+    - name: "frontend"
+      url: "http://localhost:3000"
+      expected_status: 200
+      timeout: 5s
+    
+    - name: "redis"
+      url: "redis://localhost:6379"
+      type: "tcp"
+      timeout: 3s
+    
+    - name: "external-api"
+      url: "https://your-domain.com"
+      expected_status: 200
+      timeout: 10s
+
+# Metrics collection configuration
+metrics:
+  # Custom application metrics
+  application:
+    - name: "trading_requests_total"
+      type: "counter"
+      description: "Total number of trading requests"
+      labels: ["method", "endpoint", "status"]
+    
+    - name: "trading_request_duration_seconds"
+      type: "histogram"
+      description: "Trading request duration in seconds"
+      labels: ["method", "endpoint"]
+      buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+    
+    - name: "trading_active_positions"
+      type: "gauge"
+      description: "Number of active trading positions"
+    
+    - name: "trading_balance_usd"
+      type: "gauge"
+      description: "Current trading balance in USD"
+    
+    - name: "trading_pnl_usd"
+      type: "gauge"
+      description: "Current profit/loss in USD"
+    
+    - name: "trading_risk_score"
+      type: "gauge"
+      description: "Current risk score (0-1)"
+    
+    - name: "trading_drawdown_percentage"
+      type: "gauge"
+      description: "Current drawdown percentage"
+    
+    - name: "trading_login_failures_total"
+      type: "counter"
+      description: "Total number of login failures"
+    
+    - name: "trading_execution_failures_total"
+      type: "counter"
+      description: "Total number of trade execution failures"
+      labels: ["reason"]
+  
+  # System metrics
+  system:
+    node_exporter:
+      enabled: true
+      port: 9100
+      collectors:
+        - "cpu"
+        - "diskstats"
+        - "filesystem"
+        - "loadavg"
+        - "meminfo"
+        - "netdev"
+        - "netstat"
+        - "stat"
+        - "time"
+        - "uname"
+    
+    redis_exporter:
+      enabled: true
+      port: 9121
+      redis_addr: "redis://localhost:6379"
+    
+    nginx_exporter:
+      enabled: true
+      port: 9113
+      nginx_status_url: "http://localhost/nginx_status"
+
+# Log monitoring configuration
+log_monitoring:
+  enabled: true
+  
+  # Log sources
+  sources:
+    - name: "trading-api"
+      path: "/var/log/ai-trading-sentinel/api.log"
+      format: "json"
+      
+    - name: "trading-bot"
+      path: "/var/log/ai-trading-sentinel/bot.log"
+      format: "json"
+      
+    - name: "nginx-access"
+      path: "/var/log/nginx/access.log"
+      format: "nginx"
+      
+    - name: "nginx-error"
+      path: "/var/log/nginx/error.log"
+      format: "nginx"
+      
+    - name: "system"
+      path: "/var/log/syslog"
+      format: "syslog"
+  
+  # Log-based alerts
+  alerts:
+    - name: "ErrorLogSpike"
+      pattern: "ERROR|CRITICAL|FATAL"
+      threshold: 10
+      window: "5m"
+      severity: "warning"
+      
+    - name: "LoginFailureSpike"
+      pattern: "login.*failed|authentication.*failed"
+      threshold: 5
+      window: "5m"
+      severity: "critical"
+      
+    - name: "TradeExecutionError"
+      pattern: "trade.*execution.*failed|order.*failed"
+      threshold: 3
+      window: "5m"
+      severity: "warning"
+
+# Performance monitoring
+performance:
+  enabled: true
+  
+  # SLA targets
+  sla:
+    api_response_time_p95: 2.0  # seconds
+    api_response_time_p99: 5.0  # seconds
+    uptime_target: 99.9  # percentage
+    error_rate_target: 1.0  # percentage
+  
+  # Performance thresholds
+  thresholds:
+    cpu_warning: 80  # percentage
+    cpu_critical: 95  # percentage
+    memory_warning: 85  # percentage
+    memory_critical: 95  # percentage
+    disk_warning: 85  # percentage
+    disk_critical: 95  # percentage
+    response_time_warning: 2.0  # seconds
+    response_time_critical: 5.0  # seconds
+
+# Notification settings
+notifications:
+  enabled: true
+  
+  # Slack configuration
+  slack:
+    enabled: true
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    default_channel: "#trading-alerts"
+    username: "AI Trading Sentinel"
+    icon_emoji: ":robot_face:"
+    
+    channels:
+      critical: "#trading-critical"
+      warning: "#trading-warnings"
+      info: "#trading-info"
+      system: "#trading-system"
+  
+  # Email configuration
+  email:
+    enabled: false
+    smtp_server: "localhost"
+    smtp_port: 587
+    smtp_username: "${SMTP_USERNAME}"
+    smtp_password: "${SMTP_PASSWORD}"
+    from_address: "alerts@ai-trading-sentinel.com"
+    to_addresses:
+      - "admin@ai-trading-sentinel.com"
+  
+  # Webhook configuration
+  webhook:
+    enabled: false
+    url: "${WEBHOOK_URL}"
+    timeout: 10s
+    retry_count: 3
+
+# Security monitoring
+security:
+  enabled: true
+  
+  # Security alerts
+  alerts:
+    - name: "SuspiciousLoginAttempts"
+      pattern: "failed.*login|authentication.*failed"
+      threshold: 5
+      window: "5m"
+      severity: "critical"
+      
+    - name: "UnauthorizedAccess"
+      pattern: "401|403|unauthorized|forbidden"
+      threshold: 10
+      window: "5m"
+      severity: "warning"
+      
+    - name: "SQLInjectionAttempt"
+      pattern: "union.*select|drop.*table|insert.*into"
+      threshold: 1
+      window: "1m"
+      severity: "critical"
+      
+    - name: "XSSAttempt"
+      pattern: "<script|javascript:|onerror=|onload="
+      threshold: 1
+      window: "1m"
+      severity: "warning"
+
+# Backup monitoring
+backup_monitoring:
+  enabled: true
+  
+  # Backup job monitoring
+  jobs:
+    - name: "database_backup"
+      schedule: "0 2 * * *"  # Daily at 2 AM
+      timeout: "30m"
+      
+    - name: "config_backup"
+      schedule: "0 3 * * *"  # Daily at 3 AM
+      timeout: "15m"
+      
+    - name: "logs_backup"
+      schedule: "0 4 * * 0"  # Weekly on Sunday at 4 AM
+      timeout: "1h"
+      
+    - name: "full_backup"
+      schedule: "0 1 * * 0"  # Weekly on Sunday at 1 AM
+      timeout: "2h"
+  
+  # Backup alerts
+  alerts:
+    - name: "BackupJobFailed"
+      severity: "critical"
+      description: "Backup job failed to complete"
+      
+    - name: "BackupJobTimeout"
+      severity: "warning"
+      description: "Backup job exceeded timeout"
+      
+    - name: "BackupStorageLow"
+      threshold: 85  # percentage
+      severity: "warning"
+      description: "Backup storage usage is high"
+
+# Maintenance windows
+maintenance:
+  enabled: true
+  
+  # Scheduled maintenance windows
+  windows:
+    - name: "weekly_maintenance"
+      schedule: "0 6 * * 0"  # Sunday at 6 AM
+      duration: "2h"
+      description: "Weekly system maintenance"
+      
+    - name: "monthly_updates"
+      schedule: "0 6 1 * *"  # First day of month at 6 AM
+      duration: "4h"
+      description: "Monthly system updates"
+  
+  # Maintenance alerts
+  suppress_alerts: true
+  notification_channels:
+    - "#trading-maintenance"
+
+# Reporting configuration
+reporting:
+  enabled: true
+  
+  # Report schedules
+  schedules:
+    - name: "daily_summary"
+      schedule: "0 9 * * *"  # Daily at 9 AM
+      type: "summary"
+      recipients: ["admin@ai-trading-sentinel.com"]
+      
+    - name: "weekly_performance"
+      schedule: "0 9 * * 1"  # Monday at 9 AM
+      type: "performance"
+      recipients: ["admin@ai-trading-sentinel.com"]
+      
+    - name: "monthly_report"
+      schedule: "0 9 1 * *"  # First day of month at 9 AM
+      type: "comprehensive"
+      recipients: ["admin@ai-trading-sentinel.com"]
+  
+  # Report content
+  content:
+    include_metrics: true
+    include_alerts: true
+    include_performance: true
+    include_security: true
+    include_backups: true
+    time_range: "24h"  # for daily reports
+
+# Integration settings
+integrations:
+  # PagerDuty integration
+  pagerduty:
+    enabled: false
+    service_key: "${PAGERDUTY_SERVICE_KEY}"
+    
+  # Datadog integration
+  datadog:
+    enabled: false
+    api_key: "${DATADOG_API_KEY}"
+    
+  # New Relic integration
+  newrelic:
+    enabled: false
+    license_key: "${NEWRELIC_LICENSE_KEY}"
+    
+  # Custom webhook integration
+  custom_webhook:
+    enabled: false
+    url: "${CUSTOM_WEBHOOK_URL}"
+    headers:
+      Authorization: "Bearer ${WEBHOOK_TOKEN}"
+      Content-Type: "application/json"

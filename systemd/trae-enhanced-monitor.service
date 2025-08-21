@@ -1,0 +1,54 @@
+[Unit]
+Description=AI Trading Sentinel - Enhanced 24/7 Monitoring Service
+Documentation=https://github.com/your-repo/ai-trading-sentinel
+After=network.target network-online.target
+Wants=network-online.target
+Requires=network.target
+
+[Service]
+# Service Configuration
+Type=simple
+User=trae-sentinel
+Group=trae-sentinel
+WorkingDirectory=/opt/trae-sentinel
+Environment=PYTHONPATH=/opt/trae-sentinel
+Environment=PYTHONUNBUFFERED=1
+
+# Main Command
+ExecStart=/opt/trae-sentinel/venv/bin/python enhanced_monitoring_service.py --daemon
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -TERM $MAINPID
+
+# Restart Policy
+Restart=always
+RestartSec=10
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Resource Limits
+MemoryLimit=1G
+CPUQuota=50%
+TasksMax=100
+
+# Security Settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/trae-sentinel/logs /opt/trae-sentinel/data /opt/trae-sentinel/screenshots
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=trae-enhanced-monitor
+
+# Health Check
+WatchdogSec=120
+
+# Environment Files
+EnvironmentFile=-/opt/trae-sentinel/.env
+EnvironmentFile=-/etc/trae-sentinel/monitoring.env
+
+[Install]
+WantedBy=multi-user.target
+Also=trae-enhanced-monitor.timer

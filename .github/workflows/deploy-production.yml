@@ -1,0 +1,606 @@
+name: Production CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      force_deploy:
+        description: 'Force deployment even if tests fail'
+        required: false
+        default: false
+        type: boolean
+      skip_tests:
+        description: 'Skip test execution'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+  DEPLOYMENT_TIMEOUT: 600
+
+jobs:
+  # Security and code quality checks
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install Bandit
+        run: pip install bandit[toml]
+        
+      - name: Run Bandit security linter
+        run: |
+          bandit -r . -f json -o bandit-results.json || true
+          
+      - name: Upload Bandit results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: bandit-results
+          path: bandit-results.json
+
+  # Backend testing
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: trading_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+          
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
+          
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium
+          
+      - name: Create test environment
+        run: |
+          cp .env.example .env.test
+          echo "FLASK_ENV=testing" >> .env.test
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/trading_test" >> .env.test
+          echo "REDIS_URL=redis://localhost:6379/1" >> .env.test
+          
+      - name: Run linting
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          
+      - name: Run type checking
+        run: |
+          mypy . --ignore-missing-imports || true
+          
+      - name: Run backend tests
+        run: |
+          export FLASK_ENV=testing
+          python -m pytest tests/ -v --cov=. --cov-report=xml --cov-report=html || true
+          
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: backend
+          name: backend-coverage
+          
+      - name: Archive test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: backend-test-results
+          path: |
+            htmlcov/
+            coverage.xml
+            pytest-report.xml
+
+  # Frontend testing
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run linting
+        run: npm run lint || true
+        
+      - name: Run type checking
+        run: npm run type-check || true
+        
+      - name: Run unit tests
+        run: npm run test:unit || true
+        
+      - name: Build frontend
+        run: npm run build
+        
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./frontend/coverage
+          flags: frontend
+          name: frontend-coverage
+          
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: frontend-test-results
+          path: |
+            frontend/coverage/
+            frontend/test-results/
+
+  # End-to-end testing
+  test-e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: trading_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+          
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+          
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+          
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+          
+      - name: Start backend
+        run: |
+          cp .env.example .env.test
+          echo "FLASK_ENV=testing" >> .env.test
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/trading_test" >> .env.test
+          echo "REDIS_URL=redis://localhost:6379/1" >> .env.test
+          export FLASK_ENV=testing
+          python app.py &
+          sleep 10
+          
+      - name: Start frontend
+        run: |
+          cd frontend
+          npm run preview &
+          sleep 5
+          
+      - name: Install Playwright
+        run: |
+          npx playwright install chromium
+          
+      - name: Run E2E tests
+        run: |
+          npx playwright test
+          
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: e2e-test-results
+          path: |
+            test-results/
+            playwright-report/
+
+  # Build Docker images
+  build-images:
+    name: Build Images
+    runs-on: ubuntu-latest
+    needs: [security-scan, test-backend, test-frontend]
+    if: github.event_name == 'push' || github.event.inputs.force_deploy == 'true'
+    outputs:
+      backend-image: ${{ steps.backend-meta.outputs.tags }}
+      frontend-image: ${{ steps.frontend-meta.outputs.tags }}
+      trading-bot-image: ${{ steps.trading-bot-meta.outputs.tags }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Log in to Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Extract metadata for backend
+        id: backend-meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            
+      - name: Extract metadata for frontend
+        id: frontend-meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            
+      - name: Extract metadata for trading bot
+        id: trading-bot-meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/trading-bot
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile.backend
+          push: true
+          tags: ${{ steps.backend-meta.outputs.tags }}
+          labels: ${{ steps.backend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ steps.frontend-meta.outputs.tags }}
+          labels: ${{ steps.frontend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      - name: Build and push trading bot image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile.trading-bot
+          push: true
+          tags: ${{ steps.trading-bot-meta.outputs.tags }}
+          labels: ${{ steps.trading-bot-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Deploy to production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-images, test-e2e]
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && (github.event_name == 'push' || github.event.inputs.force_deploy == 'true')
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          
+      - name: Create deployment package
+        run: |
+          tar -czf deployment.tar.gz \
+            docker-compose.prod.yml \
+            nginx.conf \
+            .env.production.example \
+            scripts/ \
+            monitoring/
+            
+      - name: Upload deployment package
+        run: |
+          scp -i ~/.ssh/id_rsa deployment.tar.gz ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/
+          
+      - name: Deploy on server
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            
+            # Create deployment directory
+            sudo mkdir -p /opt/ai-trading-sentinel
+            cd /opt/ai-trading-sentinel
+            
+            # Backup current deployment
+            if [ -d "current" ]; then
+              sudo mv current backup-$(date +%Y%m%d-%H%M%S) || true
+            fi
+            
+            # Extract new deployment
+            sudo mkdir -p current
+            cd current
+            sudo tar -xzf /tmp/deployment.tar.gz
+            
+            # Update environment file
+            if [ ! -f .env ]; then
+              sudo cp .env.production.example .env
+              echo "Please update .env with production values"
+            fi
+            
+            # Set permissions
+            sudo chown -R $USER:$USER .
+            sudo chmod +x scripts/*.sh
+            
+            # Login to container registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Pull latest images
+            docker-compose -f docker-compose.prod.yml pull
+            
+            # Stop services gracefully
+            docker-compose -f docker-compose.prod.yml down --timeout 30 || true
+            
+            # Start services
+            docker-compose -f docker-compose.prod.yml up -d
+            
+            # Wait for services to be healthy
+            sleep 30
+            
+            # Update Nginx configuration
+            sudo cp nginx.conf /etc/nginx/sites-available/ai-trading-sentinel
+            sudo ln -sf /etc/nginx/sites-available/ai-trading-sentinel /etc/nginx/sites-enabled/
+            sudo nginx -t && sudo systemctl reload nginx
+            
+            # Setup health monitor as systemd service
+            sudo cp scripts/health-monitor.py /usr/local/bin/
+            sudo chmod +x /usr/local/bin/health-monitor.py
+            
+            # Create systemd service file
+            sudo tee /etc/systemd/system/trading-health-monitor.service > /dev/null << 'SERVICE_EOF'
+          [Unit]
+          Description=AI Trading Sentinel Health Monitor
+          After=docker.service
+          Requires=docker.service
+          
+          [Service]
+          Type=simple
+          User=root
+          WorkingDirectory=/opt/ai-trading-sentinel/current
+          ExecStart=/usr/bin/python3 /usr/local/bin/health-monitor.py
+          Restart=always
+          RestartSec=30
+          
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE_EOF
+            
+            # Enable and start health monitor
+            sudo systemctl daemon-reload
+            sudo systemctl enable trading-health-monitor
+            sudo systemctl restart trading-health-monitor
+            
+            # Cleanup
+            rm -f /tmp/deployment.tar.gz
+            
+            echo "Deployment completed successfully"
+          EOF
+          
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            # Check backend health
+            curl -f http://localhost:5000/health || exit 1
+            
+            # Check frontend
+            curl -f http://localhost:3000 || exit 1
+            
+            # Check Prometheus
+            curl -f http://localhost:9090/-/healthy || exit 1
+            
+            # Check Grafana
+            curl -f http://localhost:3001/api/health || exit 1
+            
+            # Check Docker services
+            docker-compose -f /opt/ai-trading-sentinel/current/docker-compose.prod.yml ps
+            
+            echo "All services are healthy"
+          EOF
+          
+      - name: Notify deployment success
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"🚀 AI Trading Sentinel deployed successfully to production!"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+            
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"❌ AI Trading Sentinel deployment failed!"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+            
+      - name: Cleanup SSH keys
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_rsa
+
+  # Rollback on failure
+  rollback:
+    name: Rollback
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: failure() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          
+      - name: Rollback deployment
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd /opt/ai-trading-sentinel
+            
+            # Find latest backup
+            BACKUP_DIR=$(ls -1t backup-* 2>/dev/null | head -1)
+            
+            if [ -n "$BACKUP_DIR" ]; then
+              echo "Rolling back to $BACKUP_DIR"
+              
+              # Stop current services
+              cd current
+              docker-compose -f docker-compose.prod.yml down --timeout 30 || true
+              cd ..
+              
+              # Restore backup
+              rm -rf current
+              mv "$BACKUP_DIR" current
+              
+              # Restart services
+              cd current
+              docker-compose -f docker-compose.prod.yml up -d
+              
+              echo "Rollback completed"
+            else
+              echo "No backup found for rollback"
+              exit 1
+            fi
+          EOF
+          
+      - name: Notify rollback
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"🔄 AI Trading Sentinel rolled back due to deployment failure"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+            
+      - name: Cleanup SSH keys
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_rsa

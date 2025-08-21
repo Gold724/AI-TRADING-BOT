@@ -1,15 +1,13 @@
 
 services:
   # Override for local development
-  sentinel-bot:
+  bot:
     environment:
       - FLASK_ENV=development
       - DEV_MODE=true
-    ports:
-      - "5000:5000"
     volumes:
       - .:/app
-    command: python cloud_main.py
+    command: python main.py
 
   # Override for frontend development
   frontend:

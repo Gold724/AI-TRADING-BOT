@@ -353,13 +353,22 @@ def scalping_config():
         })
     else:
         # Update configuration
-        data = request.get_json() or {}
-        return jsonify({
-            'status': 'success',
-            'message': 'Scalping configuration updated',
-            'updated_fields': list(data.keys()),
-            'timestamp': datetime.datetime.now().isoformat()
-        })
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({'error': 'No JSON data provided'}), 400
+            
+            # Here you would normally update your configuration
+            # For now, just return success with the received data
+            return jsonify({
+                'status': 'success',
+                'message': 'Scalping configuration updated',
+                'updated_fields': list(data.keys()),
+                'received_data': data,
+                'timestamp': datetime.datetime.now().isoformat()
+            })
+        except Exception as e:
+            return jsonify({'error': f'Failed to process request: {str(e)}'}), 500
 
 @app.route('/api/scalping/trades')
 def scalping_trades():

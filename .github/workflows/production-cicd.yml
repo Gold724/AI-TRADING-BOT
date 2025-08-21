@@ -1,0 +1,583 @@
+name: Production CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, production ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      deploy_environment:
+        description: 'Deployment Environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+      force_deploy:
+        description: 'Force deployment (skip tests)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.10'
+  NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Security and Code Quality Checks
+  security-scan:
+    name: Security & Quality Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install security tools
+      run: |
+        pip install bandit safety semgrep
+        npm install -g audit-ci
+    
+    - name: Run Bandit security scan
+      run: |
+        bandit -r . -f json -o bandit-report.json || true
+        bandit -r . -f txt
+    
+    - name: Run Safety check
+      run: |
+        pip freeze | safety check --json --output safety-report.json || true
+        pip freeze | safety check
+    
+    - name: Run Semgrep
+      run: |
+        semgrep --config=auto --json --output=semgrep-report.json . || true
+        semgrep --config=auto .
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+          semgrep-report.json
+
+  # Code Quality and Linting
+  code-quality:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        pip install black isort flake8 mypy pylint
+        pip install -r requirements.txt
+    
+    - name: Run Black formatter check
+      run: black --check --diff .
+    
+    - name: Run isort import sorting check
+      run: isort --check-only --diff .
+    
+    - name: Run flake8 linting
+      run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    
+    - name: Run extended flake8
+      run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Run MyPy type checking
+      run: mypy . --ignore-missing-imports || true
+    
+    - name: Run Pylint
+      run: pylint **/*.py --exit-zero
+
+  # Backend Testing
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser chromium-chromedriver
+    
+    - name: Install Python dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-asyncio
+    
+    - name: Set up test environment
+      run: |
+        cp .env.example .env
+        echo "REDIS_URL=redis://localhost:6379" >> .env
+        echo "TESTING=true" >> .env
+    
+    - name: Run backend tests
+      run: |
+        pytest tests/ -v --cov=. --cov-report=xml --cov-report=html
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: backend
+        name: backend-coverage
+
+  # Frontend Testing and Build
+  frontend-tests:
+    name: Frontend Tests & Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Run frontend linting
+      working-directory: ./frontend
+      run: npm run lint
+    
+    - name: Run frontend tests
+      working-directory: ./frontend
+      run: npm run test:ci
+    
+    - name: Build frontend for production
+      working-directory: ./frontend
+      run: |
+        npm run build
+        ls -la dist/
+    
+    - name: Upload frontend build
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-build
+        path: frontend/dist/
+        retention-days: 7
+
+  # End-to-End Testing
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser chromium-chromedriver
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        cd frontend && npm ci
+    
+    - name: Download frontend build
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-build
+        path: frontend/dist/
+    
+    - name: Start application services
+      run: |
+        cp .env.example .env
+        echo "REDIS_URL=redis://localhost:6379" >> .env
+        echo "TESTING=true" >> .env
+        
+        # Start backend
+        python app.py &
+        BACKEND_PID=$!
+        
+        # Start frontend dev server
+        cd frontend && npm run preview &
+        FRONTEND_PID=$!
+        
+        # Wait for services to start
+        sleep 10
+        
+        # Save PIDs for cleanup
+        echo $BACKEND_PID > backend.pid
+        echo $FRONTEND_PID > frontend.pid
+    
+    - name: Run E2E tests
+      run: |
+        python -m pytest tests/e2e/ -v --html=e2e-report.html --self-contained-html
+    
+    - name: Upload E2E test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: e2e-test-results
+        path: |
+          e2e-report.html
+          screenshots/
+    
+    - name: Cleanup services
+      if: always()
+      run: |
+        if [ -f backend.pid ]; then kill $(cat backend.pid) || true; fi
+        if [ -f frontend.pid ]; then kill $(cat frontend.pid) || true; fi
+
+  # Docker Build and Push
+  docker-build:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [security-scan, code-quality, backend-tests, frontend-tests]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+    
+    - name: Download frontend build
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-build
+        path: frontend/dist/
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.production
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+  # Deployment Package Creation
+  create-deployment-package:
+    name: Create Deployment Package
+    runs-on: ubuntu-latest
+    needs: [e2e-tests, docker-build]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download frontend build
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-build
+        path: frontend/dist/
+    
+    - name: Create deployment package
+      run: |
+        mkdir -p deployment-package
+        
+        # Copy application files
+        cp -r *.py deployment-package/
+        cp -r src/ deployment-package/ 2>/dev/null || true
+        cp -r templates/ deployment-package/ 2>/dev/null || true
+        cp -r static/ deployment-package/ 2>/dev/null || true
+        cp -r monitoring/ deployment-package/
+        cp -r scripts/ deployment-package/
+        
+        # Copy frontend build
+        cp -r frontend/dist/ deployment-package/frontend/
+        
+        # Copy configuration files
+        cp requirements.txt deployment-package/
+        cp .env.production.template deployment-package/
+        cp docker-compose.production.yml deployment-package/ 2>/dev/null || true
+        cp Dockerfile.production deployment-package/ 2>/dev/null || true
+        
+        # Copy deployment scripts
+        cp scripts/deploy_*.sh deployment-package/ 2>/dev/null || true
+        cp scripts/deploy_*.ps1 deployment-package/ 2>/dev/null || true
+        
+        # Create version info
+        echo "{
+          \"version\": \"${{ github.sha }}\",
+          \"branch\": \"${{ github.ref_name }}\",
+          \"build_date\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+          \"build_number\": \"${{ github.run_number }}\",
+          \"commit_message\": \"${{ github.event.head_commit.message }}\"
+        }" > deployment-package/version.json
+        
+        # Create deployment archive
+        tar -czf ai-trading-sentinel-deployment.tar.gz -C deployment-package .
+        
+        # List contents for verification
+        echo "Deployment package contents:"
+        tar -tzf ai-trading-sentinel-deployment.tar.gz | head -20
+    
+    - name: Upload deployment package
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-package
+        path: ai-trading-sentinel-deployment.tar.gz
+        retention-days: 30
+
+  # Production Deployment
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [create-deployment-package]
+    if: github.ref == 'refs/heads/production' || (github.ref == 'refs/heads/main' && github.event.inputs.deploy_environment == 'production')
+    environment: production
+    
+    steps:
+    - name: Download deployment package
+      uses: actions/download-artifact@v3
+      with:
+        name: deployment-package
+    
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+    
+    - name: Deploy to VPS
+      run: |
+        # Upload deployment package
+        scp ai-trading-sentinel-deployment.tar.gz ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/
+        
+        # Execute deployment on VPS
+        ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          set -e
+          
+          # Backup current deployment
+          if [ -d "/opt/ai-trading-sentinel" ]; then
+            sudo cp -r /opt/ai-trading-sentinel /opt/ai-trading-sentinel.backup.$(date +%Y%m%d_%H%M%S)
+          fi
+          
+          # Stop services
+          sudo systemctl stop trading-bot || true
+          sudo systemctl stop trading-api || true
+          sudo systemctl stop nginx || true
+          
+          # Extract new deployment
+          sudo mkdir -p /opt/ai-trading-sentinel
+          cd /opt/ai-trading-sentinel
+          sudo tar -xzf /tmp/ai-trading-sentinel-deployment.tar.gz
+          
+          # Install/update Python dependencies
+          sudo /opt/ai-trading-sentinel/venv/bin/pip install -r requirements.txt
+          
+          # Update environment configuration
+          if [ ! -f ".env" ]; then
+            sudo cp .env.production.template .env
+          fi
+          
+          # Set permissions
+          sudo chown -R trading:trading /opt/ai-trading-sentinel
+          sudo chmod +x scripts/*.sh scripts/*.py
+          
+          # Update systemd services
+          sudo systemctl daemon-reload
+          
+          # Start services
+          sudo systemctl start trading-api
+          sudo systemctl start trading-bot
+          sudo systemctl start nginx
+          
+          # Enable services
+          sudo systemctl enable trading-api
+          sudo systemctl enable trading-bot
+          sudo systemctl enable nginx
+          
+          # Cleanup
+          rm -f /tmp/ai-trading-sentinel-deployment.tar.gz
+        EOF
+    
+    - name: Verify deployment
+      run: |
+        # Wait for services to start
+        sleep 30
+        
+        # Check API health
+        response=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.VPS_HOST }}/api/health || echo "000")
+        if [ "$response" = "200" ]; then
+          echo "✅ API health check passed"
+        else
+          echo "❌ API health check failed (HTTP $response)"
+          exit 1
+        fi
+        
+        # Check frontend
+        response=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.VPS_HOST }}/ || echo "000")
+        if [ "$response" = "200" ]; then
+          echo "✅ Frontend health check passed"
+        else
+          echo "❌ Frontend health check failed (HTTP $response)"
+          exit 1
+        fi
+    
+    - name: Send deployment notification
+      if: always()
+      run: |
+        if [ "${{ job.status }}" = "success" ]; then
+          STATUS="✅ SUCCESS"
+          COLOR="good"
+        else
+          STATUS="❌ FAILED"
+          COLOR="danger"
+        fi
+        
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{
+            \"attachments\": [{
+              \"color\": \"$COLOR\",
+              \"title\": \"AI Trading Sentinel Deployment\",
+              \"text\": \"$STATUS - Production deployment completed\",
+              \"fields\": [
+                {\"title\": \"Environment\", \"value\": \"Production\", \"short\": true},
+                {\"title\": \"Version\", \"value\": \"${{ github.sha }}\", \"short\": true},
+                {\"title\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"short\": true},
+                {\"title\": \"Build\", \"value\": \"#${{ github.run_number }}\", \"short\": true}
+              ]
+            }]
+          }" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Post-Deployment Monitoring
+  post-deploy-monitoring:
+    name: Post-Deployment Health Check
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: success()
+    
+    steps:
+    - name: Monitor deployment health
+      run: |
+        echo "🔍 Starting post-deployment monitoring..."
+        
+        for i in {1..10}; do
+          echo "Health check $i/10..."
+          
+          # Check API
+          api_status=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.VPS_HOST }}/api/health || echo "000")
+          
+          # Check frontend
+          web_status=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.VPS_HOST }}/ || echo "000")
+          
+          # Check trading bot status
+          bot_status=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.VPS_HOST }}/api/bot/status || echo "000")
+          
+          echo "API: $api_status, Web: $web_status, Bot: $bot_status"
+          
+          if [ "$api_status" = "200" ] && [ "$web_status" = "200" ] && [ "$bot_status" = "200" ]; then
+            echo "✅ All services healthy"
+          else
+            echo "⚠️  Some services may be starting up..."
+          fi
+          
+          sleep 30
+        done
+        
+        echo "🎉 Post-deployment monitoring completed"
+
+  # Cleanup
+  cleanup:
+    name: Cleanup Artifacts
+    runs-on: ubuntu-latest
+    needs: [post-deploy-monitoring]
+    if: always()
+    
+    steps:
+    - name: Clean up old artifacts
+      run: |
+        echo "🧹 Cleanup completed (artifacts will be automatically removed based on retention policy)"

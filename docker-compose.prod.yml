@@ -2,128 +2,479 @@
 version: '3.8'
 
 services:
-  # React Frontend (built and served by Nginx)
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
-    container_name: ai-trading-frontend
+  # Nginx Reverse Proxy with SSL
+  nginx:
+    image: nginx:alpine
+    container_name: ai-trading-nginx
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/ssl/certs
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - nginx_logs:/var/log/nginx
     depends_on:
       - backend
-      - sentinel
+      - frontend
     networks:
-      - trading-network
+      - ai-trading-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.ai-trading-sentinel.service=nginx"
+      - "com.ai-trading-sentinel.environment=production"
 
-  # Flask Backend API
+  # Backend API Service
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.backend
+      target: production
+    image: ai-trading-sentinel/backend:latest
     container_name: ai-trading-backend
     restart: unless-stopped
-    ports:
-      - "5000:5000"
     environment:
-      - FLASK_ENV=production
-      - PYTHONPATH=/app
-    env_file:
-      - .env.production
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://trading_user:${POSTGRES_PASSWORD}@postgres:5432/trading_db
+      - API_SECRET_KEY=${API_SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - BROKER_USERNAME=${BROKER_USERNAME}
+      - BROKER_PASSWORD=${BROKER_PASSWORD}
+      - TRADING_ENABLED=true
+      - LOG_LEVEL=INFO
+      - PROMETHEUS_PORT=8000
+      - ALERT_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
     volumes:
-      - ./data:/app/data
       - ./logs:/app/logs
-    networks:
-      - trading-network
-
-  # Bulenox Sentinel Control Panel
-  sentinel:
-    build:
-      context: .
-      dockerfile: Dockerfile.sentinel
-    container_name: ai-trading-sentinel
-    restart: unless-stopped
-    ports:
-      - "8090:8090"
-    environment:
-      - DISPLAY=:99
-      - PYTHONPATH=/app
-    env_file:
-      - .env.production
-    volumes:
+      - ./config:/app/config:ro
       - ./data:/app/data
-      - ./logs:/app/logs
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-    networks:
-      - trading-network
+      - backend_uploads:/app/uploads
     depends_on:
-      - xvfb
-
-  # Virtual display for headless browser
-  xvfb:
-    image: selenium/standalone-chrome:latest
-    container_name: ai-trading-xvfb
-    restart: unless-stopped
-    ports:
-      - "4444:4444"
-    environment:
-      - DISPLAY=:99
+      - redis
+      - postgres
     networks:
-      - trading-network
+      - ai-trading-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    labels:
+      - "com.ai-trading-sentinel.service=backend"
+      - "com.ai-trading-sentinel.environment=production"
 
-  # Redis for caching and session management
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+      args:
+        - VITE_API_URL=https://trading.yourdomain.com/api
+        - VITE_WS_URL=wss://trading.yourdomain.com/ws
+        - VITE_ENVIRONMENT=production
+    image: ai-trading-sentinel/frontend:latest
+    container_name: ai-trading-frontend
+    restart: unless-stopped
+    volumes:
+      - frontend_dist:/usr/share/nginx/html
+    networks:
+      - ai-trading-network
+    labels:
+      - "com.ai-trading-sentinel.service=frontend"
+      - "com.ai-trading-sentinel.environment=production"
+
+  # Redis Cache and Session Store
   redis:
     image: redis:7-alpine
     container_name: ai-trading-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
+      - ./redis/redis.conf:/etc/redis/redis.conf:ro
     networks:
-      - trading-network
+      - ai-trading-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    labels:
+      - "com.ai-trading-sentinel.service=redis"
+      - "com.ai-trading-sentinel.environment=production"
 
-  # PostgreSQL for trade data storage
+  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     container_name: ai-trading-postgres
     restart: unless-stopped
-    ports:
-      - "5432:5432"
     environment:
       - POSTGRES_DB=trading_db
       - POSTGRES_USER=trading_user
-      - POSTGRES_PASSWORD=secure_password_change_this
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+      - ./database/backups:/backups
     networks:
-      - trading-network
+      - ai-trading-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trading_user -d trading_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    labels:
+      - "com.ai-trading-sentinel.service=postgres"
+      - "com.ai-trading-sentinel.environment=production"
 
-  # Monitoring with Grafana
+  # Trading Bot Service
+  trading-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+      target: production
+    image: ai-trading-sentinel/bot:latest
+    container_name: ai-trading-bot
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - REDIS_URL=redis://redis:6379/1
+      - API_URL=http://backend:5000
+      - BROKER_USERNAME=${BROKER_USERNAME}
+      - BROKER_PASSWORD=${BROKER_PASSWORD}
+      - TRADING_ENABLED=true
+      - RISK_MANAGEMENT_ENABLED=true
+      - MAX_DAILY_LOSS=${MAX_DAILY_LOSS:-1000}
+      - MAX_POSITION_SIZE=${MAX_POSITION_SIZE:-10000}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+      - ./data:/app/data
+      - bot_chrome_data:/app/chrome_data
+    depends_on:
+      - backend
+      - redis
+    networks:
+      - ai-trading-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/health')"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 3G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    labels:
+      - "com.ai-trading-sentinel.service=trading-bot"
+      - "com.ai-trading-sentinel.environment=production"
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ai-trading-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - ai-trading-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "com.ai-trading-sentinel.service=prometheus"
+      - "com.ai-trading-sentinel.environment=production"
+
+  # Grafana Dashboard
   grafana:
     image: grafana/grafana:latest
     container_name: ai-trading-grafana
     restart: unless-stopped
-    ports:
-      - "3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    ports:
+      - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
     networks:
-      - trading-network
+      - ai-trading-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "com.ai-trading-sentinel.service=grafana"
+      - "com.ai-trading-sentinel.environment=production"
 
+  # Alertmanager
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: ai-trading-alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - ai-trading-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "com.ai-trading-sentinel.service=alertmanager"
+      - "com.ai-trading-sentinel.environment=production"
+
+  # Node Exporter for System Metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: ai-trading-node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - ai-trading-network
+    labels:
+      - "com.ai-trading-sentinel.service=node-exporter"
+      - "com.ai-trading-sentinel.environment=production"
+
+  # Redis Exporter for Redis Metrics
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: ai-trading-redis-exporter
+    restart: unless-stopped
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis
+    networks:
+      - ai-trading-network
+    labels:
+      - "com.ai-trading-sentinel.service=redis-exporter"
+      - "com.ai-trading-sentinel.environment=production"
+
+  # Loki for Log Aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: ai-trading-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - ai-trading-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "com.ai-trading-sentinel.service=loki"
+      - "com.ai-trading-sentinel.environment=production"
+
+  # Promtail for Log Collection
+  promtail:
+    image: grafana/promtail:latest
+    container_name: ai-trading-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./logs:/var/log/app:ro
+      - /var/log:/var/log/host:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      - loki
+    networks:
+      - ai-trading-network
+    labels:
+      - "com.ai-trading-sentinel.service=promtail"
+      - "com.ai-trading-sentinel.environment=production"
+
+  # Backup Service
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile.backup
+    image: ai-trading-sentinel/backup:latest
+    container_name: ai-trading-backup
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=trading_db
+      - POSTGRES_USER=trading_user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+      - S3_BUCKET=${S3_BACKUP_BUCKET}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - ./database/backups:/backups
+      - ./data:/app/data:ro
+      - ./config:/app/config:ro
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ai-trading-network
+    labels:
+      - "com.ai-trading-sentinel.service=backup"
+      - "com.ai-trading-sentinel.environment=production"
+
+# Networks
+networks:
+  ai-trading-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Volumes
 volumes:
   postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/ai-trading-sentinel/data/postgres
+  
   redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/ai-trading-sentinel/data/redis
+  
+  prometheus_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/ai-trading-sentinel/data/prometheus
+  
   grafana_data:
-
-networks:
-  trading-network:
-    driver: bridge
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/ai-trading-sentinel/data/grafana
+  
+  alertmanager_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/ai-trading-sentinel/data/alertmanager
+  
+  nginx_logs:
+    driver: local
+  
+  frontend_dist:
+    driver: local
+  
+  backend_uploads:
+    driver: local
+  
+  bot_chrome_data:
+    driver: local
+  
+  loki_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/ai-trading-sentinel/data/loki

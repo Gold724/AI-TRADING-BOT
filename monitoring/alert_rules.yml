@@ -1,67 +1,136 @@
 # AI Trading Sentinel - Prometheus Alert Rules
-# TRAE-SentinelOps: Critical monitoring alerts for 24/7 reliability
+# TRAE-SentinelOps: Production monitoring alerts for 24/7 trading system reliability
 
 groups:
-  - name: tradebot-alerts
+  - name: system_alerts
     rules:
-      - alert: TradeBotDown
-        expr: up{job="tradebot"} == 0
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
+
+      # Critical CPU Usage
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical CPU usage detected"
+          description: "CPU usage is above 95% for more than 2 minutes on {{ $labels.instance }}"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 85% for more than 5 minutes on {{ $labels.instance }}"
+
+      # Critical Memory Usage
+      - alert: CriticalMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Memory usage is above 95% for more than 2 minutes on {{ $labels.instance }}"
+
+      # Low Disk Space
+      - alert: LowDiskSpace
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "Low disk space detected"
+          description: "Disk usage is above 85% on {{ $labels.device }} ({{ $labels.mountpoint }}) on {{ $labels.instance }}"
+
+      # Critical Disk Space
+      - alert: CriticalDiskSpace
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical disk space detected"
+          description: "Disk usage is above 95% on {{ $labels.device }} ({{ $labels.mountpoint }}) on {{ $labels.instance }}"
+
+      # High Load Average
+      - alert: HighLoadAverage
+        expr: node_load15 > 2
+        for: 10m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High load average detected"
+          description: "Load average is {{ $value }} for more than 10 minutes on {{ $labels.instance }}"
+
+  - name: docker_alerts
+    rules:
+      # Container Down
+      - alert: ContainerDown
+        expr: up{job="docker"} == 0
         for: 1m
         labels:
           severity: critical
-          service: tradebot
+          service: docker
         annotations:
-          summary: "TradeBot service is down"
-          description: "TradeBot has been down for more than 1 minute"
-          action: "Check container status with 'docker ps' and restart if needed"
+          summary: "Container is down"
+          description: "Container {{ $labels.instance }} has been down for more than 1 minute"
 
-      - alert: TradeBotHighCPU
-        expr: rate(process_cpu_seconds_total{job="tradebot"}[5m]) * 100 > 80
+      # High Container CPU
+      - alert: HighContainerCPU
+        expr: rate(container_cpu_usage_seconds_total[5m]) * 100 > 80
         for: 5m
         labels:
           severity: warning
-          service: tradebot
+          service: docker
         annotations:
-          summary: "TradeBot high CPU usage"
-          description: "TradeBot CPU usage is above 80% for 5 minutes"
-          action: "Check for infinite loops or resource-heavy operations"
+          summary: "High container CPU usage"
+          description: "Container {{ $labels.name }} CPU usage is above 80% for more than 5 minutes"
 
-      - alert: TradeBotHighMemory
-        expr: process_resident_memory_bytes{job="tradebot"} / 1024 / 1024 > 1024
+      # High Container Memory
+      - alert: HighContainerMemory
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) * 100 > 85
         for: 5m
         labels:
           severity: warning
-          service: tradebot
+          service: docker
         annotations:
-          summary: "TradeBot high memory usage"
-          description: "TradeBot memory usage is above 1GB"
-          action: "Check for memory leaks or large data processing"
+          summary: "High container memory usage"
+          description: "Container {{ $labels.name }} memory usage is above 85% for more than 5 minutes"
 
-      - alert: TradeBotErrors
-        expr: rate(tradebot_errors_total[5m]) > 0.1
-        for: 2m
+      # Container Restart
+      - alert: ContainerRestart
+        expr: increase(container_restart_count[1h]) > 3
+        for: 0m
         labels:
           severity: warning
-          service: tradebot
+          service: docker
         annotations:
-          summary: "TradeBot error rate high"
-          description: "TradeBot error rate is {{ $value }} errors per second"
-          action: "Check logs for error details"
+          summary: "Container restarting frequently"
+          description: "Container {{ $labels.name }} has restarted {{ $value }} times in the last hour"
 
-      - alert: TradeBotNoTrades
-        expr: rate(tradebot_trades_total[10m]) == 0
-        for: 30m
-        labels:
-          severity: warning
-          service: tradebot
-        annotations:
-          summary: "No trades executed"
-          description: "No trades have been executed in the last 30 minutes"
-          action: "Check market conditions and bot configuration"
-
-  - name: api-alerts
+  - name: application_alerts
     rules:
-      - alert: APIDown
+      # API Service Down
+      - alert: APIServiceDown
         expr: up{job="api"} == 0
         for: 1m
         labels:
@@ -69,132 +138,276 @@ groups:
           service: api
         annotations:
           summary: "API service is down"
-          description: "API has been down for more than 1 minute"
-          action: "Check container status and restart if needed"
+          description: "API service has been down for more than 1 minute"
 
-      - alert: APIHighResponseTime
-        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="api"}[5m])) > 2
+      # High API Response Time
+      - alert: HighAPIResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
         for: 5m
         labels:
           severity: warning
           service: api
         annotations:
-          summary: "API high response time"
-          description: "95th percentile response time is above 2 seconds"
-          action: "Check API performance and database queries"
+          summary: "High API response time"
+          description: "95th percentile API response time is {{ $value }}s for more than 5 minutes"
 
-  - name: redis-alerts
+      # High API Error Rate
+      - alert: HighAPIErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High API error rate"
+          description: "API error rate is {{ $value }}% for more than 5 minutes"
+
+      # Critical API Error Rate
+      - alert: CriticalAPIErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 20
+        for: 2m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Critical API error rate"
+          description: "API error rate is {{ $value }}% for more than 2 minutes"
+
+  - name: service_alerts
     rules:
-      - alert: RedisDown
-        expr: up{job="redis"} == 0
+      # Backend API service down
+      - alert: BackendServiceDown
+        expr: up{job="trae-backend"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: backend
+        annotations:
+          summary: "Backend API service is down"
+          description: "The backend API service has been down for more than 30 seconds"
+          action: "Restart trae-backend service immediately"
+
+      # Trading bot service down
+      - alert: TradingBotDown
+        expr: up{job="trae-trading-bot"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: trading_bot
+        annotations:
+          summary: "Trading bot service is down"
+          description: "The trading bot service has been down for more than 30 seconds"
+          action: "Check logs and restart trae-trading-bot service"
+          runbook_url: "https://docs.ai-trading-sentinel.com/runbooks/bot-down"
+
+      # Trading bot high error rate
+      - alert: TradingBotHighErrorRate
+        expr: rate(trading_bot_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: trading_bot
+        annotations:
+          summary: "High error rate in trading bot"
+          description: "Trading bot error rate is {{ $value }} errors per second over the last 5 minutes"
+          action: "Check trading bot logs for error patterns"
+
+      # Trading bot high drawdown
+      - alert: TradingBotHighDrawdown
+        expr: trading_bot_current_drawdown_percent > 5
         for: 1m
         labels:
           severity: critical
-          service: redis
-        annotations:
-          summary: "Redis is down"
-          description: "Redis has been down for more than 1 minute"
-          action: "Check Redis container and restart if needed"
-
-      - alert: RedisHighMemory
-        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
-        for: 5m
-        labels:
-          severity: warning
-          service: redis
-        annotations:
-          summary: "Redis high memory usage"
-          description: "Redis memory usage is above 90%"
-          action: "Consider Redis memory optimization"
-
-  - name: system-alerts
-    rules:
-      - alert: SystemDown
-        expr: up{job="node"} == 0
-        for: 1m
-        labels:
-          severity: critical
-          service: system
-        annotations:
-          summary: "Node exporter is down"
-          description: "System metrics collection is down"
-          action: "Check node exporter service"
-
-      - alert: HighCPU
-        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
-        for: 5m
-        labels:
-          severity: warning
-          service: system
-        annotations:
-          summary: "High CPU usage"
-          description: "CPU usage is above 80%"
-          action: "Check running processes"
-
-      - alert: HighMemory
-        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
-        for: 5m
-        labels:
-          severity: warning
-          service: system
-        annotations:
-          summary: "High memory usage"
-          description: "Memory usage is above 80%"
-          action: "Check memory usage and processes"
-
-      - alert: DiskSpaceLow
-        expr: (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"}) * 100 < 10
-        for: 5m
-        labels:
-          severity: critical
-          service: system
-        annotations:
-          summary: "Disk space low"
-          description: "Disk space is below 10% on {{ $labels.mountpoint }}"
-          action: "Free up disk space"
-
-      - alert: LoadAverageHigh
-        expr: node_load1 > 2
-        for: 5m
-        labels:
-          severity: warning
-          service: system
-        annotations:
-          summary: "High load average"
-          description: "Load average is above 2"
-          action: "Check system load"
-
-  - name: trading-alerts
-    rules:
-      - alert: DrawdownHigh
-        expr: tradebot_drawdown_percentage > 10
-        for: 1m
-        labels:
-          severity: critical
-          service: tradebot
+          component: trading_bot
         annotations:
           summary: "High drawdown detected"
-          description: "Current drawdown is {{ $value }}%"
-          action: "Consider stopping trading and reviewing strategy"
+          description: "Current drawdown is {{ $value }}%, exceeding 5% threshold"
+          action: "Risk management required - consider reducing position sizes"
 
-      - alert: ConsecutiveLosses
-        expr: tradebot_consecutive_losses > 5
-        for: 1m
+      # Trading bot low balance
+      - alert: TradingBotLowBalance
+        expr: trading_bot_account_balance < 1000
+        for: 5m
         labels:
           severity: warning
-          service: tradebot
+          component: trading_bot
         annotations:
-          summary: "Consecutive losses"
-          description: "{{ $value }} consecutive losses detected"
-          action: "Review trading strategy and risk management"
+          summary: "Low account balance"
+          description: "Account balance is ${{ $value }}, below $1000 threshold"
+          action: "Check account funding and trading performance"
 
-      - alert: DailyProfitTargetReached
-        expr: tradebot_daily_profit >= tradebot_daily_target
+      # Health monitor service down
+      - alert: HealthMonitorDown
+        expr: up{job="trae-health-monitor"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          component: health_monitor
+        annotations:
+          summary: "Health monitor service is down"
+          description: "The health monitor service has been down for more than 2 minutes"
+          action: "Restart trae-health-monitor service"
+
+  - name: trading_alerts
+    rules:
+      # Trading bot login failure
+      - alert: TradingBotLoginFailure
+        expr: increase(trading_login_failures_total[5m]) > 3
         for: 1m
         labels:
-          severity: info
-          service: tradebot
+          severity: critical
+          component: trading_bot
         annotations:
-          summary: "Daily profit target reached"
-          description: "Daily profit target of ${{ $value }} reached"
-          action: "Consider stopping trading for the day"
+          summary: "Trading bot login failures detected"
+          description: "More than 3 login failures in the last 5 minutes"
+          action: "Check broker credentials and connection"
+
+      # High trading latency
+      - alert: HighTradingLatency
+        expr: histogram_quantile(0.95, rate(trading_execution_duration_seconds_bucket[5m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+          component: trading_bot
+        annotations:
+          summary: "High trading execution latency detected"
+          description: "95th percentile trading execution time is above 5 seconds for more than 2 minutes"
+          action: "Check network connectivity and broker performance"
+
+      # Trading execution failures
+      - alert: TradingExecutionFailures
+        expr: rate(trading_executions_failed_total[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: critical
+          component: trading_bot
+        annotations:
+          summary: "Trading execution failures detected"
+          description: "Trading execution failure rate is above 10% for more than 1 minute"
+          action: "Check trading bot logs and broker connection"
+
+      # Risk limit breach
+      - alert: RiskLimitBreach
+        expr: trading_risk_exposure_ratio > 0.8
+        for: 30s
+        labels:
+          severity: critical
+          component: risk_management
+        annotations:
+          summary: "Risk limit breach detected"
+          description: "Trading risk exposure is above 80% of the limit"
+          action: "Reduce position sizes or halt trading immediately"
+
+      # No trades executed
+      - alert: TradingBotNoTrades
+        expr: increase(trading_executions_total[30m]) == 0
+        for: 30m
+        labels:
+          severity: warning
+          component: trading_bot
+        annotations:
+          summary: "No trades executed in 30 minutes"
+          description: "Trading bot has not executed any trades in the last 30 minutes"
+          action: "Check market conditions and bot strategy"
+
+  - name: external_alerts
+    rules:
+      # API endpoint down
+      - alert: APIEndpointDown
+        expr: probe_success{job="blackbox"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: external
+        annotations:
+          summary: "External API endpoint is down"
+          description: "API endpoint {{ $labels.instance }} has been down for more than 1 minute"
+          action: "Check external service status and network connectivity"
+
+      # SSL certificate expiring
+      - alert: SSLCertificateExpiring
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 7
+        for: 1h
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in less than 7 days"
+          action: "Renew SSL certificate before expiration"
+
+  - name: performance_alerts
+    rules:
+      # High disk usage
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is above 85% on {{ $labels.device }} for more than 5 minutes"
+          action: "Clean up disk space or expand storage"
+
+      # Critical disk usage
+      - alert: CriticalDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Critical disk usage detected"
+          description: "Disk usage is above 95% on {{ $labels.device }} for more than 2 minutes"
+          action: "Immediate action required - free up disk space"
+
+      # High load average
+      - alert: HighLoadAverage
+        expr: node_load15 > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High system load detected"
+          description: "15-minute load average is above 2 for more than 5 minutes on {{ $labels.instance }}"
+          action: "Check system processes and resource usage"
+
+      # Network errors
+      - alert: NetworkErrors
+        expr: rate(node_network_receive_errs_total[5m]) > 0.01 or rate(node_network_transmit_errs_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "Network errors detected"
+          description: "Network error rate is above 1% for more than 2 minutes on {{ $labels.instance }}"
+          action: "Check network configuration and hardware"
+
+  - name: database_alerts
+    rules:
+      # Redis connection failure
+      - alert: RedisConnectionFailure
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Redis connection failure"
+          description: "Cannot connect to Redis for more than 1 minute"
+          action: "Check Redis service status and restart if needed"
+
+      # Redis high memory usage
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is above 90% for more than 5 minutes"
+          action: "Check Redis configuration and clear unnecessary data"

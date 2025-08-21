@@ -1,0 +1,21 @@
+[Unit]
+Description=Trae AI Trading Sentinel Health Monitor
+After=trae.service
+BindsTo=trae.service
+
+[Service]
+Type=oneshot
+User=trae
+Group=trae
+WorkingDirectory=/opt/trae-sentinel
+ExecStart=/opt/trae-sentinel/scripts/health-check.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=trae-monitor
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/opt/trae-sentinel

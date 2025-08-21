@@ -1,0 +1,185 @@
+{
+  "test_summary": {
+    "total_tests": 24,
+    "passed": 15,
+    "failed": 4,
+    "warnings": 5,
+    "success_rate": "62.5%"
+  },
+  "test_results": [
+    {
+      "test_name": "File Exists: deploy_to_production.sh",
+      "status": "PASS",
+      "message": "File found: Main production deployment script",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.061624"
+    },
+    {
+      "test_name": "File Exists: deploy_contabo_vps.sh",
+      "status": "PASS",
+      "message": "File found: Contabo VPS specific deployment",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.066021"
+    },
+    {
+      "test_name": "File Exists: deploy_to_contabo_vps.py",
+      "status": "PASS",
+      "message": "File found: Python deployment automation",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.070529"
+    },
+    {
+      "test_name": "File Exists: setup_production_env.sh",
+      "status": "PASS",
+      "message": "File found: Production environment setup",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.074923"
+    },
+    {
+      "test_name": "File Exists: verify_deployment.sh",
+      "status": "PASS",
+      "message": "File found: Deployment verification script",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.080084"
+    },
+    {
+      "test_name": "Bash Syntax: deploy_to_production.sh",
+      "status": "FAIL",
+      "message": "Syntax error: /bin/bash: C:UsersAdminDownloadsai-trading-sentineldeploy_to_production.sh: No such file or directory\n",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.234669"
+    },
+    {
+      "test_name": "Bash Syntax: deploy_contabo_vps.sh",
+      "status": "FAIL",
+      "message": "Syntax error: /bin/bash: C:UsersAdminDownloadsai-trading-sentineldeploy_contabo_vps.sh: No such file or directory\n",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.378874"
+    },
+    {
+      "test_name": "Bash Syntax: setup_production_env.sh",
+      "status": "FAIL",
+      "message": "Syntax error: /bin/bash: C:UsersAdminDownloadsai-trading-sentinelsetup_production_env.sh: No such file or directory\n",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.536338"
+    },
+    {
+      "test_name": "Bash Syntax: verify_deployment.sh",
+      "status": "FAIL",
+      "message": "Syntax error: /bin/bash: C:UsersAdminDownloadsai-trading-sentinelverify_deployment.sh: No such file or directory\n",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.721425"
+    },
+    {
+      "test_name": "Python Syntax: deploy_to_contabo_vps.py",
+      "status": "PASS",
+      "message": "Syntax is valid",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.735913"
+    },
+    {
+      "test_name": "Python Syntax: validate_production_system.py",
+      "status": "PASS",
+      "message": "Syntax is valid",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.751146"
+    },
+    {
+      "test_name": "Python Syntax: monitoring_dashboard.py",
+      "status": "PASS",
+      "message": "Syntax is valid",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.766255"
+    },
+    {
+      "test_name": "JSON Config: contabo_deployment_config.json",
+      "status": "PASS",
+      "message": "JSON is valid",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.771387"
+    },
+    {
+      "test_name": "JSON Config: monitoring_config.json",
+      "status": "PASS",
+      "message": "JSON is valid",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.777941"
+    },
+    {
+      "test_name": "JSON Config: alert_config.json",
+      "status": "PASS",
+      "message": "JSON is valid",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.783823"
+    },
+    {
+      "test_name": "Script Completeness: deploy_to_production.sh",
+      "status": "WARN",
+      "message": "Missing functions: setup_system_dependencies, setup_python_environment, setup_nginx, setup_firewall, create_systemd_service",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.787945"
+    },
+    {
+      "test_name": "Script Completeness: deploy_contabo_vps.sh",
+      "status": "WARN",
+      "message": "Missing functions: setup_system_dependencies, setup_python_environment, create_systemd_service",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.793087"
+    },
+    {
+      "test_name": "Script Completeness: setup_production_env.sh",
+      "status": "WARN",
+      "message": "Missing functions: setup_system_dependencies, setup_python_environment, setup_nginx, setup_firewall, create_systemd_service",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.797664"
+    },
+    {
+      "test_name": "Script Completeness: verify_deployment.sh",
+      "status": "WARN",
+      "message": "Missing functions: setup_system_dependencies, setup_python_environment, setup_nginx, setup_firewall, create_systemd_service",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.803364"
+    },
+    {
+      "test_name": "GitHub Actions: .github/workflows/deploy-production.yml",
+      "status": "WARN",
+      "message": "PyYAML not available for workflow validation",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.808936"
+    },
+    {
+      "test_name": "File Exists: PRODUCTION_DEPLOYMENT_CHECKLIST.md",
+      "status": "PASS",
+      "message": "File found: Production deployment guide",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.815143"
+    },
+    {
+      "test_name": "File Exists: dashboard.html",
+      "status": "PASS",
+      "message": "File found: Monitoring dashboard template",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.818790"
+    },
+    {
+      "test_name": "File Exists: dashboard.css",
+      "status": "PASS",
+      "message": "File found: Dashboard styling",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.822528"
+    },
+    {
+      "test_name": "File Exists: dashboard.js",
+      "status": "PASS",
+      "message": "File found: Dashboard JavaScript",
+      "details": "",
+      "timestamp": "2025-08-20T18:34:52.828993"
+    }
+  ],
+  "recommendations": [
+    "Fix failed tests before deployment",
+    "Review warnings and consider improvements",
+    "Install Git Bash or WSL for proper bash script testing"
+  ],
+  "timestamp": "2025-08-20T18:34:52.832838"
+}

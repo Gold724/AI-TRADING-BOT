@@ -1,0 +1,42 @@
+[Unit]
+Description=AI Trading Sentinel Security Monitor
+Documentation=https://github.com/your-org/ai-trading-sentinel
+After=network.target multi-user.target
+Wants=network.target
+
+[Service]
+Type=forking
+User=root
+Group=root
+WorkingDirectory=/opt/ai-trading-sentinel/security
+ExecStart=/opt/ai-trading-sentinel/security/security-monitor.sh start
+ExecStop=/opt/ai-trading-sentinel/security/security-monitor.sh stop
+ExecReload=/opt/ai-trading-sentinel/security/security-monitor.sh reload
+PIDFile=/var/run/security-monitor.pid
+Restart=always
+RestartSec=10
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Security settings
+NoNewPrivileges=false
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/security-monitor /var/run /opt/ai-trading-sentinel/security/reports
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=512M
+CPUQuota=50%
+
+# Environment
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=PYTHONPATH=/opt/ai-trading-sentinel
+EnvironmentFile=-/opt/ai-trading-sentinel/.env
+
+[Install]
+WantedBy=multi-user.target
+Alias=security-monitor.service

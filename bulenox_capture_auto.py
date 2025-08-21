@@ -34,7 +34,7 @@ def login_and_trigger_trade(email, password, playwright):
     page.on("request", handle_request)
 
     print(f"[🚀] Logging in as {email}")
-    page.goto("https://bulenox.com/login")
+    page.goto("https://bulenox.projectx.com/login")
 
     # Fill login form
     page.fill('input[name="email"]', email)
@@ -45,7 +45,7 @@ def login_and_trigger_trade(email, password, playwright):
     print("[✅] Logged in, triggering dummy trade...")
 
     # Navigate to trading page
-    page.goto("https://bulenox.com/trade")
+    page.goto("https://bulenox.projectx.com/trade")
     page.wait_for_load_state("networkidle")
 
     # Select a market using selectors from bulenox_sentinel.py

@@ -1,0 +1,52 @@
+[Unit]
+Description=AI Trading Sentinel - Main Trading Bot
+After=network-online.target
+Wants=network-online.target
+Requires=trae-backend.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/ai-trading-sentinel
+Environment=PATH=/opt/ai-trading-sentinel/venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONPATH=/opt/ai-trading-sentinel
+Environment=PYTHONUNBUFFERED=1
+Environment=DISPLAY=:99
+
+# Pre-start checks
+ExecStartPre=/bin/bash -c 'cd /opt/ai-trading-sentinel && source venv/bin/activate && python -c "import main; print(\"Dependencies OK\")"'
+ExecStartPre=/usr/bin/Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp -ac &
+
+# Main execution
+ExecStart=/bin/bash -c 'cd /opt/ai-trading-sentinel && source venv/bin/activate && exec python main.py --debug'
+
+# Restart configuration
+Restart=on-failure
+RestartSec=30
+StartLimitBurst=5
+StartLimitIntervalSec=600
+
+# Timeouts
+TimeoutStartSec=120
+TimeoutStopSec=30
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=trae-trading-bot
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/ai-trading-sentinel
+ReadWritePaths=/tmp
+
+# Resource limits
+LimitNOFILE=65536
+MemoryMax=4G
+CPUQuota=200%
+
+[Install]
+WantedBy=multi-user.target

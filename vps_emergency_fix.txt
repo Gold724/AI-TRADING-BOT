@@ -121,7 +121,7 @@ AUTO_EXECUTE=false
 SIMULATION=true
 
 # Broker Configuration
-BROKER_URL=https://bulenox.com
+BROKER_URL=https://bulenox.projectx.com
 BROKER_USERNAME=your_username
 BROKER_PASSWORD=your_password
 

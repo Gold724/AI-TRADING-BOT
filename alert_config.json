@@ -1,0 +1,361 @@
+{
+  "alerting": {
+    "name": "AI Trading Sentinel Alert System",
+    "version": "1.0.0",
+    "description": "Comprehensive alerting configuration for production monitoring",
+    "enabled": true,
+    "default_cooldown": 300,
+    "max_alerts_per_hour": 20
+  },
+  "notification_channels": {
+    "slack": {
+      "enabled": true,
+      "webhook_url": "${SLACK_WEBHOOK_URL}",
+      "channel": "#trading-alerts",
+      "username": "TRAE-SentinelOps",
+      "icon_emoji": ":robot_face:",
+      "mention_on_critical": true,
+      "mention_users": ["@channel"]
+    },
+    "email": {
+      "enabled": true,
+      "smtp_server": "${SMTP_SERVER}",
+      "smtp_port": 587,
+      "smtp_username": "${SMTP_USERNAME}",
+      "smtp_password": "${SMTP_PASSWORD}",
+      "from_email": "alerts@trae-sentinel.com",
+      "to_emails": [
+        "admin@trae-sentinel.com",
+        "ops@trae-sentinel.com"
+      ],
+      "use_tls": true
+    },
+    "webhook": {
+      "enabled": false,
+      "url": "${WEBHOOK_URL}",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ${WEBHOOK_TOKEN}"
+      }
+    },
+    "telegram": {
+      "enabled": false,
+      "bot_token": "${TELEGRAM_BOT_TOKEN}",
+      "chat_id": "${TELEGRAM_CHAT_ID}"
+    }
+  },
+  "alert_rules": {
+    "system_alerts": {
+      "high_cpu_usage": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "cpu_usage > 80",
+        "duration": 300,
+        "message": "High CPU usage detected: {value}%",
+        "channels": ["slack", "email"],
+        "cooldown": 600
+      },
+      "critical_cpu_usage": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "cpu_usage > 95",
+        "duration": 60,
+        "message": "CRITICAL: CPU usage extremely high: {value}%",
+        "channels": ["slack", "email"],
+        "cooldown": 300
+      },
+      "high_memory_usage": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "memory_usage > 85",
+        "duration": 300,
+        "message": "High memory usage detected: {value}%",
+        "channels": ["slack"],
+        "cooldown": 600
+      },
+      "critical_memory_usage": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "memory_usage > 95",
+        "duration": 60,
+        "message": "CRITICAL: Memory usage extremely high: {value}%",
+        "channels": ["slack", "email"],
+        "cooldown": 300
+      },
+      "low_disk_space": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "disk_usage > 80",
+        "duration": 600,
+        "message": "Low disk space on {path}: {value}% used",
+        "channels": ["slack", "email"],
+        "cooldown": 3600
+      },
+      "critical_disk_space": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "disk_usage > 90",
+        "duration": 300,
+        "message": "CRITICAL: Very low disk space on {path}: {value}% used",
+        "channels": ["slack", "email"],
+        "cooldown": 1800
+      },
+      "high_load_average": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "load_average_5min > 2.0",
+        "duration": 300,
+        "message": "High system load average: {value}",
+        "channels": ["slack"],
+        "cooldown": 600
+      }
+    },
+    "service_alerts": {
+      "trading_bot_down": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "service_status == 'inactive'",
+        "service": "trae-trading-bot",
+        "duration": 30,
+        "message": "CRITICAL: Trading bot service is down!",
+        "channels": ["slack", "email"],
+        "cooldown": 300,
+        "auto_restart": true
+      },
+      "backend_api_down": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "service_status == 'inactive'",
+        "service": "trae-backend",
+        "duration": 60,
+        "message": "CRITICAL: Backend API service is down!",
+        "channels": ["slack", "email"],
+        "cooldown": 300,
+        "auto_restart": true
+      },
+      "monitor_service_down": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "service_status == 'inactive'",
+        "service": "trae-enhanced-monitor",
+        "duration": 120,
+        "message": "Enhanced monitor service is down",
+        "channels": ["slack"],
+        "cooldown": 600,
+        "auto_restart": true
+      },
+      "nginx_down": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "service_status == 'inactive'",
+        "service": "nginx",
+        "duration": 60,
+        "message": "CRITICAL: Nginx web server is down!",
+        "channels": ["slack", "email"],
+        "cooldown": 300,
+        "auto_restart": true
+      },
+      "redis_down": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "service_status == 'inactive'",
+        "service": "redis-server",
+        "duration": 120,
+        "message": "Redis cache service is down",
+        "channels": ["slack"],
+        "cooldown": 600,
+        "auto_restart": true
+      }
+    },
+    "application_alerts": {
+      "trading_errors": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "error_count > 5",
+        "time_window": 300,
+        "message": "Multiple trading errors detected: {count} errors in 5 minutes",
+        "channels": ["slack"],
+        "cooldown": 600
+      },
+      "login_failures": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "login_failures > 3",
+        "time_window": 300,
+        "message": "CRITICAL: Multiple login failures to Bulenox platform",
+        "channels": ["slack", "email"],
+        "cooldown": 900
+      },
+      "api_response_slow": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "avg_response_time > 2000",
+        "duration": 300,
+        "message": "API response time is slow: {value}ms average",
+        "channels": ["slack"],
+        "cooldown": 600
+      },
+      "trade_execution_slow": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "trade_execution_time > 10000",
+        "message": "Slow trade execution detected: {value}ms",
+        "channels": ["slack"],
+        "cooldown": 300
+      },
+      "no_trades_executed": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "trades_count == 0",
+        "time_window": 3600,
+        "message": "No trades executed in the last hour",
+        "channels": ["slack"],
+        "cooldown": 1800
+      }
+    },
+    "security_alerts": {
+      "failed_ssh_attempts": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "failed_ssh_attempts > 5",
+        "time_window": 300,
+        "message": "Multiple failed SSH login attempts: {count} attempts",
+        "channels": ["slack", "email"],
+        "cooldown": 600
+      },
+      "suspicious_activity": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "suspicious_patterns_detected",
+        "message": "SECURITY ALERT: Suspicious activity detected - {details}",
+        "channels": ["slack", "email"],
+        "cooldown": 300
+      },
+      "file_integrity_violation": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "file_modified",
+        "message": "SECURITY ALERT: Critical file modified - {file_path}",
+        "channels": ["slack", "email"],
+        "cooldown": 0
+      }
+    },
+    "network_alerts": {
+      "bulenox_unreachable": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "endpoint_unreachable",
+        "endpoint": "https://bulenox.projectx.com",
+        "duration": 120,
+        "message": "CRITICAL: Bulenox platform is unreachable!",
+        "channels": ["slack", "email"],
+        "cooldown": 600
+      },
+      "internet_connectivity": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "internet_down",
+        "duration": 60,
+        "message": "CRITICAL: Internet connectivity lost!",
+        "channels": ["slack", "email"],
+        "cooldown": 300
+      },
+      "high_network_latency": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "network_latency > 500",
+        "duration": 300,
+        "message": "High network latency detected: {value}ms",
+        "channels": ["slack"],
+        "cooldown": 600
+      }
+    },
+    "database_alerts": {
+      "redis_memory_high": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "redis_memory_usage > 80",
+        "duration": 300,
+        "message": "Redis memory usage is high: {value}%",
+        "channels": ["slack"],
+        "cooldown": 600
+      },
+      "redis_connection_failed": {
+        "enabled": true,
+        "severity": "critical",
+        "condition": "redis_connection_failed",
+        "message": "CRITICAL: Cannot connect to Redis database!",
+        "channels": ["slack", "email"],
+        "cooldown": 300
+      },
+      "database_size_large": {
+        "enabled": true,
+        "severity": "warning",
+        "condition": "database_size > 1000",
+        "message": "Database size is growing large: {value}MB",
+        "channels": ["slack"],
+        "cooldown": 3600
+      }
+    }
+  },
+  "alert_templates": {
+    "slack": {
+      "warning": {
+        "color": "warning",
+        "title": "⚠️ Warning Alert",
+        "footer": "TRAE-SentinelOps Monitoring"
+      },
+      "critical": {
+        "color": "danger",
+        "title": "🚨 Critical Alert",
+        "footer": "TRAE-SentinelOps Monitoring"
+      },
+      "recovery": {
+        "color": "good",
+        "title": "✅ Recovery Alert",
+        "footer": "TRAE-SentinelOps Monitoring"
+      }
+    },
+    "email": {
+      "subject_prefix": "[TRAE-Sentinel]",
+      "html_template": true,
+      "include_charts": false
+    }
+  },
+  "escalation_rules": {
+    "enabled": true,
+    "rules": [
+      {
+        "name": "critical_service_down",
+        "condition": "severity == 'critical' AND service_down",
+        "escalation_time": 300,
+        "escalation_channels": ["email"],
+        "escalation_message": "ESCALATION: Critical service still down after 5 minutes"
+      },
+      {
+        "name": "repeated_alerts",
+        "condition": "alert_count > 5",
+        "time_window": 3600,
+        "escalation_channels": ["email"],
+        "escalation_message": "ESCALATION: Multiple alerts in the last hour"
+      }
+    ]
+  },
+  "maintenance_mode": {
+    "enabled": false,
+    "start_time": null,
+    "end_time": null,
+    "suppress_alerts": [
+      "service_alerts",
+      "system_alerts"
+    ],
+    "maintenance_message": "System is under maintenance"
+  },
+  "alert_history": {
+    "enabled": true,
+    "retention_days": 90,
+    "max_entries": 10000,
+    "export_format": "json"
+  }
+}

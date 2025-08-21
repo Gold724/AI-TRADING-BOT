@@ -59,14 +59,14 @@ def save_curl_command(curl_command, account_email):
 def create_sample_trade_request():
     """Create a sample trade request file for demonstration purposes."""
     # Create a sample trade request file for demonstration
-    sample_curl = """curl 'https://bulenox.com/api/trade' \
+    sample_curl = """curl 'https://bulenox.projectx.com/api/trade' \
   -H 'authority: bulenox.com' \
   -H 'accept: application/json' \
   -H 'accept-language: en-US,en;q=0.9' \
   -H 'authorization: Bearer YOUR_TOKEN_HERE' \
   -H 'content-type: application/json' \
-  -H 'origin: https://bulenox.com' \
-  -H 'referer: https://bulenox.com/trade' \
+  -H 'origin: https://bulenox.projectx.com' \
+  -H 'referer: https://bulenox.projectx.com/trade' \
   -H 'sec-ch-ua: "Chromium";v="112"' \
   -H 'sec-ch-ua-mobile: ?0' \
   -H 'sec-ch-ua-platform: "Windows"' \
@@ -110,7 +110,7 @@ def main():
                 page.on("request", handle_request)
                 
                 print(f"[🚀] Opening Bulenox login for {email}...")
-                page.goto("https://bulenox.com/login")
+                page.goto("https://bulenox.projectx.com/login")
                 
                 # Login
                 page.fill('input[name="email"]', email)
@@ -122,7 +122,7 @@ def main():
                 print(f"[✅] Logged in as {email}.")
                 
                 # Navigate to trade panel
-                page.goto("https://bulenox.com/trade")
+                page.goto("https://bulenox.projectx.com/trade")
                 page.wait_for_load_state("networkidle")
                 print("[📈] Trade panel ready.")
                 

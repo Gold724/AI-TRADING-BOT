@@ -126,3 +126,24 @@ web:
   enable-admin-api: true
   max-connections: 512
   read-timeout: 30s
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'trading-sentinel-1'
+    static_configs:
+      - targets: ['trading-sentinel-1:9001']
+  
+  - job_name: 'trading-sentinel-2'
+    static_configs:
+      - targets: ['trading-sentinel-2:9002']
+  
+  - job_name: 'trading-sentinel-3'
+    static_configs:
+      - targets: ['trading-sentinel-3:9003']
+  
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']

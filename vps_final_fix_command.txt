@@ -50,7 +50,7 @@ if [ ! -f .env ]; then
 # Broker Configuration
 BULENOX_USERNAME=BX64883
 BULENOX_PASSWORD=XujhMzFf6K
-BULENOX_URL=https://bulenox.com
+BULENOX_URL=https://bulenox.projectx.com
 
 # Trading Configuration
 SIMULATION_MODE=true

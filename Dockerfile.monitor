@@ -29,7 +29,6 @@ RUN pip install --no-cache-dir \
     psutil \
     schedule \
     docker \
-    smtplib \
     email-validator \
     pydantic \
     python-dotenv

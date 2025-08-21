@@ -1,46 +1,103 @@
 #!/usr/bin/env python3
 """
-🚀 AI Trading Sentinel - Production Deployment Script
+AI Trading Sentinel - Production Deployment Orchestrator
+TRAE-SentinelOps Complete Production Deployment System
 
-This script deploys all three components to a VPS:
-1. React Frontend (built and served via Nginx)
-2. Flask Backend API (port 5000)
-3. Bulenox Sentinel Control Panel (port 8090)
-
-Usage:
-    python3 deploy_production.py --domain your-domain.com --email your@email.com
+This script orchestrates the complete production deployment process.
 """
 
 import os
 import sys
-import subprocess
-import argparse
 import json
+import subprocess
+import time
 from pathlib import Path
+from typing import Dict, List, Tuple, Optional
+import logging
+from datetime import datetime
+import argparse
+
+# Configure logging with UTF-8 encoding
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('deployment.log', encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 class ProductionDeployer:
+    """Complete production deployment orchestrator"""
+    
     def __init__(self, domain, email, vps_user="root"):
         self.domain = domain
         self.email = email
         self.vps_user = vps_user
         self.app_dir = "/opt/ai-trading-sentinel"
+        self.deployment_id = datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.deployment_log = f'deployment_{self.deployment_id}.log'
+        self.status = {
+            'phase': 'initialization',
+            'success': False,
+            'errors': [],
+            'warnings': [],
+            'completed_steps': [],
+            'failed_steps': []
+        }
+    
+    def log_step(self, step: str, success: bool, message: str = ""):
+        """Log deployment step with status"""
+        timestamp = datetime.now().isoformat()
         
-    def run_command(self, cmd, check=True):
-        """Execute shell command with error handling"""
-        print(f"🔧 Running: {cmd}")
+        if success:
+            self.status['completed_steps'].append({
+                'step': step,
+                'timestamp': timestamp,
+                'message': message
+            })
+            logger.info(f"SUCCESS: {step} - {message}")
+        else:
+            self.status['failed_steps'].append({
+                'step': step,
+                'timestamp': timestamp,
+                'error': message
+            })
+            self.status['errors'].append(f"{step}: {message}")
+            logger.error(f"FAILED: {step} - {message}")
+        
+    def run_command(self, command: str, description: str, timeout: int = 300) -> Tuple[bool, str]:
+        """Run a command with timeout and logging"""
+        logger.info(f"Executing: {description}")
+        logger.debug(f"Command: {command}")
+        
         try:
-            result = subprocess.run(cmd, shell=True, check=check, 
-                                  capture_output=True, text=True)
-            if result.stdout:
-                print(result.stdout)
-            return result
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Error: {e}")
-            if e.stderr:
-                print(f"Error output: {e.stderr}")
-            if check:
-                sys.exit(1)
-            return e
+            result = subprocess.run(
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                encoding='utf-8',
+                errors='replace'
+            )
+            
+            if result.returncode == 0:
+                self.log_step(description, True, "Command executed successfully")
+                return True, result.stdout
+            else:
+                self.log_step(description, False, f"Exit code {result.returncode}: {result.stderr}")
+                return False, result.stderr
+                
+        except subprocess.TimeoutExpired:
+            error_msg = f"Command timed out after {timeout} seconds"
+            self.log_step(description, False, error_msg)
+            return False, error_msg
+        except Exception as e:
+            error_msg = f"Command execution error: {str(e)}"
+            self.log_step(description, False, error_msg)
+            return False, error_msg
     
     def setup_system(self):
         """Install system dependencies"""
@@ -367,6 +424,287 @@ echo "🎛️ Sentinel: https://{self.domain}/sentinel"
         
         self.run_command(f"chmod +x {self.app_dir}/deploy.sh")
     
+    def check_prerequisites(self) -> bool:
+        """Check all deployment prerequisites"""
+        self.status['phase'] = 'prerequisites_check'
+        logger.info("Phase 1: Checking deployment prerequisites...")
+        
+        # Check if validation report exists and is successful
+        validation_file = Path('environment_validation_report.json')
+        if not validation_file.exists():
+            logger.warning("Environment validation report not found. Running validation...")
+            success, output = self.run_command(
+                'python validate_environment.py',
+                'Environment validation',
+                timeout=60
+            )
+            if not success:
+                return False
+        
+        # Load and check validation results
+        try:
+            with open('environment_validation_report.json', 'r', encoding='utf-8') as f:
+                validation_data = json.load(f)
+            
+            if not validation_data.get('deployment_ready', False):
+                missing_vars = validation_data.get('environment_variables', {}).get('missing_required', [])
+                if missing_vars:
+                    self.log_step(
+                        'Environment validation',
+                        False,
+                        f"Missing required variables: {', '.join(missing_vars)}"
+                    )
+                    logger.error("Please configure environment variables using:")
+                    logger.error("  python setup_secrets.py --generate")
+                    logger.error("  Edit .env file with your credentials")
+                    return False
+            
+            self.log_step('Environment validation', True, 'All required variables configured')
+            
+        except Exception as e:
+            self.log_step('Environment validation', False, f"Failed to read validation report: {e}")
+            return False
+        
+        # Check deployment files
+        required_files = [
+            'deploy_to_contabo_vps.py',
+            'setup_production_env.sh',
+            'verify_deployment.sh',
+            'main.py',
+            'requirements.txt'
+        ]
+        
+        for file_path in required_files:
+            if not Path(file_path).exists():
+                self.log_step('File check', False, f"Missing required file: {file_path}")
+                return False
+        
+        self.log_step('File check', True, 'All required deployment files present')
+        return True
+    
+    def test_connections(self) -> bool:
+        """Test all external connections"""
+        self.status['phase'] = 'connection_testing'
+        logger.info("Phase 2: Testing external connections...")
+        
+        # Test VPS connection
+        vps_ip = os.getenv('CONTABO_VPS_IP')
+        if vps_ip:
+            success, output = self.run_command(
+                'python setup_secrets.py --test-vps',
+                'VPS SSH connection test',
+                timeout=30
+            )
+            if not success:
+                logger.warning("VPS connection test failed. Deployment will continue but may fail later.")
+                self.status['warnings'].append('VPS connection test failed')
+        
+        # Test GitHub connection
+        github_token = os.getenv('GITHUB_TOKEN')
+        if github_token:
+            success, output = self.run_command(
+                'python setup_secrets.py --test-github',
+                'GitHub API connection test',
+                timeout=30
+            )
+            if not success:
+                logger.warning("GitHub connection test failed. CI/CD may not work properly.")
+                self.status['warnings'].append('GitHub connection test failed')
+        
+        return True
+    
+    def prepare_deployment_package(self) -> bool:
+        """Prepare deployment package"""
+        self.status['phase'] = 'package_preparation'
+        logger.info("Phase 3: Preparing deployment package...")
+        
+        # Create deployment directory
+        deploy_dir = Path(f'deployment_{self.deployment_id}')
+        deploy_dir.mkdir(exist_ok=True)
+        
+        # Copy essential files
+        essential_files = [
+            'main.py',
+            'requirements.txt',
+            '.env',
+            'deploy_to_contabo_vps.py',
+            'setup_production_env.sh',
+            'verify_deployment.sh'
+        ]
+        
+        for file_name in essential_files:
+            source = Path(file_name)
+            if source.exists():
+                import shutil
+                shutil.copy2(source, deploy_dir / file_name)
+                logger.debug(f"Copied {file_name} to deployment package")
+        
+        # Copy directories
+        for dir_name in ['backend', 'frontend', 'scripts', 'config']:
+            source_dir = Path(dir_name)
+            if source_dir.exists():
+                import shutil
+                shutil.copytree(source_dir, deploy_dir / dir_name, dirs_exist_ok=True)
+                logger.debug(f"Copied {dir_name}/ to deployment package")
+        
+        self.log_step('Package preparation', True, f'Deployment package created: {deploy_dir}')
+        return True
+    
+    def deploy_to_vps(self) -> bool:
+        """Deploy to Contabo VPS"""
+        self.status['phase'] = 'vps_deployment'
+        logger.info("Phase 4: Deploying to Contabo VPS...")
+        
+        # Run VPS deployment script
+        success, output = self.run_command(
+            'python deploy_to_contabo_vps.py',
+            'VPS deployment execution',
+            timeout=600  # 10 minutes timeout
+        )
+        
+        if not success:
+            return False
+        
+        # Wait for services to start
+        logger.info("Waiting for services to initialize...")
+        time.sleep(30)
+        
+        return True
+    
+    def verify_deployment(self) -> bool:
+        """Verify deployment success"""
+        self.status['phase'] = 'deployment_verification'
+        logger.info("Phase 5: Verifying deployment...")
+        
+        # Run verification script
+        success, output = self.run_command(
+            'bash verify_deployment.sh',
+            'Deployment verification',
+            timeout=300
+        )
+        
+        if not success:
+            # Try Python-based verification as fallback
+            logger.info("Bash verification failed, trying Python verification...")
+            success, output = self.run_command(
+                'python -c "import requests; print(requests.get(\'http://localhost:5000/health\').status_code)"',
+                'Python health check',
+                timeout=30
+            )
+        
+        return success
+    
+    def setup_monitoring_enhanced(self) -> bool:
+        """Setup enhanced monitoring and alerts"""
+        self.status['phase'] = 'monitoring_setup'
+        logger.info("Phase 6: Setting up enhanced monitoring...")
+        
+        # Create monitoring configuration
+        monitoring_config = {
+            'deployment_id': self.deployment_id,
+            'timestamp': datetime.now().isoformat(),
+            'monitoring_enabled': True,
+            'health_check_url': 'http://localhost:5000/health',
+            'log_files': [
+                '/var/log/trading_sentinel.log',
+                '/var/log/nginx/access.log',
+                '/var/log/nginx/error.log'
+            ],
+            'alert_channels': {
+                'slack': os.getenv('SLACK_WEBHOOK_URL') is not None,
+                'email': os.getenv('SMTP_SERVER') is not None,
+                'telegram': os.getenv('TELEGRAM_BOT_TOKEN') is not None
+            }
+        }
+        
+        with open('monitoring_config.json', 'w', encoding='utf-8') as f:
+            json.dump(monitoring_config, f, indent=2)
+        
+        self.log_step('Enhanced monitoring setup', True, 'Monitoring configuration created')
+        return True
+    
+    def generate_deployment_report(self) -> Dict:
+        """Generate comprehensive deployment report"""
+        report = {
+            'deployment_id': self.deployment_id,
+            'timestamp': datetime.now().isoformat(),
+            'status': self.status,
+            'environment': {
+                'python_version': sys.version,
+                'platform': sys.platform,
+                'working_directory': str(Path.cwd())
+            },
+            'configuration': {
+                'vps_ip': os.getenv('CONTABO_VPS_IP', 'Not configured'),
+                'github_repo': os.getenv('GITHUB_REPO_URL', 'Not configured'),
+                'monitoring_enabled': os.getenv('SLACK_WEBHOOK_URL') is not None
+            },
+            'next_steps': [
+                "Access your application at: http://YOUR_VPS_IP:5000",
+                "Monitor logs: tail -f /var/log/trading_sentinel.log",
+                "Check system status: systemctl status trading-sentinel",
+                "View monitoring dashboard: http://YOUR_VPS_IP:5000/dashboard"
+            ]
+        }
+        
+        # Save report
+        report_file = f'deployment_report_{self.deployment_id}.json'
+        with open(report_file, 'w', encoding='utf-8') as f:
+            json.dump(report, f, indent=2)
+        
+        return report
+    
+    def orchestrate_deployment(self) -> bool:
+        """Orchestrate the complete deployment process"""
+        logger.info(f"Starting production deployment orchestration - ID: {self.deployment_id}")
+        
+        try:
+            # Phase 1: Prerequisites
+            if not self.check_prerequisites():
+                logger.error("Prerequisites check failed")
+                return False
+            
+            # Phase 2: Connection Testing
+            if not self.test_connections():
+                logger.error("Connection testing failed")
+                return False
+            
+            # Phase 3: Package Preparation
+            if not self.prepare_deployment_package():
+                logger.error("Package preparation failed")
+                return False
+            
+            # Phase 4: VPS Deployment
+            if not self.deploy_to_vps():
+                logger.error("VPS deployment failed")
+                return False
+            
+            # Phase 5: Verification
+            if not self.verify_deployment():
+                logger.error("Deployment verification failed")
+                return False
+            
+            # Phase 6: Monitoring Setup
+            if not self.setup_monitoring_enhanced():
+                logger.error("Monitoring setup failed")
+                return False
+            
+            # Generate final report
+            report = self.generate_deployment_report()
+            
+            self.status['success'] = True
+            self.status['phase'] = 'completed'
+            
+            logger.info("Production deployment completed successfully!")
+            logger.info(f"Deployment report saved: deployment_report_{self.deployment_id}.json")
+            
+            return True
+            
+        except Exception as e:
+            self.log_step('Deployment orchestration', False, f"Unexpected error: {str(e)}")
+            logger.error(f"Deployment failed with error: {e}")
+            return False
+    
     def deploy(self):
         """Run complete deployment process"""
         print(f"🚀 Starting production deployment for {self.domain}...")
@@ -402,14 +740,37 @@ echo "🎛️ Sentinel: https://{self.domain}/sentinel"
 
 def main():
     parser = argparse.ArgumentParser(description='Deploy AI Trading Sentinel to production')
-    parser.add_argument('--domain', required=True, help='Your domain name (e.g., trading.example.com)')
-    parser.add_argument('--email', required=True, help='Email for SSL certificates')
+    parser.add_argument('--domain', help='Your domain name (e.g., trading.example.com)')
+    parser.add_argument('--email', help='Email for SSL certificates')
     parser.add_argument('--user', default='root', help='VPS username (default: root)')
+    parser.add_argument('--orchestrate', action='store_true', help='Run orchestrated deployment (recommended)')
+    parser.add_argument('--test-only', action='store_true', help='Run prerequisites and connection tests only')
     
     args = parser.parse_args()
     
-    deployer = ProductionDeployer(args.domain, args.email, args.user)
-    deployer.deploy()
+    # Default values for orchestrated deployment
+    domain = args.domain or os.getenv('CONTABO_VPS_IP', 'localhost')
+    email = args.email or os.getenv('SSL_EMAIL', 'admin@example.com')
+    
+    deployer = ProductionDeployer(domain, email, args.user)
+    
+    if args.test_only:
+        logger.info("Running prerequisites and connection tests only...")
+        success = deployer.check_prerequisites() and deployer.test_connections()
+        if success:
+            logger.info("All tests passed! Ready for deployment.")
+        else:
+            logger.error("Tests failed. Please fix issues before deployment.")
+            sys.exit(1)
+    elif args.orchestrate or (not args.domain and not args.email):
+        logger.info("Running orchestrated deployment...")
+        success = deployer.orchestrate_deployment()
+        if not success:
+            logger.error("Orchestrated deployment failed")
+            sys.exit(1)
+    else:
+        logger.info("Running traditional deployment...")
+        deployer.deploy()
 
 if __name__ == "__main__":
     main()

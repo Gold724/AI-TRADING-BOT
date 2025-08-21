@@ -1,0 +1,58 @@
+{
+  "timestamp": "2025-08-20T19:08:47.175857",
+  "overall_status": "NOT_READY",
+  "readiness_score": 56.3,
+  "components": {
+    "environment": {
+      "status": "PARTIAL",
+      "score": 26.666666666666664,
+      "configured": 6,
+      "total": 9,
+      "missing": [
+        "CONTABO_VPS_IP",
+        "BULENOX_USERNAME",
+        "BULENOX_PASSWORD"
+      ]
+    },
+    "ssh_key": {
+      "status": "NOT_READY",
+      "score": 0,
+      "exists": false
+    },
+    "dependencies": {
+      "status": "PARTIAL",
+      "score": 17.142857142857142,
+      "installed": 6,
+      "total": 7,
+      "missing": [
+        "python-telegram-bot"
+      ]
+    },
+    "files": {
+      "status": "PARTIAL",
+      "score": 12.5,
+      "existing": 5,
+      "total": 6,
+      "missing": [
+        "app.py"
+      ]
+    },
+    "github": {
+      "status": "NOT_READY",
+      "score": 0,
+      "connected": false
+    }
+  },
+  "next_steps": [
+    "\ud83d\udd27 Configure missing environment variables: CONTABO_VPS_IP, BULENOX_USERNAME, BULENOX_PASSWORD",
+    "   Run: python configure_deployment.py --interactive",
+    "\ud83d\udd11 Generate SSH key for VPS access",
+    "   Run: ssh-keygen -t rsa -b 4096 -f ~/.ssh/contabo_key",
+    "\ud83d\udce6 Install missing dependencies: python-telegram-bot",
+    "   Run: pip install -r requirements.txt",
+    "\ud83d\udc19 Fix GitHub token or connection",
+    "   Check token at: https://github.com/settings/tokens"
+  ],
+  "warnings": [],
+  "errors": []
+}

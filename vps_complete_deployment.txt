@@ -18,7 +18,7 @@ cat > .env << 'ENVEOF'
 # AI Trading Sentinel - Production Configuration
 BROKER_USERNAME=your_bulenox_username
 BROKER_PASSWORD=your_bulenox_password
-BROKER_URL=https://bulenox.com
+BROKER_URL=https://bulenox.projectx.com
 TRADING_MODE=paper
 RISK_LEVEL=conservative
 MAX_POSITION_SIZE=1000

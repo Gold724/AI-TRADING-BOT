@@ -175,7 +175,7 @@ def login_with_cookies(driver, cookie_path="bulenox_cookies.pkl"):
     """Try to login using saved cookies"""
     try:
         # Get the broker URL from environment variables or use default
-        broker_url = os.getenv("BROKER_URL", "https://bulenox.com")
+        broker_url = os.getenv("BROKER_URL", "https://bulenox.projectx.com")
         logger.info(f"[{session_id}] Navigating to Bulenox main page: {broker_url}")
         driver.get(broker_url)
 
@@ -501,7 +501,7 @@ def login_with_form(driver):
 def check_site_status():
     """Check if the Bulenox site is up and responding"""
     try:
-        broker_url = os.getenv("BROKER_URL", "https://bulenox.com")
+        broker_url = os.getenv("BROKER_URL", "https://bulenox.projectx.com")
         logger.info(f"[{session_id}] Checking site status: {broker_url}")
 
         response = requests.get(broker_url, timeout=10)

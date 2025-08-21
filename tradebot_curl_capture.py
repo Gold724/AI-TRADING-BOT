@@ -193,7 +193,7 @@ class TradeBotCurlCapture:
         """Login to Bulenox platform"""
         username = os.getenv('BULENOX_USERNAME')
         password = os.getenv('BULENOX_PASSWORD')
-        broker_url = os.getenv('BROKER_URL', 'https://bulenox.com')
+        broker_url = os.getenv('BROKER_URL', 'https://bulenox.projectx.com')
         
         if not username or not password:
             raise Exception("BULENOX_USERNAME and BULENOX_PASSWORD must be set in .env")

@@ -1,0 +1,218 @@
+{
+  "monitoring": {
+    "name": "AI Trading Sentinel Monitoring",
+    "version": "1.0.0",
+    "description": "24/7 production monitoring configuration for Contabo VPS deployment",
+    "update_interval": 30,
+    "retention_days": 30
+  },
+  "system_metrics": {
+    "cpu": {
+      "enabled": true,
+      "warning_threshold": 80,
+      "critical_threshold": 95,
+      "check_interval": 60
+    },
+    "memory": {
+      "enabled": true,
+      "warning_threshold": 85,
+      "critical_threshold": 95,
+      "check_interval": 60
+    },
+    "disk": {
+      "enabled": true,
+      "warning_threshold": 80,
+      "critical_threshold": 90,
+      "check_interval": 300,
+      "monitored_paths": [
+        "/",
+        "/opt/trae-sentinel",
+        "/var/log"
+      ]
+    },
+    "network": {
+      "enabled": true,
+      "check_interval": 120,
+      "test_endpoints": [
+        "https://bulenox.projectx.com",
+        "https://api.github.com",
+        "https://google.com"
+      ]
+    },
+    "load_average": {
+      "enabled": true,
+      "warning_threshold": 2.0,
+      "critical_threshold": 4.0,
+      "check_interval": 60
+    }
+  },
+  "application_monitoring": {
+    "trading_bot": {
+      "enabled": true,
+      "service_name": "trae-trading-bot",
+      "check_interval": 30,
+      "restart_on_failure": true,
+      "max_restart_attempts": 3,
+      "restart_delay": 60
+    },
+    "backend_api": {
+      "enabled": true,
+      "service_name": "trae-backend",
+      "health_endpoint": "http://localhost:8080/api/health",
+      "check_interval": 60,
+      "timeout": 10
+    },
+    "enhanced_monitor": {
+      "enabled": true,
+      "service_name": "trae-enhanced-monitor",
+      "check_interval": 120
+    },
+    "nginx": {
+      "enabled": true,
+      "service_name": "nginx",
+      "check_interval": 300
+    },
+    "redis": {
+      "enabled": true,
+      "service_name": "redis-server",
+      "check_interval": 300,
+      "connection_test": true
+    }
+  },
+  "log_monitoring": {
+    "enabled": true,
+    "log_files": [
+      {
+        "path": "/var/log/trae-sentinel/trading.log",
+        "name": "Trading Bot",
+        "error_patterns": ["ERROR", "CRITICAL", "EXCEPTION", "Failed to"]
+      },
+      {
+        "path": "/var/log/trae-sentinel/backend.log",
+        "name": "Backend API",
+        "error_patterns": ["ERROR", "500", "Exception", "Failed"]
+      },
+      {
+        "path": "/var/log/trae-sentinel/monitor.log",
+        "name": "Enhanced Monitor",
+        "error_patterns": ["ERROR", "CRITICAL", "Failed"]
+      },
+      {
+        "path": "/var/log/nginx/error.log",
+        "name": "Nginx",
+        "error_patterns": ["error", "crit", "alert", "emerg"]
+      }
+    ],
+    "max_lines_per_check": 1000,
+    "check_interval": 300
+  },
+  "performance_monitoring": {
+    "enabled": true,
+    "metrics": {
+      "response_time": {
+        "enabled": true,
+        "warning_threshold": 2000,
+        "critical_threshold": 5000
+      },
+      "trade_execution_time": {
+        "enabled": true,
+        "warning_threshold": 10000,
+        "critical_threshold": 30000
+      },
+      "api_success_rate": {
+        "enabled": true,
+        "warning_threshold": 95,
+        "critical_threshold": 90
+      }
+    }
+  },
+  "security_monitoring": {
+    "enabled": true,
+    "failed_login_attempts": {
+      "enabled": true,
+      "threshold": 5,
+      "time_window": 300,
+      "log_file": "/var/log/auth.log"
+    },
+    "suspicious_activity": {
+      "enabled": true,
+      "patterns": [
+        "Invalid user",
+        "Failed password",
+        "Connection closed by",
+        "Disconnected from"
+      ]
+    },
+    "file_integrity": {
+      "enabled": true,
+      "monitored_files": [
+        "/etc/trae-sentinel/.env",
+        "/opt/trae-sentinel/main.py",
+        "/etc/systemd/system/trae-*.service"
+      ],
+      "check_interval": 3600
+    }
+  },
+  "database_monitoring": {
+    "redis": {
+      "enabled": true,
+      "host": "localhost",
+      "port": 6379,
+      "check_interval": 300,
+      "memory_warning_threshold": 80,
+      "memory_critical_threshold": 95
+    },
+    "sqlite": {
+      "enabled": true,
+      "database_path": "/var/lib/trae-sentinel/trading.db",
+      "check_interval": 600,
+      "size_warning_threshold": 1000,
+      "size_critical_threshold": 2000
+    }
+  },
+  "external_dependencies": {
+    "bulenox_platform": {
+      "enabled": true,
+      "url": "https://bulenox.projectx.com/login",
+      "check_interval": 300,
+      "timeout": 30,
+      "expected_status": 200
+    },
+    "github_api": {
+      "enabled": true,
+      "url": "https://api.github.com",
+      "check_interval": 600,
+      "timeout": 10
+    }
+  },
+  "dashboard": {
+    "enabled": true,
+    "port": 3000,
+    "refresh_interval": 30,
+    "max_data_points": 100,
+    "charts": {
+      "system_metrics": true,
+      "trading_performance": true,
+      "network_status": true,
+      "service_status": true
+    }
+  },
+  "data_retention": {
+    "metrics_retention_days": 30,
+    "logs_retention_days": 7,
+    "alerts_retention_days": 90,
+    "cleanup_interval": 86400
+  },
+  "health_checks": {
+    "enabled": true,
+    "endpoint": "/health",
+    "port": 3000,
+    "checks": [
+      "system_resources",
+      "service_status",
+      "database_connectivity",
+      "external_dependencies",
+      "log_file_access"
+    ]
+  }
+}

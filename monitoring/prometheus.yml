@@ -1,58 +1,198 @@
-# AI Trading Sentinel - Prometheus Configuration
-# TRAE-SentinelOps: Monitoring and alerting configuration for 24/7 reliability
+# Prometheus Configuration for AI Trading Sentinel
+# Production-grade monitoring setup for 24/7 trading operations
 
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    monitor: 'tradebot-monitor'
+    cluster: 'ai-trading-sentinel'
+    environment: '${ENVIRONMENT}'
 
 rule_files:
   - "alert_rules.yml"
+  - "recording_rules.yml"
 
 alerting:
   alertmanagers:
     - static_configs:
         - targets:
           - alertmanager:9093
+      scheme: http
+      timeout: 10s
+      api_version: v2
 
 scrape_configs:
   # Prometheus itself
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+    scrape_interval: 30s
+    metrics_path: /metrics
 
-  # Trading Bot Metrics
-  - job_name: 'tradebot'
+  # Node Exporter - System metrics
+  - job_name: 'node-exporter'
     static_configs:
-      - targets: ['localhost:8000']
-    metrics_path: '/metrics'
-    scrape_interval: 5s
-    scrape_timeout: 5s
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+    metrics_path: /metrics
 
-  # API Service Metrics
+  # Redis Exporter
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # PostgreSQL Exporter
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Trading Bot API
+  - job_name: 'trading-bot'
+    static_configs:
+      - targets: ['backend:5000']
+    scrape_interval: 10s
+    metrics_path: /metrics
+    scrape_timeout: 5s
+    honor_labels: true
+
+  # Backend API
   - job_name: 'api'
     static_configs:
-      - targets: ['localhost:5000']
-    metrics_path: '/metrics'
-    scrape_interval: 10s
+      - targets: ['backend:5000']
+    scrape_interval: 15s
+    metrics_path: /api/metrics
+    scrape_timeout: 10s
+    honor_labels: true
 
-  # Redis Metrics
-  - job_name: 'redis'
+  # Frontend (if serving metrics)
+  - job_name: 'frontend'
     static_configs:
-      - targets: ['localhost:9121']
+      - targets: ['frontend:3000']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+    honor_labels: true
 
-  # System Metrics
-  - job_name: 'node'
+  # Nginx metrics
+  - job_name: 'nginx'
     static_configs:
-      - targets: ['localhost:9100']
+      - targets: ['nginx:9113']
+    scrape_interval: 15s
+    metrics_path: /metrics
 
-  # Docker Metrics
+  # Docker metrics
   - job_name: 'docker'
     static_configs:
       - targets: ['localhost:9323']
+    scrape_interval: 15s
+    metrics_path: /metrics
 
-  # Nginx Metrics
-  - job_name: 'nginx'
+  # Grafana
+  - job_name: 'grafana'
     static_configs:
-      - targets: ['localhost:9113']
+      - targets: ['grafana:3000']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Alertmanager
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Loki
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Custom application metrics
+  - job_name: 'custom-metrics'
+    static_configs:
+      - targets: ['backend:5000']
+    scrape_interval: 10s
+    metrics_path: /custom-metrics
+    scrape_timeout: 5s
+    honor_labels: true
+
+  # Health checks
+  - job_name: 'health-checks'
+    static_configs:
+      - targets: 
+        - 'backend:5000'
+        - 'frontend:3000'
+        - 'redis:6379'
+        - 'postgres:5432'
+    scrape_interval: 30s
+    metrics_path: /health
+    scrape_timeout: 10s
+
+  # SSL Certificate monitoring
+  - job_name: 'ssl-exporter'
+    static_configs:
+      - targets: ['ssl-exporter:9219']
+    scrape_interval: 300s  # 5 minutes
+    metrics_path: /metrics
+
+  # Blackbox exporter for external monitoring
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://your-domain.com
+        - https://your-domain.com/api/health
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+# Remote write configuration (optional - for long-term storage)
+# remote_write:
+#   - url: "https://prometheus-remote-write-endpoint"
+#     basic_auth:
+#       username: "${REMOTE_WRITE_USERNAME}"
+#       password: "${REMOTE_WRITE_PASSWORD}"
+#     queue_config:
+#       max_samples_per_send: 1000
+#       max_shards: 200
+#       capacity: 2500
+
+# Remote read configuration (optional)
+# remote_read:
+#   - url: "https://prometheus-remote-read-endpoint"
+#     basic_auth:
+#       username: "${REMOTE_READ_USERNAME}"
+#       password: "${REMOTE_READ_PASSWORD}"
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus/data
+    retention.time: 30d
+    retention.size: 10GB
+    wal-compression: true
+
+# Web configuration
+web:
+  console.libraries: /etc/prometheus/console_libraries
+  console.templates: /etc/prometheus/consoles
+  enable-lifecycle: true
+  enable-admin-api: true
+
+# Global limits
+global:
+  scrape_timeout: 10s
+  query_timeout: 2m
+  query_max_concurrency: 20
+  query_max_samples: 50000000

@@ -1,12 +1,22 @@
-# 🚀 AI Trading Sentinel - Deployment Checklist
+# 🚀 AI Trading Sentinel - Production Deployment Checklist
 
-## Pre-Deployment Requirements
+## Overview
+This checklist ensures a complete, secure, and reliable deployment of the AI Trading Sentinel system on your Contabo VPS or any Ubuntu server.
 
-### ✅ Prerequisites Checklist
-- [ ] **Contabo VPS Account** - Ubuntu 22.04 LTS, 8GB+ RAM, 4+ CPU cores
-- [ ] **GitHub Repository Access** - `https://github.com/Gold724/AI-TRADING-BOT.git`
-- [ ] **Bulenox Broker Account** - Valid trading credentials
-- [ ] **VNC Client** (Optional) - For direct desktop access
+## 📋 Pre-Deployment Requirements
+
+### System Requirements
+- [ ] **Server**: Ubuntu 22.04/24.04 LTS
+- [ ] **RAM**: Minimum 4GB (8GB recommended)
+- [ ] **Storage**: Minimum 20GB free space
+- [ ] **Network**: Stable internet connection
+- [ ] **Access**: SSH key-based authentication configured
+
+### Credentials & Access
+- [ ] **Broker Account**: Trading account credentials ready
+- [ ] **GitHub**: Repository access and deploy keys
+- [ ] **VPS**: SSH access to Contabo server
+- [ ] **Domain** (optional): DNS configured for web interface
 
 ---
 

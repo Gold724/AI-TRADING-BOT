@@ -399,7 +399,7 @@ jobs:
 # ═══════════════════════════════════════
 BULENOX_USERNAME=your_bulenox_username
 BULENOX_PASSWORD=your_bulenox_password
-BULENOX_LOGIN_URL=https://bulenox.com/login
+BULENOX_LOGIN_URL=https://bulenox.projectx.com/login
 
 # ═══════════════════════════════════════
 # 🌐 PRODUCTION SETTINGS

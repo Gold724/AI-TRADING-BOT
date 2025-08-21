@@ -1,24 +1,68 @@
 [Unit]
-Description=Trae AI Trading Bot
-After=network.target
+Description=Trae AI Trading Sentinel - Production Trading Bot
+Documentation=https://github.com/your-org/ai-trading-sentinel
+After=network-online.target
+Wants=network-online.target
+Requires=network.target
 
 [Service]
-User=root
-WorkingDirectory=/root/ai-trading-sentinel
-ExecStart=/root/ai-trading-sentinel/venv/bin/python main.py
+# Security: Run as dedicated user (not root)
+User=trae
+Group=trae
+
+# Working directory and execution
+WorkingDirectory=/opt/trae-sentinel
+ExecStart=/opt/trae-sentinel/venv/bin/python main.py --production
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -TERM $MAINPID
+
+# Restart configuration with exponential backoff
 Restart=always
 RestartSec=10
-Environment=PYTHONUNBUFFERED=1
-# Add standard logging to journalctl
-StandardOutput=journal
-StandardError=journal
-# Add file logging
-LogsDirectory=trae
-RuntimeDirectory=trae
-RuntimeDirectoryMode=0755
-# Restart on failure with progressive backoff
 StartLimitIntervalSec=300
 StartLimitBurst=5
 
+# Environment variables
+Environment=PYTHONUNBUFFERED=1
+Environment=TRAE_ENV=production
+Environment=TRAE_LOG_LEVEL=INFO
+EnvironmentFile=-/opt/trae-sentinel/.env
+
+# Logging configuration
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=trae-sentinel
+
+# Directory permissions
+LogsDirectory=trae-sentinel
+RuntimeDirectory=trae-sentinel
+RuntimeDirectoryMode=0755
+StateDirectory=trae-sentinel
+StateDirectoryMode=0755
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/trae-sentinel/data /opt/trae-sentinel/logs /var/lib/trae-sentinel
+
+# Resource limits
+LimitNOFILE=65536
+MemoryMax=2G
+CPUQuota=200%
+
+# Health monitoring
+WatchdogSec=30
+NotifyAccess=main
+
+# Process management
+Type=notify
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStartSec=60
+TimeoutStopSec=30
+
 [Install]
 WantedBy=multi-user.target
+Also=trae-sentinel-monitor.timer

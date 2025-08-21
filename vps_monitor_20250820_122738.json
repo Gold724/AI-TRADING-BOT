@@ -1,0 +1,92 @@
+{
+  "timestamp": "2025-08-20T12:27:38.463353",
+  "connectivity": true,
+  "installation": {
+    "project_directory": {
+      "success": true,
+      "output": "total 84\ndrwxr-xr-x  9 root root 4096 Aug 18 23:46 .\ndrwx------ 26 root root 4096 Aug 20 03:44 ..\n-rw-------  1 root root  416 Aug 17 20:01 .env\ndrwxr-xr-x  2 root root 4096 Aug 18 23:15 __pycache__\ndrwxr-xr-x  3 root root 4096 Aug 18 23:41 backend\n-rw-r--r--  1 root root 8687 Aug 18 18:49 backend.log\n-rw-r--r--  1 root root    7 Aug 17 20:01 backend.pid\n-rwxr-xr-x  1 root root 3708 Aug 18 23:46 backend_fix.sh\n-rwxr-xr-x  1 root root 3859 Aug 18 23:49 complete_backend_fix.sh\ndrwxr-xr-x  2 root r",
+      "error": null
+    },
+    "python_version": {
+      "success": true,
+      "output": "Python 3.12.3",
+      "error": null
+    },
+    "pip_packages": {
+      "success": true,
+      "output": "requests            2.31.0",
+      "error": null
+    },
+    "systemd_service": {
+      "success": false,
+      "output": "",
+      "error": "Unit trae.service could not be found."
+    },
+    "bot_process": {
+      "success": true,
+      "output": "root         968  0.0  0.1  19956 12288 ?        Ss   Aug18   0:01 /root/ai-trading-sentinel/venv/bin/python /root/ai-trading-sentinel/main.py\ntradebot    1297  0.0  0.5 1165972 68840 ?       Sl   Aug18   0:03 node /home/tradebot/ai-trading-sentinel/frontend/node_modules/.bin/serve -s dist -l 3000\ntradebot    6008  0.0  0.1  34188 24308 ?        Ss   Aug18   0:34 /home/tradebot/ai-trading-sentinel/venv/bin/python3 /home/tradebot/ai-trading-sentinel/venv/bin/gunicorn --bind 127.0.0.1:5000 --worke",
+      "error": null
+    },
+    "log_files": {
+      "success": true,
+      "output": "total 452\ndrwxr-xr-x 2 root root   4096 Aug 17 20:15 .\ndrwxr-xr-x 9 root root   4096 Aug 18 23:46 ..\n-rw-rw-rw- 1 root root    827 Aug 17 20:16 backend.log\n-rw-r--r-- 1 root root    209 Aug 17 20:27 backend_startup.log\n-rw-r--r-- 1 root root 439754 Aug 20 11:26 trae.log",
+      "error": null
+    }
+  },
+  "health": {
+    "disk_usage": {
+      "success": true,
+      "output": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1        96G   13G   84G  14% /",
+      "error": null
+    },
+    "memory_usage": {
+      "success": true,
+      "output": "total        used        free      shared  buff/cache   available\nMem:            11Gi       925Mi        10Gi       1.7Mi       559Mi        10Gi\nSwap:             0B          0B          0B",
+      "error": null
+    },
+    "cpu_load": {
+      "success": true,
+      "output": "11:27:10 up 1 day, 13:24,  2 users,  load average: 0.06, 0.07, 0.08",
+      "error": null
+    },
+    "network_status": {
+      "success": true,
+      "output": "PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.\n64 bytes from 8.8.8.8: icmp_seq=1 ttl=116 time=3.66 ms\n64 bytes from 8.8.8.8: icmp_seq=2 ttl=116 time=3.21 ms\n64 bytes from 8.8.8.8: icmp_seq=3 ttl=116 time=3.23 ms\n\n--- 8.8.8.8 ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 2",
+      "error": null
+    },
+    "docker_status": {
+      "success": true,
+      "output": "CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES",
+      "error": null
+    },
+    "nginx_status": {
+      "success": true,
+      "output": "\u25cf nginx.service - A high performance web server and a reverse proxy server\n     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: enabled)\n     Active: active (running) since Mon 2025-08-18 23:11:19 CEST; 1 day 12h ago\n       Docs: man:nginx(8)\n   Main PID: 5742 (nginx)\n      T",
+      "error": null
+    }
+  },
+  "logs": {
+    "recent_logs": {
+      "success": true,
+      "output": "No trading logs",
+      "error": null
+    },
+    "error_logs": {
+      "success": true,
+      "output": "No error logs",
+      "error": null
+    },
+    "systemd_logs": {
+      "success": true,
+      "output": "-- No entries --",
+      "error": null
+    },
+    "last_trades": {
+      "success": true,
+      "output": "No trades directory",
+      "error": null
+    }
+  },
+  "status": "warning",
+  "summary": "\u26a0\ufe0f Some issues detected"
+}

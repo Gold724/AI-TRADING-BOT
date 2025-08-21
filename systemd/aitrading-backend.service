@@ -1,0 +1,48 @@
+[Unit]
+Description=AI Trading Sentinel Backend API
+After=network.target
+Wants=network.target
+Requires=network.target
+
+[Service]
+Type=simple
+User=aitrading
+Group=aitrading
+WorkingDirectory=/home/aitrading/ai-trading-sentinel
+Environment=PATH=/home/aitrading/ai-trading-sentinel/venv/bin
+Environment=PYTHONPATH=/home/aitrading/ai-trading-sentinel
+Environment=FLASK_APP=backend_main.py
+Environment=FLASK_ENV=production
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/aitrading/ai-trading-sentinel/venv/bin/python backend_main.py
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutStopSec=30
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/aitrading/ai-trading-sentinel/logs
+ReadWritePaths=/home/aitrading/ai-trading-sentinel/temp
+ReadWritePaths=/home/aitrading/ai-trading-sentinel/data
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=2G
+CPUQuota=200%
+
+# Logging
+StandardOutput=append:/home/aitrading/ai-trading-sentinel/logs/backend.log
+StandardError=append:/home/aitrading/ai-trading-sentinel/logs/backend-error.log
+SyslogIdentifier=aitrading-backend
+
+[Install]
+WantedBy=multi-user.target

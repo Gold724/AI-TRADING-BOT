@@ -1,0 +1,47 @@
+[Unit]
+Description=AI Trading Sentinel - Flask Backend API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=root
+Group=root
+WorkingDirectory=/opt/ai-trading-sentinel
+Environment=PATH=/opt/ai-trading-sentinel/venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONPATH=/opt/ai-trading-sentinel
+Environment=FLASK_APP=backend_main.py
+Environment=FLASK_ENV=production
+
+# Use Gunicorn for production deployment
+ExecStart=/opt/ai-trading-sentinel/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 --keep-alive 2 --max-requests 1000 --max-requests-jitter 100 backend_main:app
+
+# Restart configuration
+Restart=always
+RestartSec=10
+StartLimitBurst=3
+StartLimitIntervalSec=300
+
+# Timeouts
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=trae-backend
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/ai-trading-sentinel
+ReadWritePaths=/tmp
+
+# Resource limits
+LimitNOFILE=65536
+MemoryMax=2G
+CPUQuota=150%
+
+[Install]
+WantedBy=multi-user.target

@@ -86,7 +86,7 @@ chmod +x deploy_cloud.sh
 nano .env
 
 # Add your Bulenox credentials:
-# BULENOX_URL=https://bulenox.com
+# BULENOX_URL=https://bulenox.projectx.com
 # BULENOX_USERNAME=your_username
 # BULENOX_PASSWORD=your_password
 ```

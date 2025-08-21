@@ -1,0 +1,53 @@
+[Unit]
+Description=AI Trading Sentinel Bot
+After=network.target aitrading-backend.service
+Wants=network.target
+Requires=aitrading-backend.service
+
+[Service]
+Type=simple
+User=aitrading
+Group=aitrading
+WorkingDirectory=/home/aitrading/ai-trading-sentinel
+Environment=PATH=/home/aitrading/ai-trading-sentinel/venv/bin
+Environment=PYTHONPATH=/home/aitrading/ai-trading-sentinel
+Environment=PYTHONUNBUFFERED=1
+Environment=DISPLAY=:99
+ExecStartPre=/bin/bash -c 'Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &'
+ExecStart=/home/aitrading/ai-trading-sentinel/venv/bin/python tradebot_sentinel_bulenox_automation.py
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=60
+Restart=always
+RestartSec=30
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/aitrading/ai-trading-sentinel/logs
+ReadWritePaths=/home/aitrading/ai-trading-sentinel/temp
+ReadWritePaths=/home/aitrading/ai-trading-sentinel/data
+ReadWritePaths=/home/aitrading/ai-trading-sentinel/chrome_profile
+ReadWritePaths=/tmp
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=4G
+CPUQuota=300%
+
+# Logging
+StandardOutput=append:/home/aitrading/ai-trading-sentinel/logs/trading.log
+StandardError=append:/home/aitrading/ai-trading-sentinel/logs/trading-error.log
+SyslogIdentifier=aitrading-bot
+
+# Health check
+ExecStartPost=/bin/bash -c 'sleep 60 && curl -f http://localhost:5000/api/health || exit 1'
+
+[Install]
+WantedBy=multi-user.target

@@ -1,576 +1,455 @@
 #!/usr/bin/env python3
 """
 AI Trading Sentinel - Alert Manager
-TRAE-SentinelOps: Critical event notification system for 24/7 reliability
 
-Handles:
-- Email alerts for critical failures
-- Slack notifications for trading events
-- SMS alerts for emergency situations
-- Alert throttling and escalation
-- Multi-channel notification routing
+Advanced alerting system for critical event notification.
+Handles multiple alert types, channels, throttling, escalation, and multi-channel routing.
 """
 
 import os
 import sys
 import json
 import time
-import smtplib
+import yaml
+import logging
 import requests
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Any
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Any, Optional
+from dataclasses import dataclass, asdict, field
+from jinja2 import Template
 from enum import Enum
+
 
 class AlertSeverity(Enum):
     """Alert severity levels"""
     INFO = "info"
     WARNING = "warning"
-    ERROR = "error"
     CRITICAL = "critical"
     EMERGENCY = "emergency"
 
+
 class AlertChannel(Enum):
-    """Available notification channels"""
-    EMAIL = "email"
+    """Available alert channels"""
     SLACK = "slack"
+    EMAIL = "email"
     SMS = "sms"
     WEBHOOK = "webhook"
-    DISCORD = "discord"
+    PAGERDUTY = "pagerduty"
+    TEAMS = "teams"
+
 
 @dataclass
 class Alert:
     """Alert data structure"""
     id: str
-    timestamp: datetime
-    severity: AlertSeverity
+    service: str
+    severity: str
     title: str
     message: str
-    source: str
-    tags: List[str]
-    metadata: Dict[str, Any]
-    channels: List[AlertChannel]
-    acknowledged: bool = False
+    timestamp: datetime
+    labels: Dict[str, str] = field(default_factory=dict)
+    annotations: Dict[str, str] = field(default_factory=dict)
     resolved: bool = False
-    escalated: bool = False
+    resolved_at: Optional[datetime] = None
+    notification_count: int = 0
+    last_notification: Optional[datetime] = None
 
-class AlertThrottler:
-    """Prevents alert spam with intelligent throttling"""
-    
-    def __init__(self, config: Dict):
-        self.config = config
-        self.alert_history = {}
-        self.throttle_windows = {
-            AlertSeverity.INFO: 300,      # 5 minutes
-            AlertSeverity.WARNING: 180,   # 3 minutes
-            AlertSeverity.ERROR: 60,      # 1 minute
-            AlertSeverity.CRITICAL: 30,   # 30 seconds
-            AlertSeverity.EMERGENCY: 0    # No throttling
-        }
-    
-    def should_send_alert(self, alert: Alert) -> bool:
-        """Check if alert should be sent based on throttling rules"""
-        alert_key = f"{alert.source}:{alert.title}"
-        current_time = datetime.now()
-        
-        # Emergency alerts always go through
-        if alert.severity == AlertSeverity.EMERGENCY:
-            return True
-        
-        # Check throttle window
-        if alert_key in self.alert_history:
-            last_sent = self.alert_history[alert_key]['last_sent']
-            throttle_window = self.throttle_windows[alert.severity]
-            
-            if (current_time - last_sent).total_seconds() < throttle_window:
-                # Update count but don't send
-                self.alert_history[alert_key]['count'] += 1
-                return False
-        
-        # Record this alert
-        self.alert_history[alert_key] = {
-            'last_sent': current_time,
-            'count': 1,
-            'severity': alert.severity
-        }
-        
-        return True
-    
-    def get_throttled_summary(self) -> Dict:
-        """Get summary of throttled alerts"""
-        summary = {}
-        current_time = datetime.now()
-        
-        for alert_key, data in self.alert_history.items():
-            if data['count'] > 1:
-                time_diff = (current_time - data['last_sent']).total_seconds()
-                summary[alert_key] = {
-                    'count': data['count'],
-                    'severity': data['severity'].value,
-                    'last_occurrence': data['last_sent'].isoformat(),
-                    'minutes_ago': int(time_diff / 60)
-                }
-        
-        return summary
 
-class EmailNotifier:
-    """Email notification handler"""
-    
-    def __init__(self, config: Dict):
-        self.config = config
-        self.smtp_server = config.get('smtp_server', 'smtp.gmail.com')
-        self.smtp_port = config.get('smtp_port', 587)
-        self.username = config.get('username')
-        self.password = config.get('password')
-        self.from_email = config.get('from_email', self.username)
-        self.to_emails = config.get('to_emails', [])
-    
-    def send_alert(self, alert: Alert) -> bool:
-        """Send email alert"""
-        try:
-            if not self.username or not self.password:
-                return False
-            
-            # Create message
-            msg = MimeMultipart()
-            msg['From'] = self.from_email
-            msg['To'] = ', '.join(self.to_emails)
-            msg['Subject'] = f"[{alert.severity.value.upper()}] AI Trading Sentinel: {alert.title}"
-            
-            # Email body
-            body = self._format_email_body(alert)
-            msg.attach(MimeText(body, 'html'))
-            
-            # Send email
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-                server.starttls()
-                server.login(self.username, self.password)
-                server.send_message(msg)
-            
-            return True
-            
-        except Exception as e:
-            print(f"Email notification failed: {e}")
-            return False
-    
-    def _format_email_body(self, alert: Alert) -> str:
-        """Format alert as HTML email"""
-        severity_colors = {
-            AlertSeverity.INFO: '#17a2b8',
-            AlertSeverity.WARNING: '#ffc107',
-            AlertSeverity.ERROR: '#dc3545',
-            AlertSeverity.CRITICAL: '#dc3545',
-            AlertSeverity.EMERGENCY: '#6f42c1'
-        }
-        
-        color = severity_colors.get(alert.severity, '#6c757d')
-        
-        return f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; margin: 20px;">
-            <div style="border-left: 4px solid {color}; padding-left: 20px; margin-bottom: 20px;">
-                <h2 style="color: {color}; margin: 0;">{alert.title}</h2>
-                <p style="color: #666; margin: 5px 0;">Severity: <strong>{alert.severity.value.upper()}</strong></p>
-                <p style="color: #666; margin: 5px 0;">Source: <strong>{alert.source}</strong></p>
-                <p style="color: #666; margin: 5px 0;">Time: <strong>{alert.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}</strong></p>
-            </div>
-            
-            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                <h3 style="margin-top: 0;">Message:</h3>
-                <p style="white-space: pre-wrap;">{alert.message}</p>
-            </div>
-            
-            {self._format_metadata_table(alert.metadata)}
-            
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #dee2e6;">
-                <p style="color: #6c757d; font-size: 12px; margin: 0;">
-                    This alert was generated by AI Trading Sentinel monitoring system.<br>
-                    Alert ID: {alert.id}
-                </p>
-            </div>
-        </body>
-        </html>
-        """
-    
-    def _format_metadata_table(self, metadata: Dict) -> str:
-        """Format metadata as HTML table"""
-        if not metadata:
-            return ""
-        
-        rows = ""
-        for key, value in metadata.items():
-            rows += f"<tr><td style='padding: 8px; border-bottom: 1px solid #dee2e6;'><strong>{key}</strong></td><td style='padding: 8px; border-bottom: 1px solid #dee2e6;'>{value}</td></tr>"
-        
-        return f"""
-        <div style="margin-bottom: 20px;">
-            <h3>Additional Information:</h3>
-            <table style="width: 100%; border-collapse: collapse; border: 1px solid #dee2e6;">
-                {rows}
-            </table>
-        </div>
-        """
+@dataclass
+class NotificationChannel:
+    """Notification channel configuration"""
+    name: str
+    type: str
+    config: Dict[str, Any]
+    enabled: bool = True
+    severity_filter: List[str] = None  # Filter by severity levels
+    service_filter: List[str] = None   # Filter by service names
 
-class SlackNotifier:
-    """Slack notification handler"""
-    
-    def __init__(self, config: Dict):
-        self.config = config
-        self.webhook_url = config.get('webhook_url')
-        self.channel = config.get('channel', '#alerts')
-        self.username = config.get('username', 'AI Trading Sentinel')
-    
-    def send_alert(self, alert: Alert) -> bool:
-        """Send Slack alert"""
-        try:
-            if not self.webhook_url:
-                return False
-            
-            # Format Slack message
-            payload = self._format_slack_payload(alert)
-            
-            # Send to Slack
-            response = requests.post(
-                self.webhook_url,
-                json=payload,
-                timeout=10
-            )
-            
-            return response.status_code == 200
-            
-        except Exception as e:
-            print(f"Slack notification failed: {e}")
-            return False
-    
-    def _format_slack_payload(self, alert: Alert) -> Dict:
-        """Format alert as Slack message"""
-        severity_colors = {
-            AlertSeverity.INFO: '#36a64f',
-            AlertSeverity.WARNING: '#ffcc00',
-            AlertSeverity.ERROR: '#ff0000',
-            AlertSeverity.CRITICAL: '#ff0000',
-            AlertSeverity.EMERGENCY: '#800080'
-        }
-        
-        severity_emojis = {
-            AlertSeverity.INFO: ':information_source:',
-            AlertSeverity.WARNING: ':warning:',
-            AlertSeverity.ERROR: ':x:',
-            AlertSeverity.CRITICAL: ':rotating_light:',
-            AlertSeverity.EMERGENCY: ':sos:'
-        }
-        
-        color = severity_colors.get(alert.severity, '#808080')
-        emoji = severity_emojis.get(alert.severity, ':bell:')
-        
-        # Build fields for metadata
-        fields = []
-        if alert.metadata:
-            for key, value in list(alert.metadata.items())[:5]:  # Limit to 5 fields
-                fields.append({
-                    "title": key.replace('_', ' ').title(),
-                    "value": str(value),
-                    "short": True
-                })
-        
-        return {
-            "channel": self.channel,
-            "username": self.username,
-            "icon_emoji": ":robot_face:",
-            "attachments": [{
-                "color": color,
-                "title": f"{emoji} {alert.title}",
-                "text": alert.message,
-                "fields": [
-                    {
-                        "title": "Severity",
-                        "value": alert.severity.value.upper(),
-                        "short": True
-                    },
-                    {
-                        "title": "Source",
-                        "value": alert.source,
-                        "short": True
-                    },
-                    {
-                        "title": "Time",
-                        "value": alert.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC'),
-                        "short": True
-                    }
-                ] + fields,
-                "footer": "AI Trading Sentinel",
-                "footer_icon": "https://platform.slack-edge.com/img/default_application_icon.png",
-                "ts": int(alert.timestamp.timestamp())
-            }]
-        }
-
-class WebhookNotifier:
-    """Generic webhook notification handler"""
-    
-    def __init__(self, config: Dict):
-        self.config = config
-        self.webhook_urls = config.get('webhook_urls', [])
-        self.headers = config.get('headers', {'Content-Type': 'application/json'})
-    
-    def send_alert(self, alert: Alert) -> bool:
-        """Send webhook alert"""
-        success_count = 0
-        
-        for url in self.webhook_urls:
-            try:
-                payload = {
-                    'alert_id': alert.id,
-                    'timestamp': alert.timestamp.isoformat(),
-                    'severity': alert.severity.value,
-                    'title': alert.title,
-                    'message': alert.message,
-                    'source': alert.source,
-                    'tags': alert.tags,
-                    'metadata': alert.metadata
-                }
-                
-                response = requests.post(
-                    url,
-                    json=payload,
-                    headers=self.headers,
-                    timeout=10
-                )
-                
-                if response.status_code in [200, 201, 202]:
-                    success_count += 1
-                    
-            except Exception as e:
-                print(f"Webhook notification to {url} failed: {e}")
-        
-        return success_count > 0
 
 class AlertManager:
-    """Main alert management system"""
+    """Advanced alert management system."""
     
-    def __init__(self, config_path: Optional[str] = None):
-        self.config = self._load_config(config_path)
-        self.throttler = AlertThrottler(self.config.get('throttling', {}))
-        self.notifiers = self._initialize_notifiers()
-        self.alert_log = Path(self.config.get('alert_log_path', '/app/logs/alerts.json'))
-        self.alert_log.parent.mkdir(parents=True, exist_ok=True)
+    def __init__(self, config_path: str = None):
+        self.project_root = Path(__file__).parent.parent
+        self.config_path = config_path or self.project_root / "config" / "monitoring_config.yml"
+        self.alerts_dir = self.project_root / "logs" / "alerts"
+        self.alerts_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Setup logging
+        self.setup_logging()
+        
+        # Load configuration
+        self.config = self.load_config()
+        
+        # Initialize components
+        self.active_alerts = {}
+        self.notification_channels = self.setup_notification_channels()
+        self.escalation_policies = self.config.get('escalation', {})
+        
+        # Alert templates
+        self.templates = self.load_templates()
+        
+        self.logger.info("Alert Manager initialized")
     
-    def _load_config(self, config_path: Optional[str]) -> Dict:
-        """Load alert configuration"""
-        default_config = {
-            'email': {
-                'enabled': False,
-                'smtp_server': 'smtp.gmail.com',
-                'smtp_port': 587,
-                'username': os.getenv('ALERT_EMAIL_USER'),
-                'password': os.getenv('ALERT_EMAIL_PASS'),
-                'to_emails': [os.getenv('ALERT_EMAIL_TO', '')]
+    def setup_logging(self):
+        """Setup logging configuration."""
+        log_file = self.project_root / "logs" / "alert_manager.log"
+        
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(log_file),
+                logging.StreamHandler(sys.stdout)
+            ]
+        )
+        
+        self.logger = logging.getLogger('AlertManager')
+    
+    def load_config(self) -> Dict[str, Any]:
+        """Load alert manager configuration."""
+        try:
+            if self.config_path.exists():
+                with open(self.config_path, 'r') as f:
+                    config = yaml.safe_load(f)
+                self.logger.info(f"Configuration loaded from {self.config_path}")
+                return config
+            else:
+                self.logger.warning(f"Config file not found: {self.config_path}")
+                return self.get_default_config()
+        except Exception as e:
+            self.logger.error(f"Error loading config: {e}")
+            return self.get_default_config()
+    
+    def get_default_config(self) -> Dict[str, Any]:
+        """Get default configuration."""
+        return {
+            'notifications': {
+                'slack': {
+                    'enabled': True,
+                    'webhook_url': os.getenv('SLACK_WEBHOOK_URL'),
+                    'channel': '#alerts',
+                    'username': 'AI Trading Sentinel'
+                },
+                'email': {
+                    'enabled': False,
+                    'smtp_server': 'smtp.gmail.com',
+                    'smtp_port': 587,
+                    'username': os.getenv('EMAIL_USERNAME'),
+                    'password': os.getenv('EMAIL_PASSWORD'),
+                    'from_email': os.getenv('EMAIL_FROM'),
+                    'to_emails': []
+                }
             },
-            'slack': {
-                'enabled': False,
-                'webhook_url': os.getenv('SLACK_WEBHOOK_URL'),
-                'channel': '#trading-alerts'
-            },
-            'webhook': {
-                'enabled': False,
-                'webhook_urls': []
-            },
-            'throttling': {
-                'enabled': True
+            'escalation': {
+                'enabled': True,
+                'levels': [
+                    {'delay_minutes': 0, 'channels': ['slack']},
+                    {'delay_minutes': 15, 'channels': ['slack', 'email']},
+                    {'delay_minutes': 60, 'channels': ['slack', 'email', 'pagerduty']}
+                ]
             }
         }
-        
-        if config_path and Path(config_path).exists():
-            try:
-                with open(config_path, 'r') as f:
-                    user_config = json.load(f)
-                # Merge configs
-                for key, value in user_config.items():
-                    if isinstance(value, dict) and key in default_config:
-                        default_config[key].update(value)
-                    else:
-                        default_config[key] = value
-            except Exception as e:
-                print(f"Failed to load config from {config_path}: {e}")
-        
-        return default_config
     
-    def _initialize_notifiers(self) -> Dict:
-        """Initialize notification handlers"""
-        notifiers = {}
+    def setup_notification_channels(self) -> List[NotificationChannel]:
+        """Setup notification channels from configuration."""
+        channels = []
+        notifications_config = self.config.get('notifications', {})
         
-        if self.config['email']['enabled']:
-            notifiers[AlertChannel.EMAIL] = EmailNotifier(self.config['email'])
+        # Slack channel
+        slack_config = notifications_config.get('slack', {})
+        if slack_config.get('enabled', False) and slack_config.get('webhook_url'):
+            channels.append(NotificationChannel(
+                name='slack',
+                type='slack',
+                config=slack_config,
+                enabled=True
+            ))
         
-        if self.config['slack']['enabled']:
-            notifiers[AlertChannel.SLACK] = SlackNotifier(self.config['slack'])
+        # Email channel
+        email_config = notifications_config.get('email', {})
+        if email_config.get('enabled', False):
+            channels.append(NotificationChannel(
+                name='email',
+                type='email',
+                config=email_config,
+                enabled=True,
+                severity_filter=['critical', 'emergency']
+            ))
         
-        if self.config['webhook']['enabled']:
-            notifiers[AlertChannel.WEBHOOK] = WebhookNotifier(self.config['webhook'])
-        
-        return notifiers
+        self.logger.info(f"Configured {len(channels)} notification channels")
+        return channels
     
-    def send_alert(self, 
-                   title: str,
-                   message: str,
-                   severity: AlertSeverity = AlertSeverity.INFO,
-                   source: str = "unknown",
-                   tags: List[str] = None,
-                   metadata: Dict[str, Any] = None,
-                   channels: List[AlertChannel] = None) -> str:
-        """Send an alert through configured channels"""
+    def load_templates(self) -> Dict[str, Template]:
+        """Load notification templates."""
+        templates = {
+            'slack_alert': Template("""
+🚨 *{{ alert.severity.upper() }}* - {{ alert.title }}
+
+*Service:* {{ alert.service }}
+*Message:* {{ alert.message }}
+*Time:* {{ alert.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+
+{% if alert.labels %}
+*Labels:*
+{% for key, value in alert.labels.items() %}
+• {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}
+            """)
+        }
         
-        # Create alert object
+        return templates
+    
+    def create_alert(self, service: str, severity: str, title: str, message: str, 
+                    labels: Dict[str, str] = None, annotations: Dict[str, str] = None) -> Alert:
+        """Create a new alert."""
+        alert_id = f"{service}_{severity}_{int(time.time())}"
+        
         alert = Alert(
-            id=f"{int(datetime.now().timestamp())}_{hash(title) % 10000}",
-            timestamp=datetime.now(),
+            id=alert_id,
+            service=service,
             severity=severity,
             title=title,
             message=message,
-            source=source,
-            tags=tags or [],
-            metadata=metadata or {},
-            channels=channels or [AlertChannel.EMAIL, AlertChannel.SLACK]
+            timestamp=datetime.now(),
+            labels=labels or {},
+            annotations=annotations or {}
         )
         
-        # Check throttling
-        if self.config.get('throttling', {}).get('enabled', True):
-            if not self.throttler.should_send_alert(alert):
-                self._log_alert(alert, sent=False, reason="throttled")
-                return alert.id
+        self.active_alerts[alert_id] = alert
+        self.logger.info(f"Created alert: {alert_id} - {title}")
         
-        # Send through configured channels
-        results = {}
-        for channel in alert.channels:
-            if channel in self.notifiers:
-                try:
-                    success = self.notifiers[channel].send_alert(alert)
-                    results[channel.value] = success
-                except Exception as e:
-                    results[channel.value] = False
-                    print(f"Failed to send alert via {channel.value}: {e}")
+        # Save alert to file
+        self.save_alert(alert)
         
-        # Log alert
-        self._log_alert(alert, sent=any(results.values()), results=results)
-        
-        return alert.id
+        return alert
     
-    def _log_alert(self, alert: Alert, sent: bool, reason: str = None, results: Dict = None):
-        """Log alert to file"""
-        try:
-            log_entry = {
-                'alert_id': alert.id,
-                'timestamp': alert.timestamp.isoformat(),
-                'severity': alert.severity.value,
-                'title': alert.title,
-                'message': alert.message,
-                'source': alert.source,
-                'sent': sent,
-                'reason': reason,
-                'results': results or {}
-            }
+    def send_slack_alert(self, alert: Alert, channel: NotificationChannel):
+        """Send alert to Slack."""
+        webhook_url = channel.config.get('webhook_url')
+        if not webhook_url:
+            raise ValueError("Slack webhook URL not configured")
+        
+        # Render message
+        message_text = self.templates['slack_alert'].render(alert=alert)
+        
+        # Determine color based on severity
+        color_map = {
+            'info': 'good',
+            'warning': 'warning',
+            'critical': 'danger',
+            'emergency': '#8B0000'
+        }
+        
+        emoji_map = {
+            'info': '💡',
+            'warning': '⚠️',
+            'critical': '🚨',
+            'emergency': '🔥'
+        }
+        
+        color = color_map.get(alert.severity, '#808080')
+        emoji = emoji_map.get(alert.severity, '❓')
+        
+        payload = {
+            'username': channel.config.get('username', 'AI Trading Sentinel'),
+            'channel': channel.config.get('channel', '#alerts'),
+            'icon_emoji': ':robot_face:',
+            'attachments': [{
+                'color': color,
+                'title': f'{emoji} {alert.title}',
+                'text': message_text,
+                'footer': 'AI Trading Sentinel Alert Manager',
+                'ts': int(alert.timestamp.timestamp())
+            }]
+        }
+        
+        response = requests.post(webhook_url, json=payload, timeout=10)
+        response.raise_for_status()
+    
+    def send_alert(self, alert: Alert) -> bool:
+        """Send alert through appropriate channels."""
+        success = True
+        
+        for channel in self.notification_channels:
+            if not channel.enabled:
+                continue
             
-            # Append to log file
-            with open(self.alert_log, 'a') as f:
-                f.write(json.dumps(log_entry) + '\n')
+            # Check severity filter
+            if channel.severity_filter and alert.severity not in channel.severity_filter:
+                continue
+            
+            try:
+                if channel.type == 'slack':
+                    self.send_slack_alert(alert, channel)
                 
-        except Exception as e:
-            print(f"Failed to log alert: {e}")
+                self.logger.info(f"Alert sent via {channel.name}: {alert.id}")
+                
+            except Exception as e:
+                self.logger.error(f"Failed to send alert via {channel.name}: {e}")
+                success = False
+        
+        # Update alert notification tracking
+        alert.notification_count += 1
+        alert.last_notification = datetime.now()
+        
+        return success
     
-    def get_alert_summary(self, hours: int = 24) -> Dict:
-        """Get summary of recent alerts"""
+    def resolve_alert(self, alert_id: str) -> bool:
+        """Resolve an active alert."""
+        if alert_id in self.active_alerts:
+            alert = self.active_alerts[alert_id]
+            alert.resolved = True
+            alert.resolved_at = datetime.now()
+            
+            # Save updated alert
+            self.save_alert(alert)
+            
+            # Remove from active alerts
+            del self.active_alerts[alert_id]
+            
+            self.logger.info(f"Alert resolved: {alert_id}")
+            return True
+        
+        return False
+    
+    def save_alert(self, alert: Alert):
+        """Save alert to file."""
         try:
-            if not self.alert_log.exists():
-                return {'total': 0, 'by_severity': {}, 'by_source': {}}
+            alert_file = self.alerts_dir / f"{alert.id}.json"
             
-            cutoff_time = datetime.now() - timedelta(hours=hours)
-            summary = {
-                'total': 0,
-                'by_severity': {},
-                'by_source': {},
-                'throttled': self.throttler.get_throttled_summary()
-            }
+            # Convert to serializable format
+            alert_dict = asdict(alert)
+            alert_dict['timestamp'] = alert.timestamp.isoformat()
+            if alert.resolved_at:
+                alert_dict['resolved_at'] = alert.resolved_at.isoformat()
+            if alert.last_notification:
+                alert_dict['last_notification'] = alert.last_notification.isoformat()
             
-            with open(self.alert_log, 'r') as f:
-                for line in f:
-                    try:
-                        entry = json.loads(line.strip())
-                        entry_time = datetime.fromisoformat(entry['timestamp'])
-                        
-                        if entry_time >= cutoff_time:
-                            summary['total'] += 1
-                            
-                            severity = entry['severity']
-                            source = entry['source']
-                            
-                            summary['by_severity'][severity] = summary['by_severity'].get(severity, 0) + 1
-                            summary['by_source'][source] = summary['by_source'].get(source, 0) + 1
-                    
-                    except (json.JSONDecodeError, KeyError, ValueError):
-                        continue
-            
-            return summary
+            with open(alert_file, 'w') as f:
+                json.dump(alert_dict, f, indent=2)
             
         except Exception as e:
-            print(f"Failed to get alert summary: {e}")
-            return {'error': str(e)}
+            self.logger.error(f"Error saving alert {alert.id}: {e}")
+    
+    def get_active_alerts(self) -> List[Alert]:
+        """Get list of active alerts."""
+        return list(self.active_alerts.values())
+    
+    def get_alert_summary(self) -> Dict[str, Any]:
+        """Get summary of alert system status."""
+        return {
+            'active_alerts': len(self.active_alerts),
+            'notification_channels': len(self.notification_channels),
+            'alerts_by_severity': {
+                severity: len([a for a in self.active_alerts.values() if a.severity == severity])
+                for severity in ['info', 'warning', 'critical', 'emergency']
+            },
+            'last_alert': max([a.timestamp for a in self.active_alerts.values()], default=None)
+        }
+
 
 # Convenience functions for common alerts
-def send_trading_alert(title: str, message: str, severity: AlertSeverity = AlertSeverity.INFO, **kwargs):
+def send_trading_alert(title: str, message: str, severity: str = "info", **kwargs):
     """Send trading-related alert"""
     manager = AlertManager()
-    return manager.send_alert(
+    alert = manager.create_alert(
+        service="trading_bot",
+        severity=severity,
         title=title,
         message=message,
-        severity=severity,
-        source="trading_bot",
-        tags=["trading"],
-        **kwargs
+        labels={"type": "trading", **kwargs.get('labels', {})}
     )
+    return manager.send_alert(alert)
 
-def send_system_alert(title: str, message: str, severity: AlertSeverity = AlertSeverity.WARNING, **kwargs):
+
+def send_system_alert(title: str, message: str, severity: str = "warning", **kwargs):
     """Send system-related alert"""
     manager = AlertManager()
-    return manager.send_alert(
+    alert = manager.create_alert(
+        service="system_monitor",
+        severity=severity,
         title=title,
         message=message,
-        severity=severity,
-        source="system_monitor",
-        tags=["system"],
-        **kwargs
+        labels={"type": "system", **kwargs.get('labels', {})}
     )
+    return manager.send_alert(alert)
 
-def send_security_alert(title: str, message: str, severity: AlertSeverity = AlertSeverity.CRITICAL, **kwargs):
+
+def send_security_alert(title: str, message: str, severity: str = "critical", **kwargs):
     """Send security-related alert"""
     manager = AlertManager()
-    return manager.send_alert(
+    alert = manager.create_alert(
+        service="security_monitor",
+        severity=severity,
         title=title,
         message=message,
-        severity=severity,
-        source="security_monitor",
-        tags=["security"],
-        **kwargs
+        labels={"type": "security", **kwargs.get('labels', {})}
     )
+    return manager.send_alert(alert)
+
+
+def main():
+    """Main function for alert manager."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="AI Trading Sentinel Alert Manager")
+    parser.add_argument('--config', help='Configuration file path')
+    parser.add_argument('--create-alert', nargs=5, metavar=('SERVICE', 'SEVERITY', 'TITLE', 'MESSAGE', 'LABELS'),
+                       help='Create a new alert')
+    parser.add_argument('--list-alerts', action='store_true', help='List active alerts')
+    parser.add_argument('--resolve-alert', help='Resolve an alert by ID')
+    parser.add_argument('--test', action='store_true', help='Send test alert')
+    
+    args = parser.parse_args()
+    
+    # Initialize alert manager
+    alert_manager = AlertManager(args.config)
+    
+    if args.create_alert:
+        service, severity, title, message, labels_str = args.create_alert
+        labels = json.loads(labels_str) if labels_str != '{}' else {}
+        
+        alert = alert_manager.create_alert(service, severity, title, message, labels)
+        alert_manager.send_alert(alert)
+        print(f"Alert created: {alert.id}")
+    
+    elif args.list_alerts:
+        alerts = alert_manager.get_active_alerts()
+        if alerts:
+            print("Active Alerts:")
+            for alert in alerts:
+                print(f"  {alert.id}: [{alert.severity}] {alert.title} ({alert.service})")
+        else:
+            print("No active alerts")
+    
+    elif args.resolve_alert:
+        if alert_manager.resolve_alert(args.resolve_alert):
+            print(f"Alert resolved: {args.resolve_alert}")
+        else:
+            print(f"Alert not found: {args.resolve_alert}")
+    
+    elif args.test:
+        alert = alert_manager.create_alert(
+            service="test",
+            severity="info",
+            title="Test Alert",
+            message="This is a test alert from the AI Trading Sentinel alert system.",
+            labels={"environment": "test"}
+        )
+        
+        if alert_manager.send_alert(alert):
+            print(f"Test alert sent successfully: {alert.id}")
+        else:
+            print("Failed to send test alert")
+    
+    else:
+        parser.print_help()
+    
+    return 0
+
 
 if __name__ == '__main__':
-    # Test alert system
-    manager = AlertManager()
-    
-    # Send test alert
-    alert_id = manager.send_alert(
-        title="Test Alert",
-        message="This is a test alert from the AI Trading Sentinel alert system.",
-        severity=AlertSeverity.INFO,
-        source="test",
-        metadata={
-            "test_parameter": "test_value",
-            "system_status": "operational"
-        }
-    )
-    
-    print(f"Test alert sent with ID: {alert_id}")
-    
-    # Print summary
-    summary = manager.get_alert_summary()
-    print(f"Alert summary: {json.dumps(summary, indent=2)}")
+    sys.exit(main())

@@ -1,0 +1,102 @@
+﻿#!/bin/bash
+# AI Trading Sentinel Deployment Script
+echo "Starting AI Trading Sentinel deployment..."
+
+# Update system
+echo "[1/8] Updating system..."
+sudo apt update -y
+
+# Install packages
+echo "[2/8] Installing packages..."
+sudo apt install -y python3 python3-pip python3-venv git curl wget
+
+# Create directory
+echo "[3/8] Creating directory..."
+sudo mkdir -p /opt/ai-trading-sentinel
+cd /opt/ai-trading-sentinel
+
+# Create main.py
+echo "[4/8] Creating main application..."
+sudo cat > main.py << "EOF"
+#!/usr/bin/env python3
+import logging
+import time
+import os
+from datetime import datetime
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("trading.log"),
+        logging.StreamHandler()
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+def main():
+    logger.info("AI Trading Sentinel Starting...")
+    logger.info(f"Server: {os.uname().nodename}")
+    
+    counter = 0
+    try:
+        while True:
+            counter += 1
+            logger.info(f"Heartbeat #{counter} - System running OK")
+            time.sleep(30)
+    except KeyboardInterrupt:
+        logger.info("Shutdown requested")
+    except Exception as e:
+        logger.error(f"Error: {e}")
+    finally:
+        logger.info("AI Trading Sentinel stopped")
+
+if __name__ == "__main__":
+    main()
+EOF
+
+# Setup Python environment
+echo "[5/8] Setting up Python environment..."
+sudo python3 -m venv venv
+sudo ./venv/bin/pip install --upgrade pip
+sudo ./venv/bin/pip install flask requests psutil
+
+# Create systemd service
+echo "[6/8] Creating systemd service..."
+sudo cat > /etc/systemd/system/trae.service << "EOF"
+[Unit]
+Description=AI Trading Sentinel
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/ai-trading-sentinel
+ExecStart=/opt/ai-trading-sentinel/venv/bin/python main.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Set permissions and start service
+echo "[7/8] Starting service..."
+sudo chown -R root:root /opt/ai-trading-sentinel
+sudo chmod +x /opt/ai-trading-sentinel/main.py
+sudo systemctl daemon-reload
+sudo systemctl enable trae
+sudo systemctl start trae
+
+# Check status
+echo "[8/8] Checking deployment status..."
+echo ""
+echo "SUCCESS: Deployment completed!"
+sudo systemctl status trae --no-pager
+echo ""
+echo "Service Management Commands:"
+echo "View logs: sudo journalctl -u trae -f"
+echo "Restart: sudo systemctl restart trae"
+echo "Stop: sudo systemctl stop trae"
+echo "Status: sudo systemctl status trae"

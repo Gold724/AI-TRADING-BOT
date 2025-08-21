@@ -1,0 +1,218 @@
+# AI Trading Sentinel - Alertmanager Configuration
+# TRAE-SentinelOps: Production alert routing and notifications
+
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alerts@ai-trading-sentinel.com'
+  smtp_auth_username: '${SMTP_USERNAME}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+route:
+  group_by: ['alertname', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'web.hook'
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 5s
+      repeat_interval: 15m
+    
+    # Trading alerts - high priority
+    - match:
+        service: trading
+      receiver: 'trading-alerts'
+      group_wait: 30s
+      repeat_interval: 30m
+    
+    # Security alerts - immediate notification
+    - match:
+        service: security
+      receiver: 'security-alerts'
+      group_wait: 5s
+      repeat_interval: 30m
+    
+    # System alerts - standard notification
+    - match:
+        service: system
+      receiver: 'system-alerts'
+      group_wait: 2m
+      repeat_interval: 1h
+    
+    # Database alerts - high priority
+    - match:
+        service: database
+      receiver: 'database-alerts'
+      group_wait: 1m
+      repeat_interval: 30m
+    
+    # Monitoring alerts - low priority
+    - match:
+        service: monitoring
+      receiver: 'monitoring-alerts'
+      group_wait: 5m
+      repeat_interval: 2h
+
+receivers:
+  - name: 'web.hook'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook'
+        send_resolved: true
+
+  - name: 'critical-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#critical-alerts'
+        title: '🚨 CRITICAL ALERT - AI Trading Sentinel'
+        text: |
+          *Alert:* {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
+          *Description:* {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Service:* {{ .CommonLabels.service }}
+          *Time:* {{ .CommonLabels.alertname }} - {{ .Status }}
+        send_resolved: true
+        color: 'danger'
+    email_configs:
+      - to: '${ALERT_EMAIL_TO}'
+        subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }} - AI Trading Sentinel'
+        body: |
+          Critical Alert Triggered!
+          
+          Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
+          Description: {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
+          Severity: {{ .CommonLabels.severity }}
+          Service: {{ .CommonLabels.service }}
+          
+          Time: {{ range .Alerts }}{{ .StartsAt }}{{ end }}
+          
+          Please investigate immediately!
+        send_resolved: true
+
+  - name: 'trading-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#trading-alerts'
+        title: '📈 Trading Alert - AI Trading Sentinel'
+        text: |
+          *Alert:* {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
+          *Description:* {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Time:* {{ range .Alerts }}{{ .StartsAt }}{{ end }}
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+    email_configs:
+      - to: '${ALERT_EMAIL_TO}'
+        subject: '📈 Trading Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          Trading Alert:
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Severity: {{ .Labels.severity }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+        send_resolved: true
+
+  - name: 'security-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#security-alerts'
+        title: '🔒 Security Alert - AI Trading Sentinel'
+        text: |
+          *Security Alert:* {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
+          *Description:* {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Time:* {{ range .Alerts }}{{ .StartsAt }}{{ end }}
+        send_resolved: true
+        color: 'danger'
+    email_configs:
+      - to: '${SECURITY_EMAIL_TO}'
+        subject: '🔒 SECURITY ALERT: {{ .GroupLabels.alertname }}'
+        body: |
+          Security Alert Detected!
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Severity: {{ .Labels.severity }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+          
+          Please investigate immediately!
+        send_resolved: true
+
+  - name: 'system-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#system-alerts'
+        title: '⚙️ System Alert - AI Trading Sentinel'
+        text: |
+          *System Alert:* {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
+          *Description:* {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Time:* {{ range .Alerts }}{{ .StartsAt }}{{ end }}
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+
+  - name: 'database-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#database-alerts'
+        title: '🗄️ Database Alert - AI Trading Sentinel'
+        text: |
+          *Database Alert:* {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
+          *Description:* {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Time:* {{ range .Alerts }}{{ .StartsAt }}{{ end }}
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+
+  - name: 'monitoring-alerts'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#monitoring-alerts'
+        title: '📊 Monitoring Alert - AI Trading Sentinel'
+        text: |
+          *Monitoring Alert:* {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
+          *Description:* {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Time:* {{ range .Alerts }}{{ .StartsAt }}{{ end }}
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+
+inhibit_rules:
+  # Inhibit any warning-level alerts if the same alert is already critical
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service', 'instance']
+  
+  # Inhibit container alerts if the host is down
+  - source_match:
+      alertname: 'InstanceDown'
+    target_match_re:
+      alertname: 'Container.*'
+    equal: ['instance']
+  
+  # Inhibit database connection alerts if database is down
+  - source_match:
+      alertname: 'PostgreSQLDown'
+    target_match:
+      alertname: 'HighDatabaseConnections'
+    equal: ['instance']
+  
+  - source_match:
+      alertname: 'RedisDown'
+    target_match:
+      alertname: 'HighRedisMemoryUsage'
+    equal: ['instance']
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

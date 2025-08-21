@@ -1,22 +1,92 @@
-# AI Trading Sentinel - Production Cloud Deployment
-# TRAE-SentinelOps: Complete 24/7 Containerized Solution
-# Version: 2.0.0 - Enhanced for Contabo VPS
-
-version: '3.8'
-
 services:
-  # Redis for session management and caching
+  # AI Trading Sentinel Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: aitrading-backend:latest
+    container_name: aitrading-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=backend_main.py
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+      - API_HOST=0.0.0.0
+      - API_PORT=5000
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./temp:/app/temp
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - aitrading-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - redis
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # AI Trading Bot
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    image: aitrading-bot:latest
+    container_name: aitrading-bot
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DISPLAY=:99
+      - BACKEND_URL=http://backend:5000
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./temp:/app/temp
+      - ./chrome_profile:/app/chrome_profile
+      - /dev/shm:/dev/shm
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - aitrading-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis for caching and session management
   redis:
     image: redis:7-alpine
-    container_name: sentinel-redis
+    container_name: aitrading-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+      - redis-data:/data
+      - /etc/localtime:/etc/localtime:ro
     networks:
-      - sentinel-network
+      - aitrading-network
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -25,156 +95,65 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "50m"
-        max-file: "3"
+        max-size: "5m"
+        max-file: "2"
 
-  # Main Trading Bot Service
-  tradebot:
-    build:
-      context: .
-      dockerfile: Dockerfile.bot
-    container_name: sentinel-bot
-    restart: unless-stopped
-    depends_on:
-      redis:
-        condition: service_healthy
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - TRADING_MODE=${TRADING_MODE:-live}
-      - BULENOX_USERNAME=${BULENOX_USERNAME:-BX64883}
-      - BULENOX_PASSWORD=${BULENOX_PASSWORD:-XujhMzFf6K}
-      - MAX_DAILY_TRADES=${MAX_DAILY_TRADES:-21}
-      - DAILY_PROFIT_TARGET=${DAILY_PROFIT_TARGET:-300}
-      - MAX_DRAWDOWN=${MAX_DRAWDOWN:-150}
-      - FIBONACCI_SEQUENCE=${FIBONACCI_SEQUENCE:-10,10,20,30,50,80,130}
-      - GOLD_SYMBOL=${GOLD_SYMBOL:-GCZ25}
-      - DEFAULT_CONTRACTS=${DEFAULT_CONTRACTS:-1}
-      - MAX_CONTRACTS=${MAX_CONTRACTS:-3}
-      - HEADLESS=${HEADLESS:-true}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - TZ=UTC
-      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
-      - EMAIL_ALERTS=${EMAIL_ALERTS}
-      - SMTP_SERVER=${SMTP_SERVER}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USERNAME=${SMTP_USERNAME}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-    volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-      - ./screenshots:/app/screenshots
-      - ./backups:/app/backups
-      - /dev/shm:/dev/shm  # Shared memory for Playwright
-    shm_size: 2gb
-    networks:
-      - sentinel-network
-    security_opt:
-      - seccomp:unconfined
-    cap_add:
-      - SYS_ADMIN
-    healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=10)"]
-      interval: 60s
-      timeout: 30s
-      retries: 3
-      start_period: 120s
-    deploy:
-      resources:
-        limits:
-          memory: 3G
-          cpus: '1.5'
-        reservations:
-          memory: 1.5G
-          cpus: '0.75'
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "5"
-
-  # Flask API Backend
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    container_name: sentinel-api
-    restart: unless-stopped
-    depends_on:
-      redis:
-        condition: service_healthy
-    ports:
-      - "5000:5000"
-    environment:
-      - FLASK_ENV=production
-      - FLASK_DEBUG=false
-      - REDIS_URL=redis://redis:6379
-      - SECRET_KEY=${SECRET_KEY:-$(openssl rand -hex 32)}
-      - JWT_SECRET=${JWT_SECRET:-$(openssl rand -hex 32)}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:80}
-      - DATABASE_URL=${DATABASE_URL:-sqlite:///data/trading.db}
-    volumes:
-      - ./logs:/app/logs:ro
-      - ./data:/app/data
-    networks:
-      - sentinel-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '0.5'
-        reservations:
-          memory: 512M
-          cpus: '0.25'
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-  # React Frontend Dashboard
+  # Frontend (React/Vite)
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.frontend
-      args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:5000}
-        - VITE_WEBSOCKET_URL=${VITE_WEBSOCKET_URL:-ws://localhost:5000}
-    container_name: sentinel-frontend
+      context: ./AI-TRADING-BOT/frontend
+      dockerfile: Dockerfile
+    container_name: aitrading-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
-    depends_on:
-      - api
+    environment:
+      - VITE_API_URL=http://localhost:5000
+      - VITE_WEBSOCKET_URL=ws://localhost:5000
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     networks:
-      - sentinel-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.3'
-        reservations:
-          memory: 256M
-          cpus: '0.15'
+      - aitrading-network
+    depends_on:
+      - backend
     logging:
       driver: "json-file"
       options:
-        max-size: "50m"
+        max-size: "10m"
+        max-file: "3"
+
+  # Monitoring Service
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
+    container_name: aitrading-monitor
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - BACKEND_URL=http://backend:5000
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - aitrading-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
         max-file: "3"
 
   # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
-    container_name: sentinel-nginx
+    container_name: aitrading-nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -182,103 +161,88 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./logs/nginx:/var/log/nginx
-      - ./ssl:/etc/nginx/ssl:ro
+      - /etc/localtime:/etc/localtime:ro
     networks:
-      - sentinel-network
+      - aitrading-network
     depends_on:
+      - backend
       - frontend
-      - api
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: '0.1'
     logging:
       driver: "json-file"
       options:
-        max-size: "50m"
+        max-size: "10m"
         max-file: "3"
 
-  # Monitoring and Health Checks
-  monitor:
-    build:
-      context: .
-      dockerfile: Dockerfile.monitor
-    container_name: sentinel-monitor
-    restart: unless-stopped
-    depends_on:
-      - tradebot
-      - api
-      - redis
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
-      - EMAIL_ALERTS=${EMAIL_ALERTS}
-      - SMTP_SERVER=${SMTP_SERVER}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USERNAME=${SMTP_USERNAME}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-300}
-      - ALERT_COOLDOWN=${ALERT_COOLDOWN:-1800}
-    volumes:
-      - ./logs:/app/logs:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - sentinel-network
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.2'
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-  # Log Rotation Service
+  # Log aggregation and monitoring
   logrotate:
     image: alpine:latest
-    container_name: sentinel-logrotate
+    container_name: aitrading-logrotate
     restart: unless-stopped
     volumes:
       - ./logs:/logs
-      - ./scripts/logrotate.conf:/etc/logrotate.conf:ro
-    command: >
-      sh -c "apk add --no-cache logrotate &&
-      while true; do
-        logrotate -f /etc/logrotate.conf
-        sleep 86400
-      done"
+      - ./logrotate.conf:/etc/logrotate.conf:ro
+      - /etc/localtime:/etc/localtime:ro
     networks:
-      - sentinel-network
-    deploy:
-      resources:
-        limits:
-          memory: 64M
-          cpus: '0.05'
+      - aitrading-network
+    command: >
+      sh -c "apk add --no-cache logrotate dcron &&
+             echo '0 2 * * * /usr/sbin/logrotate /etc/logrotate.conf' | crontab - &&
+             crond -f"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
-volumes:
-  redis_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./data/redis
+  # Health check and alerting
+  # healthcheck:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.healthcheck
+  #   container_name: aitrading-healthcheck
+  #   restart: unless-stopped
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #     - CHECK_INTERVAL=60
+  #     - BACKEND_URL=http://backend:5000
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./logs:/app/logs
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #   networks:
+  #     - aitrading-network
+  #   depends_on:
+  #     - backend
+  #     - bot
 
 networks:
-  sentinel-network:
-    name: sentinel-network
+  aitrading-network:
     driver: bridge
     ipam:
       config:
         - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
-    driver_opts:
-      com.docker.network.bridge.name: sentinel-br0
+
+volumes:
+  redis-data:
+    driver: local
+  nginx-ssl:
+    driver: local
+
+# Add these volume mappings to your services
+volumes:
+  # Map data directories
+  - "D:\trae-data:/app/data"
+  - "E:\trae-logs:/app/logs"
+  - "D:\trae-data\cache:/app/cache"
+  - "E:\checkpoints:/app/checkpoints"
+  
+# Update environment variables
+environment:
+  - TRAE_DATA_DIR=/app/data
+  - TRAE_LOGS_DIR=/app/logs
+  - TRAE_CACHE_DIR=/app/cache
+  - LOG_DIR=/app/logs

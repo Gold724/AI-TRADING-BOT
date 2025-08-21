@@ -1,0 +1,368 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}-config
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+    config-type: application
+data:
+  # Application Configuration
+  APP_NAME: {{ .Values.app.name | quote }}
+  APP_VERSION: {{ .Values.app.version | quote }}
+  APP_ENVIRONMENT: {{ .Values.app.environment | quote }}
+  LOG_LEVEL: {{ .Values.app.logLevel | quote }}
+  DEBUG: {{ .Values.app.debug | quote }}
+  
+  # API Configuration
+  API_HOST: {{ .Values.app.api.host | quote }}
+  API_PORT: {{ .Values.app.api.port | quote }}
+  API_PREFIX: {{ .Values.app.api.prefix | quote }}
+  API_CORS_ORIGINS: {{ .Values.app.api.corsOrigins | join "," | quote }}
+  API_RATE_LIMIT: {{ .Values.app.api.rateLimit | quote }}
+  API_TIMEOUT: {{ .Values.app.api.timeout | quote }}
+  
+  # WebSocket Configuration
+  {{- if .Values.app.websocket.enabled }}
+  WEBSOCKET_ENABLED: "true"
+  WEBSOCKET_HOST: {{ .Values.app.websocket.host | quote }}
+  WEBSOCKET_PORT: {{ .Values.app.websocket.port | quote }}
+  WEBSOCKET_PATH: {{ .Values.app.websocket.path | quote }}
+  WEBSOCKET_HEARTBEAT_INTERVAL: {{ .Values.app.websocket.heartbeatInterval | quote }}
+  WEBSOCKET_MAX_CONNECTIONS: {{ .Values.app.websocket.maxConnections | quote }}
+  {{- else }}
+  WEBSOCKET_ENABLED: "false"
+  {{- end }}
+  
+  # Trading Configuration
+  MAX_ACCOUNTS: {{ .Values.app.trading.maxAccounts | quote }}
+  MAX_CONCURRENT_TRADES: {{ .Values.app.trading.maxConcurrentTrades | quote }}
+  TRADE_TIMEOUT: {{ .Values.app.trading.tradeTimeout | quote }}
+  POSITION_SIZE_LIMIT: {{ .Values.app.trading.positionSizeLimit | quote }}
+  DAILY_LOSS_LIMIT: {{ .Values.app.trading.dailyLossLimit | quote }}
+  
+  # Risk Management
+  RISK_MAX_DRAWDOWN: {{ .Values.app.riskManagement.maxDrawdown | quote }}
+  RISK_MAX_DAILY_TRADES: {{ .Values.app.riskManagement.maxDailyTrades | quote }}
+  RISK_STOP_LOSS_PCT: {{ .Values.app.riskManagement.stopLossPct | quote }}
+  RISK_TAKE_PROFIT_PCT: {{ .Values.app.riskManagement.takeProfitPct | quote }}
+  RISK_MAX_POSITION_SIZE: {{ .Values.app.riskManagement.maxPositionSize | quote }}
+  RISK_VOLATILITY_THRESHOLD: {{ .Values.app.riskManagement.volatilityThreshold | quote }}
+  RISK_SPREAD_THRESHOLD: {{ .Values.app.riskManagement.spreadThreshold | quote }}
+  
+  # Database Configuration
+  {{- if .Values.postgresql.enabled }}
+  DATABASE_TYPE: "postgresql"
+  DATABASE_HOST: {{ include "trading-sentinel.postgresql.fullname" . | quote }}
+  DATABASE_PORT: {{ .Values.postgresql.primary.service.ports.postgresql | quote }}
+  DATABASE_NAME: {{ .Values.postgresql.auth.database | quote }}
+  DATABASE_POOL_SIZE: {{ .Values.postgresql.primary.persistence.size | quote }}
+  DATABASE_MAX_OVERFLOW: "20"
+  DATABASE_POOL_TIMEOUT: "30"
+  DATABASE_POOL_RECYCLE: "3600"
+  {{- else if .Values.externalDatabase.enabled }}
+  DATABASE_TYPE: {{ .Values.externalDatabase.type | quote }}
+  DATABASE_HOST: {{ .Values.externalDatabase.host | quote }}
+  DATABASE_PORT: {{ .Values.externalDatabase.port | quote }}
+  DATABASE_NAME: {{ .Values.externalDatabase.database | quote }}
+  DATABASE_POOL_SIZE: {{ .Values.externalDatabase.poolSize | quote }}
+  DATABASE_MAX_OVERFLOW: {{ .Values.externalDatabase.maxOverflow | quote }}
+  DATABASE_POOL_TIMEOUT: {{ .Values.externalDatabase.poolTimeout | quote }}
+  DATABASE_POOL_RECYCLE: {{ .Values.externalDatabase.poolRecycle | quote }}
+  {{- end }}
+  
+  # Redis Configuration
+  {{- if .Values.redis.enabled }}
+  REDIS_HOST: {{ include "trading-sentinel.redis.fullname" . }}-master
+  REDIS_PORT: {{ .Values.redis.master.service.ports.redis | quote }}
+  REDIS_SENTINEL_ENABLED: {{ .Values.redis.sentinel.enabled | quote }}
+  {{- if .Values.redis.sentinel.enabled }}
+  REDIS_SENTINEL_SERVICE: {{ include "trading-sentinel.redis.fullname" . }}
+  REDIS_SENTINEL_PORT: {{ .Values.redis.sentinel.service.ports.sentinel | quote }}
+  REDIS_MASTER_NAME: {{ .Values.redis.sentinel.masterSet | quote }}
+  {{- end }}
+  REDIS_DB: {{ .Values.redis.auth.database | quote }}
+  REDIS_MAX_CONNECTIONS: "100"
+  REDIS_RETRY_ON_TIMEOUT: "true"
+  REDIS_HEALTH_CHECK_INTERVAL: "30"
+  {{- else if .Values.externalRedis.enabled }}
+  REDIS_HOST: {{ .Values.externalRedis.host | quote }}
+  REDIS_PORT: {{ .Values.externalRedis.port | quote }}
+  REDIS_DB: {{ .Values.externalRedis.database | quote }}
+  REDIS_SENTINEL_ENABLED: "false"
+  REDIS_MAX_CONNECTIONS: {{ .Values.externalRedis.maxConnections | quote }}
+  REDIS_RETRY_ON_TIMEOUT: {{ .Values.externalRedis.retryOnTimeout | quote }}
+  REDIS_HEALTH_CHECK_INTERVAL: {{ .Values.externalRedis.healthCheckInterval | quote }}
+  {{- end }}
+  
+  # Monitoring Configuration
+  {{- if .Values.monitoring.metrics.enabled }}
+  METRICS_ENABLED: "true"
+  METRICS_PORT: {{ .Values.monitoring.metrics.port | quote }}
+  METRICS_PATH: {{ .Values.monitoring.metrics.path | quote }}
+  METRICS_INTERVAL: {{ .Values.monitoring.metrics.interval | quote }}
+  {{- else }}
+  METRICS_ENABLED: "false"
+  {{- end }}
+  
+  {{- if .Values.monitoring.tracing.enabled }}
+  TRACING_ENABLED: "true"
+  JAEGER_AGENT_HOST: {{ .Values.monitoring.tracing.jaeger.agent.host | quote }}
+  JAEGER_AGENT_PORT: {{ .Values.monitoring.tracing.jaeger.agent.port | quote }}
+  JAEGER_SAMPLER_TYPE: {{ .Values.monitoring.tracing.jaeger.sampler.type | quote }}
+  JAEGER_SAMPLER_PARAM: {{ .Values.monitoring.tracing.jaeger.sampler.param | quote }}
+  {{- else }}
+  TRACING_ENABLED: "false"
+  {{- end }}
+  
+  # Security Configuration
+  SECURITY_ENABLED: {{ .Values.security.enabled | quote }}
+  {{- if .Values.security.networkPolicy.enabled }}
+  NETWORK_POLICY_ENABLED: "true"
+  {{- end }}
+  
+  # Backup Configuration
+  {{- if .Values.backup.enabled }}
+  BACKUP_ENABLED: "true"
+  BACKUP_SCHEDULE: {{ .Values.backup.database.schedule | quote }}
+  BACKUP_RETENTION_DAYS: {{ .Values.backup.database.retention | quote }}
+  BACKUP_STORAGE_TYPE: {{ .Values.backup.database.storageType | quote }}
+  {{- else }}
+  BACKUP_ENABLED: "false"
+  {{- end }}
+  
+  # Kubernetes Configuration
+  KUBERNETES_NAMESPACE: {{ .Release.Namespace | quote }}
+  KUBERNETES_SERVICE_NAME: {{ include "trading-sentinel.fullname" . | quote }}
+  KUBERNETES_POD_NAME: "$(POD_NAME)"
+  KUBERNETES_NODE_NAME: "$(NODE_NAME)"
+  
+  # Health Check Configuration
+  HEALTH_CHECK_ENABLED: "true"
+  HEALTH_CHECK_INTERVAL: "30"
+  HEALTH_CHECK_TIMEOUT: "10"
+  HEALTH_CHECK_RETRIES: "3"
+  
+  # Cache Configuration
+  CACHE_ENABLED: "true"
+  CACHE_TTL: "300"
+  CACHE_MAX_SIZE: "1000"
+  
+  # Session Configuration
+  SESSION_TIMEOUT: "3600"
+  SESSION_CLEANUP_INTERVAL: "300"
+  
+  # File Upload Configuration
+  MAX_UPLOAD_SIZE: "10485760"  # 10MB
+  ALLOWED_EXTENSIONS: "csv,json,txt,log"
+  
+  # Rate Limiting
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_WINDOW: "60"
+  
+  # Timezone
+  TZ: {{ .Values.app.timezone | default "UTC" | quote }}
+  
+  # Python Configuration
+  PYTHONPATH: "/app"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  
+  # Flask Configuration
+  FLASK_ENV: {{ .Values.app.environment | quote }}
+  FLASK_DEBUG: {{ .Values.app.debug | quote }}
+  
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}-nginx-config
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+    config-type: nginx
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+    
+    events {
+        worker_connections 1024;
+        use epoll;
+        multi_accept on;
+    }
+    
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+        
+        log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+        
+        access_log /var/log/nginx/access.log main;
+        
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+        
+        gzip on;
+        gzip_vary on;
+        gzip_min_length 1024;
+        gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+        
+        upstream trading_sentinel {
+            least_conn;
+            {{- range $i := until (int .Values.replicaCount) }}
+            server {{ include "trading-sentinel.fullname" $ }}-{{ $i }}.{{ include "trading-sentinel.fullname" $ }}-headless.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.app.api.port }};
+            {{- end }}
+        }
+        
+        upstream trading_sentinel_ws {
+            ip_hash;
+            {{- range $i := until (int .Values.replicaCount) }}
+            server {{ include "trading-sentinel.fullname" $ }}-{{ $i }}.{{ include "trading-sentinel.fullname" $ }}-headless.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.app.websocket.port }};
+            {{- end }}
+        }
+        
+        server {
+            listen 80;
+            server_name _;
+            
+            client_max_body_size {{ .Values.app.api.maxBodySize | default "10m" }};
+            
+            # Health check endpoint
+            location /health {
+                access_log off;
+                return 200 "healthy\n";
+                add_header Content-Type text/plain;
+            }
+            
+            # API endpoints
+            location /api/ {
+                proxy_pass http://trading_sentinel;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_connect_timeout 30s;
+                proxy_send_timeout 30s;
+                proxy_read_timeout 30s;
+            }
+            
+            # WebSocket endpoints
+            location /ws/ {
+                proxy_pass http://trading_sentinel_ws;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_connect_timeout 7d;
+                proxy_send_timeout 7d;
+                proxy_read_timeout 7d;
+            }
+            
+            # Static files
+            location / {
+                root /usr/share/nginx/html;
+                index index.html index.htm;
+                try_files $uri $uri/ /index.html;
+            }
+        }
+    }
+
+---
+{{- if .Values.monitoring.prometheus.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}-prometheus-config
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+    config-type: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: {{ .Values.monitoring.prometheus.scrapeInterval | default "15s" }}
+      evaluation_interval: {{ .Values.monitoring.prometheus.evaluationInterval | default "15s" }}
+    
+    rule_files:
+      - "/etc/prometheus/rules/*.yml"
+    
+    scrape_configs:
+      - job_name: 'trading-sentinel'
+        static_configs:
+          - targets: ['{{ include "trading-sentinel.fullname" . }}-metrics:{{ .Values.monitoring.metrics.port }}']
+        metrics_path: {{ .Values.monitoring.metrics.path }}
+        scrape_interval: {{ .Values.monitoring.prometheus.scrapeInterval | default "15s" }}
+      
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+{{- end }}
+
+---
+{{- if .Values.app.environment == "development" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}-dev-config
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+    config-type: development
+data:
+  # Development-specific configuration
+  FLASK_DEBUG: "true"
+  WERKZEUG_DEBUG_PIN: "off"
+  OAUTHLIB_INSECURE_TRANSPORT: "1"
+  
+  # Debug configuration
+  DEBUGPY_ENABLED: "true"
+  DEBUGPY_HOST: "0.0.0.0"
+  DEBUGPY_PORT: "5678"
+  
+  # Hot reload
+  FLASK_ENV: "development"
+  FLASK_DEBUG: "true"
+  
+  # Logging
+  LOG_LEVEL: "DEBUG"
+  
+  # Database
+  DATABASE_ECHO: "true"
+  
+  # Testing
+  TESTING: "false"
+  WTF_CSRF_ENABLED: "false"
+{{- end }}

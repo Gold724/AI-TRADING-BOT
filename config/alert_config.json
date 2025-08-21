@@ -1,0 +1,268 @@
+{
+  "notifications": {
+    "slack": {
+      "enabled": true,
+      "webhook_url": "",
+      "channels": {
+        "trading": {
+          "webhook_url": "",
+          "emoji": "📈",
+          "username": "Trading-Sentinel"
+        },
+        "system": {
+          "webhook_url": "",
+          "emoji": "🖥️",
+          "username": "System-Monitor"
+        },
+        "risk": {
+          "webhook_url": "",
+          "emoji": "⚠️",
+          "username": "Risk-Manager"
+        },
+        "critical": {
+          "webhook_url": "",
+          "emoji": "🚨",
+          "username": "Critical-Alert"
+        }
+      },
+      "message_format": {
+        "include_timestamp": true,
+        "include_severity": true,
+        "include_metadata": true,
+        "max_message_length": 4000
+      }
+    },
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "use_tls": true,
+      "username": "",
+      "password": "",
+      "sender_name": "AI Trading Sentinel",
+      "sender_email": "",
+      "recipients": {
+        "primary": [],
+        "secondary": [],
+        "emergency": []
+      },
+      "templates": {
+        "trading_alert": {
+          "subject": "[TRADING] {severity}: {title}",
+          "include_charts": true,
+          "include_logs": false
+        },
+        "system_alert": {
+          "subject": "[SYSTEM] {severity}: {title}",
+          "include_charts": false,
+          "include_logs": true
+        },
+        "critical_alert": {
+          "subject": "[CRITICAL] IMMEDIATE ACTION REQUIRED: {title}",
+          "include_charts": true,
+          "include_logs": true
+        }
+      }
+    },
+    "sms": {
+      "enabled": false,
+      "provider": "twilio",
+      "account_sid": "",
+      "auth_token": "",
+      "from_number": "",
+      "recipients": [],
+      "message_template": "[{severity}] AI Trading Sentinel: {title} - {timestamp}",
+      "max_message_length": 160,
+      "rate_limit": {
+        "max_per_hour": 10,
+        "max_per_day": 50
+      }
+    },
+    "webhook": {
+      "enabled": false,
+      "endpoints": {
+        "primary": {
+          "url": "",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer {token}"
+          },
+          "timeout": 30,
+          "retry_count": 3
+        },
+        "backup": {
+          "url": "",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "timeout": 30,
+          "retry_count": 2
+        }
+      },
+      "payload_format": {
+        "timestamp": "{timestamp}",
+        "severity": "{severity}",
+        "source": "{source}",
+        "title": "{title}",
+        "message": "{message}",
+        "metadata": "{metadata}",
+        "system_info": {
+          "hostname": "{hostname}",
+          "ip_address": "{ip_address}",
+          "version": "{version}"
+        }
+      }
+    },
+    "discord": {
+      "enabled": false,
+      "webhook_url": "",
+      "username": "AI Trading Sentinel",
+      "avatar_url": "",
+      "embed_format": {
+        "color": {
+          "info": 3447003,
+          "warning": 16776960,
+          "error": 15158332,
+          "critical": 10038562,
+          "emergency": 16711680
+        },
+        "include_thumbnail": true,
+        "include_footer": true
+      }
+    }
+  },
+  "alert_rules": {
+    "trading_events": {
+      "trade_executed": {
+        "severity": "info",
+        "channels": ["slack"],
+        "throttle": 0
+      },
+      "trade_failed": {
+        "severity": "warning",
+        "channels": ["slack", "email"],
+        "throttle": 300
+      },
+      "login_success": {
+        "severity": "info",
+        "channels": ["slack"],
+        "throttle": 3600
+      },
+      "login_failed": {
+        "severity": "error",
+        "channels": ["slack", "email"],
+        "throttle": 600
+      },
+      "risk_limit_exceeded": {
+        "severity": "critical",
+        "channels": ["slack", "email", "sms"],
+        "throttle": 300
+      },
+      "emergency_stop": {
+        "severity": "emergency",
+        "channels": ["slack", "email", "sms", "webhook"],
+        "throttle": 0
+      }
+    },
+    "system_events": {
+      "high_cpu_usage": {
+        "severity": "warning",
+        "channels": ["slack"],
+        "throttle": 1800
+      },
+      "high_memory_usage": {
+        "severity": "warning",
+        "channels": ["slack"],
+        "throttle": 1800
+      },
+      "disk_space_low": {
+        "severity": "error",
+        "channels": ["slack", "email"],
+        "throttle": 3600
+      },
+      "service_down": {
+        "severity": "critical",
+        "channels": ["slack", "email", "sms"],
+        "throttle": 300
+      },
+      "network_connectivity_lost": {
+        "severity": "critical",
+        "channels": ["slack", "email", "sms"],
+        "throttle": 600
+      },
+      "system_crash": {
+        "severity": "emergency",
+        "channels": ["slack", "email", "sms", "webhook"],
+        "throttle": 0
+      }
+    },
+    "security_events": {
+      "unauthorized_access": {
+        "severity": "critical",
+        "channels": ["slack", "email", "sms"],
+        "throttle": 0
+      },
+      "suspicious_activity": {
+        "severity": "warning",
+        "channels": ["slack", "email"],
+        "throttle": 900
+      },
+      "configuration_changed": {
+        "severity": "info",
+        "channels": ["slack"],
+        "throttle": 1800
+      }
+    }
+  },
+  "escalation": {
+    "enabled": true,
+    "rules": [
+      {
+        "condition": "unresolved_critical_alerts > 3",
+        "action": "escalate_to_emergency",
+        "delay": 900
+      },
+      {
+        "condition": "system_down_duration > 1800",
+        "action": "notify_emergency_contacts",
+        "delay": 0
+      },
+      {
+        "condition": "consecutive_failed_trades > 10",
+        "action": "emergency_stop_trading",
+        "delay": 300
+      }
+    ],
+    "emergency_contacts": {
+      "primary": {
+        "name": "Primary Admin",
+        "email": "",
+        "phone": "",
+        "slack_user_id": ""
+      },
+      "secondary": {
+        "name": "Secondary Admin",
+        "email": "",
+        "phone": "",
+        "slack_user_id": ""
+      }
+    }
+  },
+  "maintenance": {
+    "quiet_hours": {
+      "enabled": false,
+      "start_time": "02:00",
+      "end_time": "06:00",
+      "timezone": "UTC",
+      "suppress_levels": ["info", "warning"]
+    },
+    "scheduled_maintenance": {
+      "enabled": false,
+      "windows": [],
+      "suppress_all_alerts": false,
+      "notification_advance": 3600
+    }
+  }
+}

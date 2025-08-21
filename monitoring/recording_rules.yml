@@ -1,0 +1,245 @@
+groups:
+  - name: system_recording_rules
+    interval: 30s
+    rules:
+      # CPU usage recording rules
+      - record: instance:cpu_usage:rate5m
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+      
+      - record: instance:cpu_usage:rate1m
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)
+      
+      # Memory usage recording rules
+      - record: instance:memory_usage:ratio
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))
+      
+      - record: instance:memory_usage:percent
+        expr: instance:memory_usage:ratio * 100
+      
+      # Disk usage recording rules
+      - record: instance:disk_usage:ratio
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"}))
+      
+      - record: instance:disk_usage:percent
+        expr: instance:disk_usage:ratio * 100
+      
+      # Network I/O recording rules
+      - record: instance:network_receive_bytes:rate5m
+        expr: rate(node_network_receive_bytes_total[5m])
+      
+      - record: instance:network_transmit_bytes:rate5m
+        expr: rate(node_network_transmit_bytes_total[5m])
+      
+      - record: instance:network_total_bytes:rate5m
+        expr: instance:network_receive_bytes:rate5m + instance:network_transmit_bytes:rate5m
+
+  - name: application_recording_rules
+    interval: 15s
+    rules:
+      # HTTP request rate recording rules
+      - record: instance:http_requests:rate5m
+        expr: rate(http_requests_total[5m])
+      
+      - record: instance:http_requests:rate1m
+        expr: rate(http_requests_total[1m])
+      
+      # HTTP error rate recording rules
+      - record: instance:http_errors:rate5m
+        expr: rate(http_requests_total{status=~"5.."}[5m])
+      
+      - record: instance:http_error_ratio:rate5m
+        expr: instance:http_errors:rate5m / instance:http_requests:rate5m
+      
+      - record: instance:http_error_percent:rate5m
+        expr: instance:http_error_ratio:rate5m * 100
+      
+      # HTTP response time recording rules
+      - record: instance:http_request_duration:p50
+        expr: histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))
+      
+      - record: instance:http_request_duration:p95
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+      
+      - record: instance:http_request_duration:p99
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+
+  - name: trading_recording_rules
+    interval: 10s
+    rules:
+      # Trading operation rates
+      - record: trading:operations:rate5m
+        expr: rate(trading_operations_total[5m])
+      
+      - record: trading:operations:rate1m
+        expr: rate(trading_operations_total[1m])
+      
+      # Trading error rates
+      - record: trading:errors:rate5m
+        expr: rate(trading_errors_total[5m])
+      
+      - record: trading:error_ratio:rate5m
+        expr: trading:errors:rate5m / trading:operations:rate5m
+      
+      - record: trading:error_percent:rate5m
+        expr: trading:error_ratio:rate5m * 100
+      
+      # Login success/failure rates
+      - record: trading:login_attempts:rate10m
+        expr: rate(login_attempts_total[10m])
+      
+      - record: trading:login_failures:rate10m
+        expr: rate(login_failures_total[10m])
+      
+      - record: trading:login_success_ratio:rate10m
+        expr: 1 - (trading:login_failures:rate10m / trading:login_attempts:rate10m)
+      
+      # Profit/Loss calculations
+      - record: trading:pnl:total
+        expr: sum(trading_pnl_total)
+      
+      - record: trading:pnl:rate1h
+        expr: rate(trading_pnl_total[1h])
+      
+      - record: trading:drawdown:current
+        expr: current_drawdown_percent
+      
+      - record: trading:drawdown:max_1h
+        expr: max_over_time(current_drawdown_percent[1h])
+      
+      # Trade execution metrics
+      - record: trading:execution_time:p50
+        expr: histogram_quantile(0.50, rate(trade_execution_duration_seconds_bucket[5m]))
+      
+      - record: trading:execution_time:p95
+        expr: histogram_quantile(0.95, rate(trade_execution_duration_seconds_bucket[5m]))
+      
+      - record: trading:execution_time:p99
+        expr: histogram_quantile(0.99, rate(trade_execution_duration_seconds_bucket[5m]))
+
+  - name: database_recording_rules
+    interval: 30s
+    rules:
+      # PostgreSQL connection usage
+      - record: postgres:connections:usage_ratio
+        expr: pg_stat_database_numbackends / pg_settings_max_connections
+      
+      - record: postgres:connections:usage_percent
+        expr: postgres:connections:usage_ratio * 100
+      
+      # PostgreSQL query performance
+      - record: postgres:queries:rate5m
+        expr: rate(pg_stat_database_xact_commit[5m]) + rate(pg_stat_database_xact_rollback[5m])
+      
+      - record: postgres:queries:commit_ratio
+        expr: rate(pg_stat_database_xact_commit[5m]) / postgres:queries:rate5m
+      
+      # Redis memory usage
+      - record: redis:memory:usage_ratio
+        expr: redis_memory_used_bytes / redis_memory_max_bytes
+      
+      - record: redis:memory:usage_percent
+        expr: redis:memory:usage_ratio * 100
+      
+      # Redis operations
+      - record: redis:operations:rate5m
+        expr: rate(redis_commands_processed_total[5m])
+      
+      - record: redis:keyspace:hit_ratio
+        expr: rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))
+
+  - name: container_recording_rules
+    interval: 30s
+    rules:
+      # Container CPU usage
+      - record: container:cpu_usage:rate5m
+        expr: rate(container_cpu_usage_seconds_total[5m]) * 100
+      
+      # Container memory usage
+      - record: container:memory_usage:ratio
+        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes
+      
+      - record: container:memory_usage:percent
+        expr: container:memory_usage:ratio * 100
+      
+      # Container network I/O
+      - record: container:network_receive:rate5m
+        expr: rate(container_network_receive_bytes_total[5m])
+      
+      - record: container:network_transmit:rate5m
+        expr: rate(container_network_transmit_bytes_total[5m])
+      
+      # Container restart frequency
+      - record: container:restarts:rate1h
+        expr: rate(container_restart_count[1h])
+
+  - name: business_metrics_recording_rules
+    interval: 60s
+    rules:
+      # Daily trading volume
+      - record: business:trading_volume:daily
+        expr: increase(trading_volume_total[24h])
+      
+      # Hourly profit/loss
+      - record: business:pnl:hourly
+        expr: increase(trading_pnl_total[1h])
+      
+      # Daily profit/loss
+      - record: business:pnl:daily
+        expr: increase(trading_pnl_total[24h])
+      
+      # Weekly profit/loss
+      - record: business:pnl:weekly
+        expr: increase(trading_pnl_total[7d])
+      
+      # Success rate metrics
+      - record: business:trade_success_ratio:daily
+        expr: increase(successful_trades_total[24h]) / increase(total_trades_total[24h])
+      
+      - record: business:trade_success_percent:daily
+        expr: business:trade_success_ratio:daily * 100
+      
+      # Average trade duration
+      - record: business:avg_trade_duration:daily
+        expr: avg_over_time(trade_duration_seconds[24h])
+      
+      # Risk metrics
+      - record: business:max_drawdown:daily
+        expr: max_over_time(current_drawdown_percent[24h])
+      
+      - record: business:avg_drawdown:daily
+        expr: avg_over_time(current_drawdown_percent[24h])
+      
+      # System uptime
+      - record: business:uptime:daily
+        expr: avg_over_time(up{job="trading-bot"}[24h]) * 100
+      
+      - record: business:uptime:weekly
+        expr: avg_over_time(up{job="trading-bot"}[7d]) * 100
+
+  - name: security_recording_rules
+    interval: 60s
+    rules:
+      # Failed login attempts
+      - record: security:failed_logins:rate1h
+        expr: rate(failed_login_attempts_total[1h])
+      
+      - record: security:failed_logins:daily
+        expr: increase(failed_login_attempts_total[24h])
+      
+      # Suspicious activity
+      - record: security:suspicious_requests:rate1h
+        expr: rate(suspicious_requests_total[1h])
+      
+      - record: security:suspicious_requests:daily
+        expr: increase(suspicious_requests_total[24h])
+      
+      # SSL certificate days until expiry
+      - record: security:ssl_cert_days_until_expiry
+        expr: (ssl_certificate_expiry_seconds - time()) / 86400
+      
+      # Security scan results
+      - record: security:vulnerabilities:critical
+        expr: security_vulnerabilities_total{severity="critical"}
+      
+      - record: security:vulnerabilities:high
+        expr: security_vulnerabilities_total{severity="high"}

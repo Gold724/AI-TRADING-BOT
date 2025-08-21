@@ -156,7 +156,7 @@ BULENOX_USERNAME=your_bulenox_username
 BULENOX_PASSWORD=your_bulenox_password
 BULENOX_DEMO_MODE=true
 BULENOX_BASE_URL=https://app.bulenox.com
-BULENOX_LOGIN_URL=https://app.bulenox.com/login
+BULENOX_LOGIN_URL=https://app.bulenox.projectx.com/login
 BULENOX_TRADING_URL=https://app.bulenox.com/trading
 
 # 🏗️ API CONFIGURATION

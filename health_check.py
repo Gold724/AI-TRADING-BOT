@@ -223,7 +223,7 @@ class TradeBotHealthChecker:
         """
         test_urls = [
             ('google.com', 'https://www.google.com'),
-            ('bulenox.com', 'https://bulenox.com'),
+            ('bulenox.com', 'https://bulenox.projectx.com'),
             ('github.com', 'https://github.com'),
             ('docker.com', 'https://hub.docker.com')
         ]
@@ -287,7 +287,7 @@ class TradeBotHealthChecker:
                 }
             
             # Test platform connectivity
-            platform_url = 'https://bulenox.com'
+            platform_url = 'https://bulenox.projectx.com'
             try:
                 response = requests.get(platform_url, timeout=15)
                 platform_accessible = response.status_code == 200

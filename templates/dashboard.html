@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trading Sentinel - Production Dashboard</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --dark-bg: #1a1a1a;
+            --card-bg: #2d3748;
+            --text-light: #e2e8f0;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            padding: 30px;
+        }
+        
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-healthy { background-color: var(--success-color); }
+        .status-warning { background-color: var(--warning-color); }
+        .status-critical { background-color: var(--danger-color); }
+        .status-unknown { background-color: #6c757d; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        
+        .metric-card:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring-circle {
+            transition: stroke-dasharray 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        .alert-item {
+            border-left: 4px solid;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 0 10px 10px 0;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert-critical { border-left-color: var(--danger-color); }
+        .alert-warning { border-left-color: var(--warning-color); }
+        .alert-info { border-left-color: var(--secondary-color); }
+        
+        .control-button {
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            border: none;
+            margin: 5px;
+        }
+        
+        .control-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+        }
+        
+        .connected { background-color: var(--success-color); }
+        .disconnected { background-color: var(--danger-color); }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .service-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .emergency-stop {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border: none;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 10px 30px rgba(238, 90, 36, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .emergency-stop:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(238, 90, 36, 0.6);
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status disconnected">
+        <i class="fas fa-wifi"></i> Connecting...
+    </div>
+    
+    <!-- Emergency Stop Button -->
+    <button id="emergencyStop" class="emergency-stop" title="Emergency Stop All Trading">
+        <i class="fas fa-stop"></i>
+    </button>
+    
+    <div class="container-fluid">
+        <div class="dashboard-container">
+            <!-- Header -->
+            <div class="row">
+                <div class="col-12">
+                    <h1 class="header-title">
+                        <i class="fas fa-robot"></i> AI Trading Sentinel
+                        <br><small style="font-size: 0.5em; color: #6c757d;">Production Dashboard</small>
+                    </h1>
+                </div>
+            </div>
+            
+            <!-- System Overview -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="status-card text-center">
+                        <h5><i class="fas fa-server"></i> System Status</h5>
+                        <div id="systemStatus">
+                            <span class="status-indicator status-unknown"></span>
+                            <span id="systemStatusText">Loading...</span>
+                        </div>
+                        <small id="lastUpdate" class="text-muted">Last update: --</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="status-card text-center">
+                        <h5><i class="fas fa-chart-line"></i> Trading Status</h5>
+                        <div id="tradingStatus">
+                            <span class="status-indicator status-unknown"></span>
+                            <span id="tradingStatusText">Loading...</span>
+                        </div>
+                        <div class="mt-2">
+                            <button class="btn btn-success btn-sm control-button" onclick="controlTrading('start')">
+                                <i class="fas fa-play"></i> Start
+                            </button>
+                            <button class="btn btn-danger btn-sm control-button" onclick="controlTrading('stop')">
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                            <button class="btn btn-warning btn-sm control-button" onclick="controlTrading('restart')">
+                                <i class="fas fa-redo"></i> Restart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="status-card text-center">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Active Alerts</h5>
+                        <div id="alertCount">
+                            <span class="badge bg-secondary" id="alertBadge">0</span>
+                        </div>
+                        <small class="text-muted">System alerts</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="status-card text-center">
+                        <h5><i class="fas fa-clock"></i> Uptime</h5>
+                        <div id="systemUptime">Loading...</div>
+                        <small class="text-muted">System uptime</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Metrics -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="metric-card">
+                        <h6><i class="fas fa-microchip"></i> CPU Usage</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <div class="progress" style="height: 10px;">
+                                    <div id="cpuProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <span id="cpuPercent" class="ms-3 fw-bold">0%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="metric-card">
+                        <h6><i class="fas fa-memory"></i> Memory Usage</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <div class="progress" style="height: 10px;">
+                                    <div id="memoryProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <span id="memoryPercent" class="ms-3 fw-bold">0%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="metric-card">
+                        <h6><i class="fas fa-hdd"></i> Disk Usage</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <div class="progress" style="height: 10px;">
+                                    <div id="diskProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <span id="diskPercent" class="ms-3 fw-bold">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Row -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="status-card">
+                        <h5><i class="fas fa-chart-area"></i> System Performance</h5>
+                        <div class="chart-container">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="status-card">
+                        <h5><i class="fas fa-coins"></i> Trading Statistics</h5>
+                        <div id="tradingStats">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 id="totalTrades" class="text-primary">0</h4>
+                                    <small>Total Trades</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 id="successRate" class="text-success">0%</h4>
+                                    <small>Success Rate</small>
+                                </div>
+                            </div>
+                            <div class="row text-center mt-3">
+                                <div class="col-6">
+                                    <h4 id="totalProfitLoss" class="text-info">$0.00</h4>
+                                    <small>Total P&L</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 id="lastTradeTime" class="text-muted">--</h4>
+                                    <small>Last Trade</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Services Status -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="status-card">
+                        <h5><i class="fas fa-cogs"></i> Services Status</h5>
+                        <div id="servicesGrid" class="service-grid">
+                            <!-- Services will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alerts -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="status-card">
+                        <h5><i class="fas fa-bell"></i> System Alerts</h5>
+                        <div id="alertsList">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-check-circle fa-3x mb-3"></i>
+                                <p>No active alerts</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Logs Viewer -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="status-card">
+                        <h5><i class="fas fa-file-alt"></i> System Logs</h5>
+                        <div class="mb-3">
+                            <select id="logService" class="form-select" onchange="loadLogs()">
+                                <option value="trading-bot">Trading Bot</option>
+                                <option value="backend">Backend Service</option>
+                                <option value="monitor">Monitor Service</option>
+                                <option value="nginx">Nginx</option>
+                            </select>
+                        </div>
+                        <div id="logsContainer" style="height: 300px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                            <div class="text-center text-muted">
+                                <div class="loading-spinner"></div>
+                                <p>Loading logs...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        let socket;
+        let performanceChart;
+        let isConnected = false;
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSocket();
+            initializeCharts();
+            setupEventHandlers();
+            loadLogs();
+        });
+        
+        // Initialize Socket.IO connection
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', function() {
+                isConnected = true;
+                updateConnectionStatus(true);
+                console.log('Connected to dashboard server');
+            });
+            
+            socket.on('disconnect', function() {
+                isConnected = false;
+                updateConnectionStatus(false);
+                console.log('Disconnected from dashboard server');
+            });
+            
+            socket.on('status_update', function(data) {
+                updateDashboard(data);
+            });
+            
+            // Request initial update
+            socket.emit('request_update');
+        }
+        
+        // Update connection status indicator
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.className = 'connection-status connected';
+                statusEl.innerHTML = '<i class="fas fa-wifi"></i> Connected';
+            } else {
+                statusEl.className = 'connection-status disconnected';
+                statusEl.innerHTML = '<i class="fas fa-wifi"></i> Disconnected';
+            }
+        }
+        
+        // Initialize charts
+        function initializeCharts() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'CPU %',
+                        data: [],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Memory %',
+                        data: [],
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Setup event handlers
+        function setupEventHandlers() {
+            // Emergency stop button
+            document.getElementById('emergencyStop').addEventListener('click', function() {
+                if (confirm('Are you sure you want to perform an emergency stop? This will halt all trading activities.')) {
+                    emergencyStop();
+                }
+            });
+            
+            // Auto-refresh logs every 30 seconds
+            setInterval(loadLogs, 30000);
+        }
+        
+        // Update dashboard with new data
+        function updateDashboard(data) {
+            try {
+                // Update system status
+                updateSystemStatus(data.system_status);
+                
+                // Update trading status
+                updateTradingStatus(data.trading_status);
+                
+                // Update metrics
+                if (data.metrics) {
+                    updateMetrics(data.metrics);
+                }
+                
+                // Update services
+                if (data.services) {
+                    updateServices(data.services);
+                }
+                
+                // Update alerts
+                if (data.alerts) {
+                    updateAlerts(data.alerts);
+                }
+                
+                // Update last update time
+                if (data.last_update) {
+                    document.getElementById('lastUpdate').textContent = 
+                        'Last update: ' + new Date(data.last_update).toLocaleTimeString();
+                }
+                
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+            }
+        }
+        
+        // Update system status
+        function updateSystemStatus(status) {
+            const statusEl = document.getElementById('systemStatus');
+            const textEl = document.getElementById('systemStatusText');
+            const indicator = statusEl.querySelector('.status-indicator');
+            
+            indicator.className = `status-indicator status-${status}`;
+            textEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+        
+        // Update trading status
+        function updateTradingStatus(status) {
+            const statusEl = document.getElementById('tradingStatus');
+            const textEl = document.getElementById('tradingStatusText');
+            const indicator = statusEl.querySelector('.status-indicator');
+            
+            let statusClass = 'unknown';
+            if (status === 'active') statusClass = 'healthy';
+            else if (status === 'stopped') statusClass = 'warning';
+            else if (status === 'error') statusClass = 'critical';
+            
+            indicator.className = `status-indicator status-${statusClass}`;
+            textEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+        
+        // Update system metrics
+        function updateMetrics(metrics) {
+            // Update CPU
+            if (metrics.cpu) {
+                const cpuPercent = Math.round(metrics.cpu.percent);
+                document.getElementById('cpuPercent').textContent = cpuPercent + '%';
+                document.getElementById('cpuProgress').style.width = cpuPercent + '%';
+                document.getElementById('cpuProgress').className = 
+                    `progress-bar ${getProgressBarClass(cpuPercent)}`;
+            }
+            
+            // Update Memory
+            if (metrics.memory) {
+                const memPercent = Math.round(metrics.memory.percent);
+                document.getElementById('memoryPercent').textContent = memPercent + '%';
+                document.getElementById('memoryProgress').style.width = memPercent + '%';
+                document.getElementById('memoryProgress').className = 
+                    `progress-bar ${getProgressBarClass(memPercent)}`;
+            }
+            
+            // Update Disk
+            if (metrics.disk) {
+                const diskPercent = Math.round(metrics.disk.percent);
+                document.getElementById('diskPercent').textContent = diskPercent + '%';
+                document.getElementById('diskProgress').style.width = diskPercent + '%';
+                document.getElementById('diskProgress').className = 
+                    `progress-bar ${getProgressBarClass(diskPercent)}`;
+            }
+            
+            // Update performance chart
+            updatePerformanceChart(metrics);
+        }
+        
+        // Get progress bar class based on percentage
+        function getProgressBarClass(percent) {
+            if (percent >= 90) return 'bg-danger';
+            if (percent >= 70) return 'bg-warning';
+            return 'bg-success';
+        }
+        
+        // Update performance chart
+        function updatePerformanceChart(metrics) {
+            if (!performanceChart) return;
+            
+            const now = new Date().toLocaleTimeString();
+            const maxDataPoints = 20;
+            
+            // Add new data point
+            performanceChart.data.labels.push(now);
+            performanceChart.data.datasets[0].data.push(metrics.cpu ? metrics.cpu.percent : 0);
+            performanceChart.data.datasets[1].data.push(metrics.memory ? metrics.memory.percent : 0);
+            
+            // Remove old data points
+            if (performanceChart.data.labels.length > maxDataPoints) {
+                performanceChart.data.labels.shift();
+                performanceChart.data.datasets[0].data.shift();
+                performanceChart.data.datasets[1].data.shift();
+            }
+            
+            performanceChart.update('none');
+        }
+        
+        // Update services status
+        function updateServices(services) {
+            const grid = document.getElementById('servicesGrid');
+            grid.innerHTML = '';
+            
+            for (const [serviceName, serviceData] of Object.entries(services)) {
+                const serviceEl = document.createElement('div');
+                serviceEl.className = 'service-item fade-in';
+                
+                const status = serviceData.status || 'unknown';
+                let statusClass = 'secondary';
+                let statusIcon = 'question';
+                
+                if (status === 'active' || status === 'healthy') {
+                    statusClass = 'success';
+                    statusIcon = 'check';
+                } else if (status === 'inactive' || status === 'unhealthy') {
+                    statusClass = 'danger';
+                    statusIcon = 'times';
+                } else if (status === 'warning') {
+                    statusClass = 'warning';
+                    statusIcon = 'exclamation';
+                }
+                
+                serviceEl.innerHTML = `
+                    <div>
+                        <h6 class="mb-1">${serviceName}</h6>
+                        <small class="text-muted">${status}</small>
+                    </div>
+                    <div>
+                        <span class="badge bg-${statusClass}">
+                            <i class="fas fa-${statusIcon}"></i>
+                        </span>
+                    </div>
+                `;
+                
+                grid.appendChild(serviceEl);
+            }
+        }
+        
+        // Update alerts
+        function updateAlerts(alerts) {
+            const alertsList = document.getElementById('alertsList');
+            const alertBadge = document.getElementById('alertBadge');
+            
+            alertBadge.textContent = alerts.length;
+            alertBadge.className = `badge ${alerts.length > 0 ? 'bg-danger' : 'bg-secondary'}`;
+            
+            if (alerts.length === 0) {
+                alertsList.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                        <p>No active alerts</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            alertsList.innerHTML = '';
+            alerts.forEach(alert => {
+                const alertEl = document.createElement('div');
+                alertEl.className = `alert-item alert-${alert.severity} fade-in`;
+                
+                const timeAgo = getTimeAgo(new Date(alert.timestamp));
+                
+                alertEl.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>${alert.type.toUpperCase()}</strong>
+                            <p class="mb-1">${alert.message}</p>
+                            <small class="text-muted">${timeAgo}</small>
+                        </div>
+                        <span class="badge bg-${alert.severity === 'critical' ? 'danger' : alert.severity === 'warning' ? 'warning' : 'info'}">
+                            ${alert.severity}
+                        </span>
+                    </div>
+                `;
+                
+                alertsList.appendChild(alertEl);
+            });
+        }
+        
+        // Get time ago string
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minutes ago`;
+            
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `${diffHours} hours ago`;
+            
+            const diffDays = Math.floor(diffHours / 24);
+            return `${diffDays} days ago`;
+        }
+        
+        // Control trading bot
+        function controlTrading(action) {
+            if (!isConnected) {
+                alert('Not connected to server');
+                return;
+            }
+            
+            fetch('/api/trading/control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: action })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Trading bot ${action} successful`, 'success');
+                } else {
+                    showNotification(`Trading bot ${action} failed: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification(`Error: ${error.message}`, 'error');
+            });
+        }
+        
+        // Emergency stop
+        function emergencyStop() {
+            fetch('/api/emergency/stop', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Emergency stop completed', 'success');
+                } else {
+                    showNotification(`Emergency stop failed: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification(`Error: ${error.message}`, 'error');
+            });
+        }
+        
+        // Load service logs
+        function loadLogs() {
+            const service = document.getElementById('logService').value;
+            const container = document.getElementById('logsContainer');
+            
+            fetch(`/api/logs/${service}?lines=100`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    container.innerHTML = `<pre>${data.logs}</pre>`;
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    container.innerHTML = `<div class="text-danger">Error loading logs: ${data.error}</div>`;
+                }
+            })
+            .catch(error => {
+                container.innerHTML = `<div class="text-danger">Error: ${error.message}</div>`;
+            });
+        }
+        
+        // Show notification
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+            notification.style.position = 'fixed';
+            notification.style.top = '80px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '1050';
+            notification.style.minWidth = '300px';
+            
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+        
+        // Fetch and update trading statistics
+        function updateTradingStatistics() {
+            fetch('/api/trading/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.statistics) {
+                    const stats = data.statistics;
+                    
+                    document.getElementById('totalTrades').textContent = stats.total_trades || 0;
+                    
+                    const successRate = stats.total_trades > 0 ? 
+                        ((stats.successful_trades / stats.total_trades) * 100).toFixed(1) : 0;
+                    document.getElementById('successRate').textContent = successRate + '%';
+                    
+                    const profitLoss = stats.total_profit_loss || 0;
+                    document.getElementById('totalProfitLoss').textContent = 
+                        '$' + profitLoss.toFixed(2);
+                    document.getElementById('totalProfitLoss').className = 
+                        profitLoss >= 0 ? 'text-success' : 'text-danger';
+                    
+                    const lastTrade = stats.last_trade_time ? 
+                        new Date(stats.last_trade_time).toLocaleString() : '--';
+                    document.getElementById('lastTradeTime').textContent = lastTrade;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching trading statistics:', error);
+            });
+        }
+        
+        // Update trading statistics every 30 seconds
+        setInterval(updateTradingStatistics, 30000);
+        
+        // Initial load of trading statistics
+        setTimeout(updateTradingStatistics, 2000);
+    </script>
+</body>
+</html>

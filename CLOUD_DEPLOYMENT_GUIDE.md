@@ -458,14 +458,14 @@ swapon /swapfile
 3. **Network Issues**
 ```bash
 # Test connectivity
-curl -I https://bulenox.com
+curl -I https://bulenox.projectx.com
 ping 8.8.8.8
 
 # Check DNS
 nslookup bulenox.com
 
 # Test from container
-docker exec tradebot curl -I https://bulenox.com
+docker exec tradebot curl -I https://bulenox.projectx.com
 ```
 
 ## 💰 Cost Optimization

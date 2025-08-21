@@ -152,7 +152,7 @@ BULENOX_USERNAME=your_username
 BULENOX_PASSWORD=your_password
 
 # Optional - Broker URL
-BROKER_URL=https://bulenox.com
+BROKER_URL=https://bulenox.projectx.com
 
 # Optional - Capture Settings
 MAX_WAIT_TIME=300                # Maximum wait time in seconds

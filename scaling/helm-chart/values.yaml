@@ -1,0 +1,720 @@
+# AI Trading Sentinel Helm Chart Values
+# Default values for trading-sentinel.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# =============================================================================
+# GLOBAL CONFIGURATION
+# =============================================================================
+
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+  postgresql:
+    auth:
+      postgresPassword: "changeme"
+      username: "trading_user"
+      password: "changeme"
+      database: "trading_sentinel"
+  redis:
+    auth:
+      enabled: true
+      password: "changeme"
+
+# =============================================================================
+# APPLICATION CONFIGURATION
+# =============================================================================
+
+image:
+  registry: docker.io
+  repository: trading-sentinel/app
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Application configuration
+app:
+  name: trading-sentinel
+  version: "1.0.0"
+  environment: production  # development, staging, production
+  logLevel: INFO
+  debug: false
+  
+  # Trading configuration
+  trading:
+    maxAccounts: 50
+    maxConcurrentTrades: 100
+    riskManagement:
+      enabled: true
+      maxDrawdown: 0.05  # 5%
+      maxDailyLoss: 0.02  # 2%
+    
+  # API configuration
+  api:
+    port: 8000
+    workers: 4
+    timeout: 30
+    maxRequestSize: "10MB"
+    
+  # WebSocket configuration
+  websocket:
+    enabled: true
+    port: 8001
+    maxConnections: 1000
+
+# =============================================================================
+# DEPLOYMENT CONFIGURATION
+# =============================================================================
+
+deployment:
+  replicaCount: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  
+  # Pod configuration
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext:
+    fsGroup: 1000
+    runAsNonRoot: true
+    runAsUser: 1000
+  
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+  
+  # Resource configuration
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  
+  # Node selection
+  nodeSelector: {}
+  tolerations: []
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+              - trading-sentinel
+          topologyKey: kubernetes.io/hostname
+  
+  # Probes
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  startupProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: http
+  annotations: {}
+  
+  # Additional ports
+  additionalPorts:
+    - name: websocket
+      port: 8001
+      targetPort: websocket
+      protocol: TCP
+
+# =============================================================================
+# INGRESS CONFIGURATION
+# =============================================================================
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+  
+  hosts:
+    - host: trading-sentinel.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: trading-sentinel
+            port: 80
+        - path: /ws
+          pathType: Prefix
+          service:
+            name: trading-sentinel
+            port: 8001
+  
+  tls:
+    - secretName: trading-sentinel-tls
+      hosts:
+        - trading-sentinel.local
+  
+  # Nginx specific configuration
+  nginx:
+    enabled: true
+    controller:
+      replicaCount: 2
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+
+# =============================================================================
+# AUTOSCALING CONFIGURATION
+# =============================================================================
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  
+  # Custom metrics (requires metrics server)
+  customMetrics:
+    - type: Pods
+      pods:
+        metric:
+          name: active_trading_accounts
+        target:
+          type: AverageValue
+          averageValue: "10"
+    - type: Pods
+      pods:
+        metric:
+          name: api_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "50"
+
+# Vertical Pod Autoscaling
+vpa:
+  enabled: false
+  updateMode: "Auto"  # Off, Initial, Auto
+  resourcePolicy:
+    containerPolicies:
+    - containerName: trading-sentinel
+      maxAllowed:
+        cpu: 4000m
+        memory: 8Gi
+      minAllowed:
+        cpu: 100m
+        memory: 256Mi
+
+# =============================================================================
+# PERSISTENCE CONFIGURATION
+# =============================================================================
+
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  annotations: {}
+  
+  # Multiple volumes
+  volumes:
+    data:
+      enabled: true
+      size: 10Gi
+      mountPath: /app/data
+    logs:
+      enabled: true
+      size: 5Gi
+      mountPath: /app/logs
+    cache:
+      enabled: true
+      size: 2Gi
+      mountPath: /app/cache
+
+# =============================================================================
+# DATABASE CONFIGURATION (PostgreSQL)
+# =============================================================================
+
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "changeme"
+    username: "trading_user"
+    password: "changeme"
+    database: "trading_sentinel"
+  
+  architecture: replication
+  primary:
+    persistence:
+      enabled: true
+      size: 50Gi
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    
+    # PostgreSQL configuration
+    configuration: |
+      max_connections = 200
+      shared_buffers = 1GB
+      effective_cache_size = 3GB
+      maintenance_work_mem = 256MB
+      checkpoint_completion_target = 0.9
+      wal_buffers = 16MB
+      default_statistics_target = 100
+      random_page_cost = 1.1
+      effective_io_concurrency = 200
+      work_mem = 4MB
+      min_wal_size = 1GB
+      max_wal_size = 4GB
+      max_worker_processes = 8
+      max_parallel_workers_per_gather = 4
+      max_parallel_workers = 8
+      max_parallel_maintenance_workers = 4
+  
+  readReplicas:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 50Gi
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+  
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# External PostgreSQL configuration
+externalDatabase:
+  enabled: false
+  host: ""
+  port: 5432
+  username: "trading_user"
+  database: "trading_sentinel"
+  password: ""
+  existingSecret: ""
+  existingSecretPasswordKey: ""
+
+# =============================================================================
+# REDIS CONFIGURATION
+# =============================================================================
+
+redis:
+  enabled: true
+  architecture: replication
+  auth:
+    enabled: true
+    password: "changeme"
+  
+  master:
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    
+    # Redis configuration
+    configuration: |
+      maxmemory 1gb
+      maxmemory-policy allkeys-lru
+      save 900 1
+      save 300 10
+      save 60 10000
+      tcp-keepalive 300
+      tcp-backlog 511
+      timeout 0
+      databases 16
+  
+  replica:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 50m
+        memory: 128Mi
+  
+  sentinel:
+    enabled: true
+    masterSet: mymaster
+    downAfterMilliseconds: 30000
+    failoverTimeout: 180000
+    parallelSyncs: 1
+  
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# External Redis configuration
+externalRedis:
+  enabled: false
+  host: ""
+  port: 6379
+  password: ""
+  database: 0
+  existingSecret: ""
+  existingSecretPasswordKey: ""
+
+# =============================================================================
+# MONITORING CONFIGURATION
+# =============================================================================
+
+monitoring:
+  enabled: true
+  
+  # Prometheus configuration
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      labels: {}
+      annotations: {}
+    
+    rules:
+      enabled: true
+      spec:
+        - alert: TradingSentinelDown
+          expr: up{job="trading-sentinel"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Trading Sentinel is down"
+            description: "Trading Sentinel has been down for more than 5 minutes."
+        
+        - alert: HighCPUUsage
+          expr: rate(container_cpu_usage_seconds_total{pod=~"trading-sentinel-.*"}[5m]) > 0.8
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU usage detected"
+            description: "CPU usage is above 80% for more than 10 minutes."
+        
+        - alert: HighMemoryUsage
+          expr: container_memory_usage_bytes{pod=~"trading-sentinel-.*"} / container_spec_memory_limit_bytes > 0.9
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage detected"
+            description: "Memory usage is above 90% for more than 5 minutes."
+        
+        - alert: TradingAccountFailure
+          expr: trading_account_failures_total > 5
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Multiple trading account failures"
+            description: "More than 5 trading account failures detected."
+  
+  # Grafana configuration
+  grafana:
+    enabled: true
+    adminPassword: "changeme"
+    
+    dashboards:
+      enabled: true
+      configMaps:
+        - configMapName: trading-sentinel-dashboards
+          fileName: trading-overview.json
+        - configMapName: trading-sentinel-dashboards
+          fileName: system-metrics.json
+        - configMapName: trading-sentinel-dashboards
+          fileName: trading-performance.json
+    
+    datasources:
+      enabled: true
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-server:80
+          access: proxy
+          isDefault: true
+  
+  # Jaeger tracing
+  jaeger:
+    enabled: false
+    agent:
+      host: jaeger-agent
+      port: 6831
+  
+  # Application metrics
+  metrics:
+    enabled: true
+    port: 9090
+    path: /metrics
+    serviceMonitor:
+      enabled: true
+
+# =============================================================================
+# SECURITY CONFIGURATION
+# =============================================================================
+
+security:
+  # Pod Security Standards
+  podSecurityStandards:
+    enforce: "restricted"
+    audit: "restricted"
+    warn: "restricted"
+  
+  # Network Policies
+  networkPolicy:
+    enabled: true
+    ingress:
+      - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+        ports:
+        - protocol: TCP
+          port: 8000
+      - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        ports:
+        - protocol: TCP
+          port: 9090
+    
+    egress:
+      - to: []
+        ports:
+        - protocol: TCP
+          port: 5432  # PostgreSQL
+        - protocol: TCP
+          port: 6379  # Redis
+        - protocol: TCP
+          port: 53    # DNS
+        - protocol: UDP
+          port: 53    # DNS
+        - protocol: TCP
+          port: 443   # HTTPS
+        - protocol: TCP
+          port: 80    # HTTP
+  
+  # RBAC
+  rbac:
+    create: true
+    rules:
+      - apiGroups: [""]
+        resources: ["pods", "services", "endpoints"]
+        verbs: ["get", "list", "watch"]
+      - apiGroups: ["apps"]
+        resources: ["deployments", "replicasets"]
+        verbs: ["get", "list", "watch"]
+  
+  # Service Account
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+    automountServiceAccountToken: false
+
+# =============================================================================
+# BACKUP CONFIGURATION
+# =============================================================================
+
+backup:
+  enabled: true
+  
+  # Database backup
+  database:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retention: "30d"
+    storage:
+      type: s3  # s3, gcs, azure
+      bucket: "trading-sentinel-backups"
+      region: "us-east-1"
+      secretName: "backup-credentials"
+  
+  # Application data backup
+  data:
+    enabled: true
+    schedule: "0 3 * * *"  # Daily at 3 AM
+    retention: "7d"
+    volumes:
+      - data
+      - logs
+
+# =============================================================================
+# ENVIRONMENT-SPECIFIC OVERRIDES
+# =============================================================================
+
+# Development environment
+development:
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  
+  postgresql:
+    primary:
+      persistence:
+        size: 10Gi
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+  
+  redis:
+    master:
+      persistence:
+        size: 2Gi
+      resources:
+        limits:
+          cpu: 200m
+          memory: 512Mi
+        requests:
+          cpu: 50m
+          memory: 128Mi
+
+# Staging environment
+staging:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: 1500m
+      memory: 3Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+# Production environment (inherits from default values)
+production: {}
+
+# =============================================================================
+# ADDITIONAL SERVICES
+# =============================================================================
+
+# Message Queue (RabbitMQ)
+messageQueue:
+  enabled: false
+  rabbitmq:
+    auth:
+      username: "trading"
+      password: "changeme"
+    persistence:
+      enabled: true
+      size: 5Gi
+
+# Elasticsearch for logging
+elasticsearch:
+  enabled: false
+  replicas: 1
+  minimumMasterNodes: 1
+  persistence:
+    enabled: true
+    size: 20Gi
+
+# Kibana for log visualization
+kibana:
+  enabled: false
+  elasticsearchHosts: "http://elasticsearch:9200"
+
+# =============================================================================
+# TESTING CONFIGURATION
+# =============================================================================
+
+testing:
+  enabled: false
+  
+  # Test pods
+  testPods:
+    - name: api-test
+      image: curlimages/curl:latest
+      command: ["/bin/sh"]
+      args: ["-c", "curl -f http://trading-sentinel/health"]
+    
+    - name: database-test
+      image: postgres:15-alpine
+      command: ["/bin/sh"]
+      args: ["-c", "pg_isready -h postgresql -U trading_user"]
+    
+    - name: redis-test
+      image: redis:7-alpine
+      command: ["/bin/sh"]
+      args: ["-c", "redis-cli -h redis ping"]

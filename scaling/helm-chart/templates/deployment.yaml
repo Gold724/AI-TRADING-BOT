@@ -1,0 +1,334 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trading-sentinel.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "trading-sentinel.labels" . | nindent 4 }}
+  {{- with .Values.deployment.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.deployment.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "trading-sentinel.selectorLabels" . | nindent 6 }}
+  {{- with .Values.deployment.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.deployment.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "trading-sentinel.selectorLabels" . | nindent 8 }}
+        {{- with .Values.deployment.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "trading-sentinel.serviceAccountName" . }}
+      {{- with .Values.deployment.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      # Init containers for database migration and setup
+      initContainers:
+        # Database migration
+        - name: db-migrate
+          image: {{ include "trading-sentinel.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for database to be ready..."
+              until pg_isready -h {{ include "trading-sentinel.databaseHost" . }} -p {{ include "trading-sentinel.databasePort" . }} -U {{ include "trading-sentinel.databaseUser" . }}; do
+                echo "Database not ready, waiting..."
+                sleep 5
+              done
+              echo "Database is ready, running migrations..."
+              python manage.py migrate
+              echo "Migrations completed"
+          env:
+            {{- include "trading-sentinel.databaseEnv" . | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        
+        # Redis connectivity check
+        - name: redis-check
+          image: redis:7-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Checking Redis connectivity..."
+              until redis-cli -h {{ include "trading-sentinel.redisHost" . }} -p {{ include "trading-sentinel.redisPort" . }} {{- if .Values.redis.auth.enabled }} -a $REDIS_PASSWORD {{- end }} ping | grep PONG; do
+                echo "Redis not ready, waiting..."
+                sleep 5
+              done
+              echo "Redis is ready"
+          env:
+            {{- include "trading-sentinel.redisEnv" . | nindent 12 }}
+          resources:
+            limits:
+              cpu: 100m
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+        
+        # Application setup
+        - name: app-setup
+          image: {{ include "trading-sentinel.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Setting up application directories..."
+              mkdir -p /app/data/accounts /app/data/cache /app/logs
+              chmod 755 /app/data /app/logs
+              echo "Initializing application configuration..."
+              python -c "from src.setup import initialize_app; initialize_app()"
+              echo "Application setup completed"
+          env:
+            {{- include "trading-sentinel.env" . | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- include "trading-sentinel.volumeMounts" . | nindent 12 }}
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+      
+      containers:
+        # Main application container
+        - name: {{ .Chart.Name }}
+          image: {{ include "trading-sentinel.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          
+          ports:
+            - name: http
+              containerPort: {{ .Values.app.api.port }}
+              protocol: TCP
+            {{- if .Values.app.websocket.enabled }}
+            - name: websocket
+              containerPort: {{ .Values.app.websocket.port }}
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.monitoring.metrics.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.monitoring.metrics.port }}
+              protocol: TCP
+            {{- end }}
+          
+          env:
+            {{- include "trading-sentinel.env" . | nindent 12 }}
+          
+          envFrom:
+            - configMapRef:
+                name: {{ include "trading-sentinel.fullname" . }}-config
+            - secretRef:
+                name: {{ include "trading-sentinel.fullname" . }}-secret
+          
+          {{- with .Values.deployment.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          
+          {{- with .Values.deployment.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          
+          {{- with .Values.deployment.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          
+          {{- with .Values.deployment.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          
+          volumeMounts:
+            {{- include "trading-sentinel.volumeMounts" . | nindent 12 }}
+            # Temporary directories
+            - name: tmp
+              mountPath: /tmp
+            - name: var-tmp
+              mountPath: /var/tmp
+            # Application cache
+            - name: app-cache
+              mountPath: /app/cache
+        
+        # Sidecar container for log shipping
+        {{- if .Values.monitoring.enabled }}
+        - name: log-shipper
+          image: fluent/fluent-bit:2.0
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+          volumeMounts:
+            - name: fluent-bit-config
+              mountPath: /fluent-bit/etc
+            - name: logs
+              mountPath: /app/logs
+              readOnly: true
+        {{- end }}
+        
+        # Sidecar container for metrics collection
+        {{- if .Values.monitoring.metrics.enabled }}
+        - name: metrics-exporter
+          image: prom/node-exporter:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+            - --path.rootfs=/host/root
+            - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+          ports:
+            - name: node-metrics
+              containerPort: 9100
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 50m
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+          volumeMounts:
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+            - name: root
+              mountPath: /host/root
+              readOnly: true
+        {{- end }}
+      
+      volumes:
+        # Persistent volumes
+        {{- if .Values.persistence.enabled }}
+        {{- range $name, $config := .Values.persistence.volumes }}
+        {{- if $config.enabled }}
+        - name: {{ $name }}
+          persistentVolumeClaim:
+            claimName: {{ include "trading-sentinel.fullname" $ }}-{{ $name }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        
+        # Temporary volumes
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: var-tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: app-cache
+          emptyDir:
+            sizeLimit: 2Gi
+        
+        # Configuration volumes
+        - name: config
+          configMap:
+            name: {{ include "trading-sentinel.fullname" . }}-config
+        - name: secret
+          secret:
+            secretName: {{ include "trading-sentinel.fullname" . }}-secret
+        
+        # Monitoring volumes
+        {{- if .Values.monitoring.enabled }}
+        - name: fluent-bit-config
+          configMap:
+            name: {{ include "trading-sentinel.fullname" . }}-fluent-bit
+        {{- end }}
+        
+        {{- if .Values.monitoring.metrics.enabled }}
+        # Host volumes for metrics collection
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: root
+          hostPath:
+            path: /
+        {{- end }}
+      
+      {{- with .Values.deployment.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- with .Values.deployment.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- with .Values.deployment.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      # DNS configuration
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
+          - name: edns0
+      
+      # Termination settings
+      terminationGracePeriodSeconds: 60
+      
+      # Restart policy
+      restartPolicy: Always
+      
+      # Priority and preemption
+      {{- if .Values.app.environment == "production" }}
+      priorityClassName: high-priority
+      {{- end }}

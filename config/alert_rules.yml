@@ -1,0 +1,465 @@
+# AI Trading Sentinel - Prometheus Alert Rules
+# Comprehensive alerting for trading system monitoring
+
+groups:
+  - name: trading_system_alerts
+    rules:
+      # Trading Bot Health
+      - alert: TradingBotDown
+        expr: up{job="trading_bot"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: trading_bot
+        annotations:
+          summary: "Trading bot is down"
+          description: "Trading bot has been down for more than 30 seconds"
+          runbook_url: "https://docs.ai-trading-sentinel.com/runbooks/bot-down"
+
+      - alert: TradingAPIDown
+        expr: up{job="trading_api"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: trading_api
+        annotations:
+          summary: "Trading API is down"
+          description: "Trading API has been down for more than 30 seconds"
+          runbook_url: "https://docs.ai-trading-sentinel.com/runbooks/api-down"
+
+      - alert: HighTradeLatency
+        expr: trading_execution_duration_seconds > 5
+        for: 1m
+        labels:
+          severity: warning
+          service: trading_execution
+        annotations:
+          summary: "High trade execution latency detected"
+          description: "Trade execution taking longer than 5 seconds for {{ $value }} seconds"
+
+      - alert: TradingErrorRate
+        expr: rate(trading_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: trading_execution
+        annotations:
+          summary: "High trading error rate"
+          description: "Trading error rate is {{ $value }} errors per second"
+
+      - alert: LoginFailure
+        expr: increase(login_failures_total[5m]) > 3
+        for: 1m
+        labels:
+          severity: critical
+          service: authentication
+        annotations:
+          summary: "Multiple login failures detected"
+          description: "{{ $value }} login failures in the last 5 minutes"
+
+      - alert: PositionSizeExceeded
+        expr: current_position_size > max_position_size
+        for: 0s
+        labels:
+          severity: critical
+          service: risk_management
+        annotations:
+          summary: "Position size limit exceeded"
+          description: "Current position size {{ $value }} exceeds maximum allowed"
+
+      - alert: DrawdownLimitReached
+        expr: current_drawdown_percent > max_drawdown_percent
+        for: 0s
+        labels:
+          severity: critical
+          service: risk_management
+        annotations:
+          summary: "Drawdown limit reached"
+          description: "Current drawdown {{ $value }}% exceeds limit"
+
+      - alert: DailyLossLimitReached
+        expr: daily_pnl < daily_loss_limit
+        for: 0s
+        labels:
+          severity: critical
+          service: risk_management
+        annotations:
+          summary: "Daily loss limit reached"
+          description: "Daily P&L {{ $value }} has reached the loss limit"
+
+  - name: system_resource_alerts
+    rules:
+      # CPU Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for more than 5 minutes (current: {{ $value }}%)"
+
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical CPU usage detected"
+          description: "CPU usage is above 95% for more than 2 minutes (current: {{ $value }}%)"
+
+      # Memory Alerts
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 80% for more than 5 minutes (current: {{ $value }}%)"
+
+      - alert: CriticalMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Memory usage is above 95% for more than 2 minutes (current: {{ $value }}%)"
+
+      # Disk Alerts
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage on {{ $labels.mountpoint }} is above 80% (current: {{ $value }}%)"
+
+      - alert: CriticalDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical disk usage detected"
+          description: "Disk usage on {{ $labels.mountpoint }} is above 95% (current: {{ $value }}%)"
+
+      # Load Average
+      - alert: HighLoadAverage
+        expr: node_load1 > 4
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High system load average"
+          description: "1-minute load average is {{ $value }}"
+
+      # Network Alerts
+      - alert: HighNetworkTraffic
+        expr: rate(node_network_receive_bytes_total[5m]) > 100000000  # 100MB/s
+        for: 5m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "High network receive traffic"
+          description: "Network receive traffic is {{ $value }} bytes/sec on {{ $labels.device }}"
+
+  - name: database_alerts
+    rules:
+      # Redis Alerts
+      - alert: RedisDown
+        expr: up{job="redis_exporter"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been down for more than 30 seconds"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is above 80% (current: {{ $value }}%)"
+
+      - alert: RedisHighConnections
+        expr: redis_connected_clients > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis high connection count"
+          description: "Redis has {{ $value }} connected clients"
+
+      - alert: RedisSlowQueries
+        expr: redis_slowlog_length > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis slow queries detected"
+          description: "Redis has {{ $value }} slow queries in the log"
+
+  - name: web_server_alerts
+    rules:
+      # Nginx Alerts
+      - alert: NginxDown
+        expr: up{job="nginx_exporter"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: nginx
+        annotations:
+          summary: "Nginx is down"
+          description: "Nginx has been down for more than 30 seconds"
+
+      - alert: HighHTTPErrorRate
+        expr: rate(nginx_http_requests_total{status=~"4..|5.."}[5m]) / rate(nginx_http_requests_total[5m]) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: nginx
+        annotations:
+          summary: "High HTTP error rate"
+          description: "HTTP error rate is {{ $value }}% for the last 5 minutes"
+
+      - alert: HighResponseTime
+        expr: nginx_http_request_duration_seconds{quantile="0.95"} > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: nginx
+        annotations:
+          summary: "High HTTP response time"
+          description: "95th percentile response time is {{ $value }} seconds"
+
+      - alert: TooManyConnections
+        expr: nginx_connections_active > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: nginx
+        annotations:
+          summary: "Too many active connections"
+          description: "Nginx has {{ $value }} active connections"
+
+  - name: security_alerts
+    rules:
+      # Security Monitoring
+      - alert: SuspiciousLoginAttempts
+        expr: increase(failed_login_attempts_total[10m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "Suspicious login attempts detected"
+          description: "{{ $value }} failed login attempts in the last 10 minutes"
+
+      - alert: UnauthorizedAPIAccess
+        expr: increase(unauthorized_api_requests_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "Unauthorized API access attempts"
+          description: "{{ $value }} unauthorized API requests in the last 5 minutes"
+
+      - alert: SSLCertificateExpiring
+        expr: ssl_certificate_expiry_days < 30
+        for: 1h
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate expires in {{ $value }} days"
+
+      - alert: SSLCertificateExpired
+        expr: ssl_certificate_expiry_days < 0
+        for: 0s
+        labels:
+          severity: critical
+          service: security
+        annotations:
+          summary: "SSL certificate expired"
+          description: "SSL certificate has expired {{ $value }} days ago"
+
+  - name: application_alerts
+    rules:
+      # Application Performance
+      - alert: HighApplicationLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: application
+        annotations:
+          summary: "High application latency"
+          description: "95th percentile latency is {{ $value }} seconds"
+
+      - alert: ApplicationErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: application
+        annotations:
+          summary: "High application error rate"
+          description: "Application error rate is {{ $value }}%"
+
+      # Health Check Failures
+      - alert: HealthCheckFailing
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: health_check
+        annotations:
+          summary: "Health check failing"
+          description: "Health check for {{ $labels.instance }} has been failing for more than 1 minute"
+
+      # Queue Monitoring
+      - alert: HighQueueSize
+        expr: queue_size > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: queue
+        annotations:
+          summary: "High queue size"
+          description: "Queue {{ $labels.queue_name }} has {{ $value }} items"
+
+      - alert: QueueProcessingDelay
+        expr: queue_processing_delay_seconds > 300  # 5 minutes
+        for: 2m
+        labels:
+          severity: warning
+          service: queue
+        annotations:
+          summary: "Queue processing delay"
+          description: "Queue {{ $labels.queue_name }} has processing delay of {{ $value }} seconds"
+
+  - name: backup_alerts
+    rules:
+      # Backup Monitoring
+      - alert: BackupJobFailed
+        expr: backup_job_success == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backup
+        annotations:
+          summary: "Backup job failed"
+          description: "Backup job {{ $labels.job_name }} has failed"
+
+      - alert: BackupJobOverdue
+        expr: time() - backup_job_last_success_timestamp > 86400  # 24 hours
+        for: 1h
+        labels:
+          severity: warning
+          service: backup
+        annotations:
+          summary: "Backup job overdue"
+          description: "Backup job {{ $labels.job_name }} hasn't run successfully for more than 24 hours"
+
+      - alert: BackupStorageSpace
+        expr: backup_storage_used_percent > 90
+        for: 1h
+        labels:
+          severity: warning
+          service: backup
+        annotations:
+          summary: "Backup storage space low"
+          description: "Backup storage is {{ $value }}% full"
+
+  - name: monitoring_system_alerts
+    rules:
+      # Monitoring Infrastructure
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus has been down for more than 1 minute"
+
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana has been down for more than 1 minute"
+
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: "Alertmanager is down"
+          description: "Alertmanager has been down for more than 1 minute"
+
+      - alert: PrometheusTargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "Prometheus target down"
+          description: "Prometheus target {{ $labels.instance }} of job {{ $labels.job }} has been down for more than 2 minutes"
+
+      - alert: PrometheusTSDBReloadsFailing
+        expr: increase(prometheus_tsdb_reloads_failures_total[3h]) > 0
+        for: 0s
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "Prometheus TSDB reloads failing"
+          description: "Prometheus has {{ $value }} TSDB reload failures in the last 3 hours"
+
+      - alert: PrometheusConfigurationReloadFailure
+        expr: prometheus_config_last_reload_successful != 1
+        for: 0s
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "Prometheus configuration reload failure"
+          description: "Prometheus configuration reload has failed"
+
+      - alert: PrometheusTooManyRestarts
+        expr: changes(process_start_time_seconds{job=~"prometheus|pushgateway|alertmanager"}[15m]) > 2
+        for: 0s
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "Prometheus too many restarts"
+          description: "Prometheus has restarted more than twice in the last 15 minutes"

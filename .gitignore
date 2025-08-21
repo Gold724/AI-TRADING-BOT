@@ -1,6 +1,9 @@
-# Environment variables
+git : The term 'git' is not recognized as the name of a cmdlet, function, script file, or operable program.# Environment variables
 .env
 .env.*
+.env.temp
+.env.local
+.env.production
 
 # Python
 __pycache__/
@@ -26,9 +29,21 @@ wheels/
 
 # Logs and databases
 *.log
+*.pid
 *.sqlite
 *.db
 logs/
+*.log.*
+*_error.log
+*_debug.log
+trading*.log
+bot*.log
+api*.log
+backend*.log
+frontend*.log
+monitoring*.log
+security*.log
+audit*.log
 
 # Node.js
 node_modules/
@@ -54,16 +69,71 @@ chromedriver*
 
 # Screenshots and media
 screenshots/
+logs/screenshots/
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*.swp
+*.swo
+*.cache
+*~
+
+# Test files and artifacts
+test_results/
+coverage/
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+
+# Backup directories
+backups/
+config_backups/
+*.tar.gz
+*.zip
 
 # IDE specific files
 .idea/
 .vscode/
 *.swp
 *.swo
+.vimrc
+.vim/
 
 # OS specific files
 .DS_Store
 Thumbs.db
+*.lnk
+
+# Security and sensitive files
+*.key
+*.pem
+*.crt
+*.p12
+secrets/
+credentials/
+
+# Runtime files
+*.sock
+*.lock
+heartbeat.pid
+supervisord.pid
+
+# Monitoring and performance
+*.prof
+*.trace
+performance/
+metrics/
 
 # Git LFS tracked files (these are tracked by Git LFS, not ignored)
 # *.png

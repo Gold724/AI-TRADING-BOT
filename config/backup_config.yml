@@ -1,0 +1,431 @@
+# AI Trading Sentinel - Backup Configuration
+# Comprehensive backup and disaster recovery settings
+
+# Global backup settings
+backup:
+  # Base configuration
+  enabled: true
+  backup_directory: "./backups"
+  temp_directory: "/tmp/ai-trading-sentinel-backup"
+  
+  # Retention policies
+  retention:
+    database_days: 30
+    config_days: 90
+    logs_days: 14
+    system_days: 60
+    max_backups_per_type: 50
+  
+  # Compression settings
+  compression:
+    enabled: true
+    level: 6  # gzip compression level (1-9)
+    algorithm: "gzip"  # gzip, bzip2, xz
+  
+  # Encryption settings
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    key_file: "./config/backup_encryption.key"
+    rotate_keys: true
+    key_rotation_days: 90
+  
+  # Backup schedules (cron format)
+  schedules:
+    database:
+      enabled: true
+      cron: "0 */6 * * *"  # Every 6 hours
+      priority: "high"
+      max_duration_minutes: 30
+    
+    config:
+      enabled: true
+      cron: "0 2 * * *"   # Daily at 2 AM
+      priority: "medium"
+      max_duration_minutes: 15
+    
+    logs:
+      enabled: true
+      cron: "0 1 * * 0"   # Weekly on Sunday at 1 AM
+      priority: "low"
+      max_duration_minutes: 45
+    
+    full_system:
+      enabled: true
+      cron: "0 3 * * 0"   # Weekly on Sunday at 3 AM
+      priority: "medium"
+      max_duration_minutes: 120
+    
+    cleanup:
+      enabled: true
+      cron: "0 4 * * *"   # Daily at 4 AM
+      priority: "low"
+      max_duration_minutes: 10
+
+# Database backup settings
+database:
+  # Redis backup configuration
+  redis:
+    enabled: true
+    host: "localhost"
+    port: 6379
+    password_env: "REDIS_PASSWORD"
+    db: 0
+    
+    # Backup methods
+    methods:
+      - "rdb_dump"     # Redis RDB dump
+      - "aof_backup"   # AOF file backup (if enabled)
+    
+    # Verification
+    verify_backup: true
+    test_restore: false  # Test restore in isolated environment
+    
+    # Performance settings
+    use_bgsave: true
+    timeout_seconds: 300
+    memory_limit_mb: 1024
+
+# Configuration backup settings
+config:
+  # Files and directories to include
+  include_patterns:
+    - ".env"
+    - ".env.production"
+    - "config/**/*"
+    - "monitoring/**/*"
+    - "load_balancing/**/*"
+    - "scripts/**/*"
+    - "systemd/**/*"
+    - "requirements.txt"
+    - "package.json"
+    - "package-lock.json"
+    - "docker-compose*.yml"
+    - "Dockerfile*"
+    - "nginx.conf"
+    - "*.md"
+  
+  # Files and directories to exclude
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/*.pyc"
+    - "**/*.pyo"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/venv/**"
+    - "**/.venv/**"
+    - "**/env/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/*.tmp"
+    - "**/*.temp"
+    - "**/backups/**"
+  
+  # Sensitive files handling
+  sensitive_files:
+    encrypt_always:
+      - ".env"
+      - ".env.production"
+      - "config/secrets.yml"
+      - "config/ssl/**"
+    
+    mask_in_logs:
+      - "password"
+      - "secret"
+      - "key"
+      - "token"
+      - "api_key"
+
+# Log backup settings
+logs:
+  # Log directories and files
+  sources:
+    - "logs/**/*.log"
+    - "logs/**/*.log.*"  # Rotated logs
+    - "/var/log/nginx/ai-trading-sentinel*"
+    - "/var/log/systemd/trading-*"
+    - "/var/log/redis/redis-server.log"
+  
+  # Log processing
+  processing:
+    compress_old_logs: true
+    remove_after_backup: false
+    anonymize_sensitive_data: true
+    
+  # Log retention (separate from backup retention)
+  local_retention_days: 7
+  
+  # Log analysis
+  analyze_before_backup: true
+  generate_summary: true
+
+# System backup settings
+system:
+  # Full system backup configuration
+  include_system_files: false  # OS-level files
+  include_user_data: true
+  include_application_data: true
+  
+  # System directories to include
+  include_directories:
+    - "./"  # Project root
+  
+  # System directories to exclude
+  exclude_directories:
+    - "./backups"
+    - "./logs"
+    - "./tmp"
+    - "./.git"
+    - "./node_modules"
+    - "./venv"
+    - "./.venv"
+    - "./env"
+  
+  # Performance settings
+  parallel_compression: true
+  max_threads: 4
+  io_priority: "low"  # low, normal, high
+
+# Remote backup settings
+remote:
+  # Remote backup configuration
+  enabled: true
+  
+  # Primary remote location
+  primary:
+    type: "rsync"  # rsync, s3, gcs, azure, ftp
+    enabled: true
+    
+    # Rsync configuration
+    rsync:
+      host: "backup.example.com"
+      user: "backup-user"
+      path: "/backup/ai-trading-sentinel"
+      ssh_key: "~/.ssh/backup_key"
+      port: 22
+      options:
+        - "--compress"
+        - "--delete"
+        - "--partial"
+        - "--progress"
+    
+    # Schedule for remote sync
+    sync_schedule: "0 5 * * *"  # Daily at 5 AM
+    verify_after_sync: true
+    
+  # Secondary remote location (optional)
+  secondary:
+    type: "s3"
+    enabled: false
+    
+    # AWS S3 configuration
+    s3:
+      bucket: "ai-trading-sentinel-backups"
+      region: "us-east-1"
+      access_key_env: "AWS_ACCESS_KEY_ID"
+      secret_key_env: "AWS_SECRET_ACCESS_KEY"
+      storage_class: "STANDARD_IA"  # STANDARD, STANDARD_IA, GLACIER
+      encryption: "AES256"
+    
+    # Schedule for S3 sync
+    sync_schedule: "0 6 * * 0"  # Weekly on Sunday at 6 AM
+  
+  # Remote backup retention
+  remote_retention:
+    primary_days: 90
+    secondary_days: 365
+    
+  # Bandwidth limiting
+  bandwidth_limit: "10M"  # 10 MB/s limit
+
+# Monitoring and alerting
+monitoring:
+  # Backup monitoring
+  enabled: true
+  
+  # Health checks
+  health_checks:
+    backup_age_threshold_hours: 8
+    backup_size_change_threshold_percent: 50
+    backup_duration_threshold_minutes: 60
+    
+  # Notifications
+  notifications:
+    # Slack notifications
+    slack:
+      enabled: true
+      webhook_url_env: "SLACK_WEBHOOK_URL"
+      channel: "#ai-trading-alerts"
+      
+      # Notification triggers
+      notify_on:
+        - "backup_success"
+        - "backup_failure"
+        - "backup_warning"
+        - "cleanup_completed"
+        - "remote_sync_failure"
+        - "disk_space_low"
+    
+    # Email notifications
+    email:
+      enabled: false
+      smtp_host: "smtp.gmail.com"
+      smtp_port: 587
+      username_env: "SMTP_USERNAME"
+      password_env: "SMTP_PASSWORD"
+      from_address: "alerts@ai-trading-sentinel.com"
+      to_addresses:
+        - "admin@ai-trading-sentinel.com"
+      
+      # Email triggers
+      notify_on:
+        - "backup_failure"
+        - "remote_sync_failure"
+        - "disaster_recovery_needed"
+  
+  # Metrics collection
+  metrics:
+    enabled: true
+    prometheus_enabled: true
+    
+    # Metrics to collect
+    collect:
+      - "backup_duration_seconds"
+      - "backup_size_bytes"
+      - "backup_success_total"
+      - "backup_failure_total"
+      - "cleanup_removed_files_total"
+      - "remote_sync_duration_seconds"
+      - "disk_usage_bytes"
+
+# Disaster recovery settings
+disaster_recovery:
+  # Recovery procedures
+  enabled: true
+  
+  # Recovery testing
+  testing:
+    enabled: true
+    test_schedule: "0 2 1 * *"  # Monthly on 1st at 2 AM
+    test_environment: "isolated"
+    
+    # Test scenarios
+    scenarios:
+      - "database_corruption"
+      - "config_loss"
+      - "full_system_failure"
+      - "partial_data_loss"
+  
+  # Recovery objectives
+  objectives:
+    # Recovery Time Objective (minutes)
+    rto:
+      database: 15
+      config: 5
+      logs: 30
+      full_system: 120
+    
+    # Recovery Point Objective (hours)
+    rpo:
+      database: 6
+      config: 24
+      logs: 168  # 7 days
+      full_system: 24
+  
+  # Emergency procedures
+  emergency:
+    # Emergency contacts
+    contacts:
+      primary: "admin@ai-trading-sentinel.com"
+      secondary: "backup-admin@ai-trading-sentinel.com"
+      escalation: "cto@ai-trading-sentinel.com"
+    
+    # Emergency scripts
+    scripts:
+      quick_recovery: "./scripts/quick_recovery.sh"
+      full_restore: "./scripts/full_restore.sh"
+      emergency_stop: "./scripts/emergency_stop.sh"
+
+# Security settings
+security:
+  # Backup security
+  enabled: true
+  
+  # Access control
+  access_control:
+    backup_user: "trading"
+    backup_group: "trading"
+    file_permissions: "600"
+    directory_permissions: "700"
+  
+  # Encryption settings
+  encryption:
+    encrypt_at_rest: true
+    encrypt_in_transit: true
+    key_management: "file"  # file, vault, kms
+    
+  # Integrity verification
+  integrity:
+    checksum_algorithm: "sha256"
+    verify_on_restore: true
+    store_checksums_separately: true
+  
+  # Audit logging
+  audit:
+    enabled: true
+    log_file: "./logs/backup_audit.log"
+    log_level: "INFO"
+    
+    # Events to audit
+    audit_events:
+      - "backup_created"
+      - "backup_restored"
+      - "backup_deleted"
+      - "config_changed"
+      - "access_denied"
+      - "encryption_key_rotated"
+
+# Performance settings
+performance:
+  # Resource limits
+  limits:
+    max_cpu_percent: 50
+    max_memory_mb: 2048
+    max_disk_io_mbps: 100
+    max_network_mbps: 50
+  
+  # Optimization settings
+  optimization:
+    parallel_operations: true
+    max_parallel_jobs: 2
+    use_compression: true
+    deduplicate_files: false
+    
+  # Scheduling
+  scheduling:
+    nice_level: 10  # Lower priority
+    ionice_class: 2  # Best effort I/O
+    ionice_level: 4  # Lower I/O priority
+
+# Logging settings
+logging:
+  # Backup operation logging
+  enabled: true
+  log_file: "./logs/backup.log"
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  
+  # Log rotation
+  rotation:
+    enabled: true
+    max_size_mb: 100
+    backup_count: 5
+    
+  # Log format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+  
+  # Structured logging
+  structured:
+    enabled: true
+    format: "json"
+    include_metadata: true

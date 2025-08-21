@@ -1,0 +1,80 @@
+# AI Trading Sentinel - Monitoring Dockerfile
+# Production-ready monitoring and alerting container
+
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Create app user
+RUN groupadd -r aitrading && useradd -r -g aitrading aitrading
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    gcc \
+    g++ \
+    make \
+    libffi-dev \
+    libssl-dev \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set work directory
+WORKDIR /app
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install additional monitoring dependencies
+RUN pip install --no-cache-dir \
+    psutil \
+    requests \
+    schedule \
+    python-telegram-bot \
+    slack-sdk \
+    prometheus-client
+
+# Copy application code
+COPY monitoring_setup.py .
+COPY core/ ./core/
+COPY utils/ ./utils/
+COPY config/ ./config/
+
+# Create necessary directories
+RUN mkdir -p logs data temp metrics && \
+    chown -R aitrading:aitrading /app
+
+# Switch to non-root user
+USER aitrading
+
+# Create startup script for monitoring
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "Starting AI Trading Sentinel Monitoring..."\n\
+\n\
+echo "Waiting for backend to be ready..."\n\
+while ! curl -sf "${BACKEND_URL:-http://backend:5000}/api/health" > /dev/null 2>&1; do\n\
+    echo "Backend not ready, waiting..."\n\
+    sleep 10\n\
+done\n\
+echo "Backend is ready!"\n\
+\n\
+echo "Starting monitoring daemon..."\n\
+python monitoring_setup.py --daemon' > /app/start_monitoring.sh && \
+    chmod +x /app/start_monitoring.sh
+
+# Health check
+HEALTHCHECK --interval=60s --timeout=15s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/metrics || exit 1
+
+# Expose metrics port
+EXPOSE 8080
+
+# Run the monitoring service
+CMD ["/app/start_monitoring.sh"]
